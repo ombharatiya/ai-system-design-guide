@@ -39,8 +39,8 @@ The coding AI landscape has three distinct layers:
 │                                                             │
 │  LAYER 1: CODING MODELS (The brains behind everything)     │
 │  ┌──────────────┐ ┌────────────┐ ┌────────────────────┐   │
-│  │  Claude 3.7  │ │    o3      │ │ Qwen2.5-Coder-32B  │   │
-│  │  GPT-4o      │ │ DeepSeek-R1│ │ StarCoder2-15B     │   │
+│  │  Opus 4.7    │ │  GPT-5.5   │ │ DeepSeek V4 Pro    │   │
+│  │  Sonnet 4.6  │ │ Gemini 3.1 │ │ Qwen 3.6 Coder     │   │
 │  └──────────────┘ └────────────┘ └────────────────────┘   │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
@@ -54,7 +54,7 @@ These models can be self-hosted, fine-tuned, and deployed without any API depend
 
 ### Qwen2.5-Coder (Alibaba)
 
-The strongest open-source coding model family as of March 2026:
+A strong open-source coding model family. As of May 2026, the open-source coding leaders are Qwen 3.6 Coder and DeepSeek V4 Pro; Qwen 2.5 Coder remains a popular pick for self-hosted deployments on smaller hardware:
 
 | Model | Parameters | Context | HumanEval+ | Notes |
 |-------|------------|---------|------------|-------|
@@ -63,7 +63,7 @@ The strongest open-source coding model family as of March 2026:
 | Qwen2.5-Coder-1.5B | 1.5B | 32K | 65.8% | Edge/on-device use |
 
 **Strengths:**
-- Matches GPT-4o on many coding benchmarks
+- Strong on coding benchmarks; competitive with frontier closed models on SWE-bench Verified
 - 100+ programming languages
 - Excellent fill-in-the-middle (FIM) for completions
 - Apache 2.0 license — fully commercial
@@ -149,7 +149,7 @@ Cursor is the leading AI-native IDE. Key capabilities:
 | **Tab** | Predictive completions (smarter than Copilot) |
 | **@-mentions** | Attach files, URLs, docs to context |
 | **.cursorrules** | Project-level AI instructions (like CLAUDE.md) |
-| **Model choice** | GPT-4o, Claude 3.7 Sonnet, o3, Gemini 2.0 Flash |
+| **Model choice** | GPT-5.5, Claude Sonnet 4.6 / Opus 4.7, Gemini 3.1 Pro, DeepSeek V4 Pro |
 
 **Best for**: Frontend/full-stack developers who want agentic editing within a familiar GUI.
 
@@ -165,18 +165,18 @@ Windsurf differentiates via **Flows** (not to be confused with CrewAI Flows):
 |---------|-------------|
 | **Cascade** | Windsurf's agentic editing mode |
 | **Flows** | Deterministic agentic sequences (agent + user in harmony) |
-| **Model choice** | Any: GPT-4o, Claude 3.7, Gemini 2.0, DeepSeek |
+| **Model choice** | Any: GPT-5.5, Claude Sonnet 4.6 / Opus 4.7, Gemini 3.1 Pro, DeepSeek V4 |
 | **Free tier** | Generous free credits |
 
 **Best for**: Teams that want Cursor-like experience with a free tier and model flexibility.
 
 ### GitHub Copilot (Microsoft/OpenAI)
 
-| Feature | Status (March 2026) |
+| Feature | Status (May 2026) |
 |---------|---------------------|
 | Completions | ✅ Still the market leader by install base |
 | Copilot Workspace | ✅ Multi-file agentic editing (in GA) |
-| Model | GPT-4o (default), Claude 3.5 (available) |
+| Model | GPT-5.5 (default), Claude Sonnet 4.6 / Opus 4.7 (available) |
 | Enterprise features | ✅ IP protection, org policies, code referencing off |
 
 **Best for**: Enterprise teams already on Microsoft/GitHub ecosystem.
@@ -218,7 +218,7 @@ OpenHands Controller
 ```
 
 **Key features:**
-- **Any LLM**: Works with Claude 3.7, GPT-4o, Gemini, local Ollama
+- **Any LLM**: Works with Claude Sonnet 4.6 / Opus 4.7, GPT-5.5, Gemini 3.1 Pro, DeepSeek V4, local Ollama
 - **Docker sandbox**: Agent runs in isolated container
 - **Web UI**: Chat-like interface; shows agent's reasoning
 - **API access**: REST API for CI integration
@@ -250,9 +250,10 @@ aider --model claude-3-7-sonnet-20250219
 - **Architecture mode**: Discusses design before touching code
 
 ```bash
-# Benchmark (March 2026)
-# Aider + claude-3-7-sonnet → SWE-bench Verified: ~55%
-# Aider + o3 → SWE-bench Verified: ~60%
+# SWE-bench Verified benchmarks (May 2026)
+# Aider + Claude Sonnet 4.6  → ~74%
+# Aider + Claude Opus 4.7    → ~87%
+# Aider + GPT-5.5            → ~88%
 ```
 
 ### Cline (VS Code Extension)
@@ -289,11 +290,12 @@ The gold standard for agentic software engineering. Measures ability to resolve 
 
 | Agent / System | Score | Model Backend | Notes |
 |---------------|-------|---------------|-------|
-| Devin 2.0 (commercial) | 55-65% | Claude 3.7 | Paid service |
-| Claude Code | ~70% | Claude 3.7 Sonnet | Anthropic's official |
-| OpenHands (best config) | ~55% | Claude 3.7 Sonnet | Open-source |
-| Aider | ~55% | o3 / Claude 3.7 | Open-source CLI |
-| SWE-agent | ~38% | GPT-4o | Princeton research |
+| GPT-5.5 (single-shot leader) | 88.7% | OpenAI | Holds #1 on SWE-Bench Verified (May 2026) |
+| Claude Opus 4.7 (Anthropic) | 87.6% | Anthropic | Leads SWE-Bench Pro at 64.3% |
+| Claude Code | ~87% | Claude Opus 4.7 / Sonnet 4.6 | Anthropic's official agent |
+| OpenHands (best config) | ~75% | Claude Sonnet 4.6 | Open-source |
+| Aider | ~74% | Claude Sonnet 4.6 / Opus 4.7 / GPT-5.5 | Open-source CLI |
+| SWE-agent | ~55% | GPT-5.5 | Princeton research baseline |
 
 > [!NOTE]
 > SWE-bench scores are highly sensitive to backend model. The same agent with claude-3-7-sonnet typically scores 10-15% higher than with GPT-4o.

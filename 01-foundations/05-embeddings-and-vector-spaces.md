@@ -218,9 +218,7 @@ def euclidean_distance(a, b):
 | Cohere embed-v3.5 | 1024 | 512 | 67.5 | $0.10 |
 | Google text-embedding-005 | 768 | 8k | 67.2 | $0.02 |
 
-*MTEB scores represent late 2025 frontier standards.*
-
-*MTEB scores are approximate and vary by benchmark subset. Always verify current values.*
+*MTEB scores are approximate and vary by benchmark subset. Always verify current values. The English leaderboard is currently led by Gemini Embedding 001 (68.32); the multilingual leaderboard by Qwen3-Embedding-8B (70.58) and Llama-Embed-Nemotron-8B.*
 
 ### Open Source Models
 
@@ -265,7 +263,7 @@ dim_64 = full_embedding[:64]
 | Use Case | Dimension | Tradeoff |
 |----------|-----------|----------|
 | Full Retrieval | 1024-3072 | Peak Accuracy |
-| **Two-Stage Retrieval**| 128 -> 1024 | **The 2025 Standard**: Retrieve 1000 with 128-d, refine top 100 with 1024-d. |
+| **Two-Stage Retrieval**| 128 -> 1024 | **Production standard**: retrieve 1000 with 128-d, refine top 100 with 1024-d. |
 | Cost-sensitive | 256 | 12x storage savings, <2% MRR loss |
 | Edge / Mobile | 64 | Maximum speed, handles simple intent |
 

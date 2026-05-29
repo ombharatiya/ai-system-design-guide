@@ -48,7 +48,7 @@ class GraphState(TypedDict):
 
 ## Persistence and Checkpointing
 
-Late 2025 LangGraph uses **Thread-based Persistence**.
+Current LangGraph uses **Thread-based Persistence**.
 - **The Concept**: Every session has a `thread_id`.
 - **The Win**: If a user comes back after 2 days, the agent remembers the exact point it was at in a multi-step workflow.
 - **Time-Travel**: Developers can "re-run" a specific thread from a previous state to debug a failure.

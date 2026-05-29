@@ -117,10 +117,10 @@ Used by T5, ALBERT, some multilingual models.
 |------|---------|------|------|
 | Small (10K) | Some early models | Smaller embeddings | Long token sequences |
 | Medium (32K) | Llama 2 | Good balance | Multilingual inefficiency |
-| Large (128K) | Llama 3/4, GPT-4o | **Standard in late 2025**. High compression ratio. | Larger embeddings table |
-| Huge (200K+) | GPT-5.2 (o200k) | Native multimodal & multilingual efficiency | Memory pressure at the LM Head |
+| Large (128K) | Llama 3/4, Claude Sonnet 4.6, Mistral Medium 3.5 | **Current standard.** High compression ratio. | Larger embeddings table |
+| Huge (200K+) | GPT-5.5 (o200k), Claude Opus 4.7 | Native multimodal and multilingual efficiency | Memory pressure at the LM Head |
 
-**The 2025 Vocab Expansion (Deep Dive):**
+**The vocab-expansion deep dive:**
 - **Llama 3/4 (128k)**: By moving from 32k to 128k, Meta improved English compression by ~15% and non-English languages like Hindi by 3-4x. 
 - **GPT-4o/5.2 (o200k_base)**: Tiktoken's latest encoding provides superior compression for code and multilingual text, reducing API costs indirectly by using fewer tokens for the same meaning.
 

@@ -107,13 +107,13 @@ Uses bidirectional attention. Each token sees all other tokens. Cannot generate 
 
 ### Encoder-Decoder (The Return of the Encoder)
 
-While decoder-only dominated for years, late 2025 has seen a return to Encoder-Decoder architectures for specialized **reasoning** and **verification** tasks (e.g., o3 internal verifiers).
+While decoder-only dominated for years, there has been a partial return to encoder-decoder architectures for specialized **reasoning** and **verification** tasks (e.g., internal verifiers inside the o-series and Claude reasoning models).
 
 ---
 
 ## Mixture of Experts (MoE)
 
-**The most significant architectural shift in frontier models (GPT-4o, DeepSeek-V3, Mixtral).**
+**The most significant architectural shift in frontier models (GPT-5.5, Claude Opus 4.7, Gemini 3.1 Pro, DeepSeek V4, Llama 4 Maverick, Mixtral).**
 
 MoE replaces the dense Feed-Forward Network (FFN) with multiple "experts" and a "router" that selects which experts process a given token.
 
@@ -137,11 +137,11 @@ MoE replaces the dense Feed-Forward Network (FFN) with multiple "experts" and a 
 ```
 
 ### Key MoE Nuances for System Design:
-1. **Total vs. Active Parameters**: A 1.2T parameter MoE model (like GPT-4o rumored) might only use 100B parameters per token. 
+1. **Total vs. Active Parameters**: A 1.6T parameter MoE model (like DeepSeek V4 Pro) might only use 49B parameters per token. Llama 4 Maverick is 17B active across 128 experts. Kimi K2.6 is 1T total / 32B active.
     - **Memory constraint**: You must store all 1.2T parameters (high VRAM).
     - **Compute constraint**: You only pay for 100B params of FLOPs (faster latency).
 2. **Routing Collapse**: If the router only picks one expert, the others don't learn. Modern models use **load balancing loss** and **auxiliary losses** to ensure all experts are utilized.
-3. **DeepSeek-V3 Refinements**: Introduced **Multi-head Latent Attention (MLA)** and **Auxiliary-loss-free load balancing**, setting the 2025 standard for efficiency.
+3. **DeepSeek-V3 Refinements**: Introduced **Multi-head Latent Attention (MLA)** and **Auxiliary-loss-free load balancing**, which became the de-facto standard for MoE efficiency. DeepSeek V4 (April 2026) extends both techniques to a 1M-token context window.
 
 The routing decision per token, as a flowchart:
 
@@ -164,7 +164,7 @@ flowchart TD
 
 The original Chinchilla laws (2022) focused on being **Training-Optimal**: finding the best model size for a given training budget.
 
-In late 2025, the industry has shifted to **Inference-Optimal** scaling:
+The industry has now shifted to **Inference-Optimal** scaling:
 - **Over-training**: Training smaller models (e.g., Llama 3 8B) on massive data (15T+ tokens) far beyond the Chinchilla point.
 - **Why?**: The cost of inference over millions of users dwarfs the one-time training cost. A 7B model trained for 10x longer is cheaper to serve than a 70B model trained at the Chinchilla point.
 

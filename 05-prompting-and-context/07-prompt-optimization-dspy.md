@@ -1,6 +1,6 @@
 # Prompt Optimization (DSPy)
 
-Prompting is moving from the "Hand-tuning" era to the "Programmatic" era. **DSPy (Declarative Self-improving Language Programs)** is the 2025 industry standard for building robust LLM pipelines where prompts are optimized automatically by algorithms.
+Prompting has moved from the "Hand-tuning" era to the "Programmatic" era. **DSPy (Declarative Self-improving Language Programs)** is the de-facto standard for building robust LLM pipelines where prompts are optimized automatically by algorithms. The 3.x line (DSPy 3.1.3 shipped Feb 5, 2026, with point releases through May 2026) introduces tighter integration with reasoning-native models and a cleaner async runtime.
 
 ## Table of Contents
 
@@ -16,7 +16,7 @@ Prompting is moving from the "Hand-tuning" era to the "Programmatic" era. **DSPy
 
 ## The DSPy Philosophy: Programming vs. Prompting
 
-In traditional prompting, changing a model (e.g., from GPT-4o to Llama-4) requires re-writing all your prompts. 
+In traditional prompting, changing a model (e.g., from GPT-5.5 to Claude Sonnet 4.6 or Llama 4) requires re-writing all your prompts.
 **DSPy separates Logic from Formatting.**
 
 - **Logic**: Defined by **Modules** (e.g., ChainOfThought, ReAct).
@@ -29,7 +29,7 @@ In traditional prompting, changing a model (e.g., from GPT-4o to Llama-4) requir
 Instead of writing a prompt, you define a **Signature**: what the input is and what the output should be.
 
 ```python
-# DSPy 2025 Pattern
+# Signature pattern
 class MultiHopQA(dspy.Signature):
     """Answer questions that require multiple context retrievals."""
     context = dspy.InputField()
@@ -46,7 +46,7 @@ qa_system = dspy.ChainOfThought(MultiHopQA)
 
 Teleprompters are algorithms that iterate on your program to improve accuracy.
 1. **BootstrapFewShot**: Automatically finds high-quality examples for your prompt.
-2. **MIPROv2 (2025)**: A Bayesian optimizer that tries different instruction phrasings and select the one that maximizes your score.
+2. **MIPROv2**: A Bayesian optimizer that tries different instruction phrasings and selects the one that maximizes your score. Still the flagship optimizer in the 3.x line.
 
 **Why it matters**: You no longer guess if "Be helpful" or "Think carefully" is better. The optimizer proves it with data.
 
@@ -63,7 +63,7 @@ In DSPy, your prompt is like a weight in a neural network. You don't "hardcode" 
 
 Optimization requires a **Metric** (a function that returns a score).
 - **Exact Match**: `prediction.answer == target.answer`
-- **LLM-as-Judge**: Use a larger model (GPT-5.2) to grade the output of a smaller model (Llama 8B).
+- **LLM-as-Judge**: Use a larger model (Claude Opus 4.7, GPT-5.5 reasoning) to grade the output of a smaller model (Llama 4 8B, Claude Haiku 4.5).
 
 ---
 

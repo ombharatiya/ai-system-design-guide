@@ -3217,14 +3217,16 @@ For fine-tuning: Open weights enable full fine-tuning on proprietary datasets. C
 
 "Prompt caching works by the provider storing the computed KV tensors for a prefix of your prompt on their servers. For subsequent requests that match the same prefix, they skip the entire prefill computation for that prefix.
 
-**Provider support (March 2026):**
+**Provider support (May 2026):**
 - **Anthropic**: Cache control via `cache_control: {'type': 'ephemeral'}` annotations. Cache lasts 5 minutes (refreshed on each use).
 - **OpenAI**: Automatic prefix caching for prompts > 1024 tokens. Input tokens from cache are 50% cheaper.
-- **DeepSeek**: Automatic prefix caching, very aggressive - often >80% hit rates.
+- **Google**: Cache reads $0.20/1M (Gemini 3.1 Pro under 200K) with separate hourly storage fee.
+- **DeepSeek**: Automatic prefix caching, very aggressive - often >80% hit rates. Cache-hit price dropped to 1/10 of launch on April 26, 2026. V4 Flash cache-hit: $0.0028/M.
 
 **Cost impact:**
-- Anthropic: Cached input = $0.30/1M vs normal $3.00/1M = 10× savings
-- OpenAI: Cached input = $1.25/1M vs $2.50/1M = 2× savings
+- Anthropic Sonnet 4.6: Cached input = $0.30/1M vs normal $3.00/1M = 10x savings
+- OpenAI GPT-5.5: Cached input = ~$2.50/1M vs $5.00/1M = 2x savings
+- DeepSeek V4 Flash: Cached input = $0.0028/M vs normal $0.14/M = 50x savings
 
 **Architectural patterns to maximize cache hit rate:**
 
@@ -3318,7 +3320,7 @@ Even good judges have systematic biases (positivity bias, verbosity preference).
 
 "MCP standardizes how AI applications connect to external tools and data. Think of it as USB-C for AI tools - one standard protocol, many devices.
 
-**MCP 2.0 key changes (March 2026):**
+**MCP 2.0 key changes:**
 - **Streamable HTTP transport**: Moved from stdio-only to a bidirectional streaming HTTP connection. This lets MCP servers run as cloud microservices, not just local processes.
 - **OAuth 2.1 authorization**: Remote MCP servers now support proper auth with client credentials and scopes. Enterprise-grade access control per tenant.
 - Both changes enable multi-tenant, remote MCP deployments - but also expand the attack surface.

@@ -398,7 +398,7 @@ If your long prefix is used by **more than 2 users**, caching it is strictly che
 | **TCO Break-even**| **Cost-effective < 40% util** | **Cost-effective > 40% util** |
 
 **Principal-level Nuance:**
-"GPU Cloud Arbitrage" involves moving production workloads between providers based on **Spot Instance availability**. In 2025-26, tools like **Skypilot** automate this, saving up to 60% on self-hosting costs by following "low-demand" regions globally. The rise of MoE models (Llama 4 Scout fits on a single H100, Maverick on ~2x H100) has further reduced self-hosting GPU requirements compared to dense models.
+"GPU Cloud Arbitrage" involves moving production workloads between providers based on **spot instance availability**. Tools like **Skypilot** automate this, saving up to 60% on self-hosting costs by following "low-demand" regions globally. The rise of MoE models (Llama 4 Scout fits on a single H100, Maverick on ~2x H100, DeepSeek V4 Flash on 4x H100) has further reduced self-hosting GPU requirements compared to dense models.
 
 ### When Self-Hosting Makes Sense
 

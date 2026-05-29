@@ -258,7 +258,7 @@ for seq in stop_sequences:
 
 ## Latent Optimization: Speculative Decoding
 
-**The 2025 standard for high-bandwidth serving.**
+**The current standard for high-bandwidth serving.**
 
 Speculative decoding uses a smaller "draft model" to predict multiple future tokens in a single step, which the larger "target model" then verifies in parallel.
 

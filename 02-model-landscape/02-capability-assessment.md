@@ -46,7 +46,7 @@ customers' questions about our product documentation?"
 
 ## Evaluation Dimensions
 
-### Dimension 1: Task Performance (Dec 2025)
+### Dimension 1: Task Performance
 
 | Task Type | Evaluation Approach | Key Metric |
 |-----------|---------------------|------------|
@@ -97,18 +97,18 @@ Models often spend 2000+ "thinking" tokens on a question that could be answered 
 
 **Principal-level Nuance:**
 Evaluate models based on **Logic Efficiency**: `Accuracy / (Inference Tokens)`.
-Production systems in 2025 use **Model Arbitration**: A small model (Gemini 3 Flash) detects if a query needs "Thinking" mode. This avoids the 10x latency/cost penalty for simple queries.
+Production systems use **Model Arbitration**: a small model (Gemini 3.1 Flash, Claude Haiku 4.5, GPT-5.5-mini) detects whether a query needs "Thinking" mode. This avoids the 10x latency and cost penalty for simple queries.
 
 ---
 
 ## Internal Elo-based Evaluation
 
 **Moving beyond static rubrics.**
-Rubrics (1-5 scales) are prone to "judge fatigue" and "score drifting." Late 2025 systems use **Pairwise Elo** for internal golden sets.
+Rubrics (1-5 scales) are prone to "judge fatigue" and "score drifting." Modern systems use **Pairwise Elo** for internal golden sets.
 
 **The Workflow:**
 1. **Blind Side-by-Side:** Model A and Model B generate answers for the same query.
-2. **The Judge:** An "Ultra" model (GPT-5.2 or Human) selects the winner.
+2. **The Judge:** An "Ultra" model (Claude Opus 4.7, GPT-5.5 reasoning, or human) selects the winner.
 3. **Elo Update:** Update the internal leaderboard.
 
 ```python
@@ -121,7 +121,7 @@ def update_elo(winner_elo, loser_elo, k=32):
 
 **Why it wins:** It provides a **relative** ranking that is much more robust to changes in judge personality or model versioning.
 
-### Dimension 4: Context Recall (Dec 2025)
+### Dimension 4: Context Recall
 
 With 2M+ context windows, simple "needle-in-a-haystack" is no longer enough. We now measure **Contextual Reasoning** across the window.
 

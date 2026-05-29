@@ -69,7 +69,7 @@ This is the industry standard for production RAG.
 
 ### 2. Table Chunking
 - **Strategy**: Use Markdown formatting for tables.
-- **2025 Pattern**: "Summarized Tables." Store a natural language summary of the table in the vector DB, but return the full Markdown table to the LLM.
+- **Modern pattern**: "Summarized Tables." Store a natural language summary of the table in the vector DB, but return the full Markdown table to the LLM.
 
 ### 3. PDF/Layout Chunking
 - **Strategy**: Use **Vision-Language Model (VLM)** pre-processing (e.g., ColPali).

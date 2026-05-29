@@ -9,7 +9,7 @@ This chapter provides a comprehensive guide to the model landscape as of **May 2
 ## Table of Contents
 
 - [Model Categories](#model-categories)
-- [Frontier Models (April 2026)](#frontier-models)
+- [Frontier Models (May 2026)](#frontier-models)
 - [Reasoning Models](#reasoning-models)
 - [Open Source Models](#open-source-models)
 - [Specialized Models](#specialized-models)
@@ -28,23 +28,23 @@ This chapter provides a comprehensive guide to the model landscape as of **May 2
 
 | Tier | Characteristics | Examples | Use Case |
 |------|-----------------|----------|----------|
-| **Frontier** | State-of-the-art reasoning, agentic mastery | Claude Opus 4.6, GPT-5.4, Gemini 3.1 Pro, Grok 4 | Complex reasoning, coding, production agents |
-| **Fast/Efficient** | Sub-200ms, cost-optimized | Gemini 3.1 Flash, GPT-5.4-mini, Claude Haiku 4.5 | High-volume streaming, UI, real-time |
-| **Battle-Tested** | Mature, widely-deployed, stable | Claude Sonnet 4.6, GPT-4o, Gemini 2.5 Pro | Enterprise production workloads |
+| **Frontier** | State-of-the-art reasoning, agentic mastery | Claude Opus 4.7, GPT-5.5, Gemini 3.1 Pro, Grok 4.3 | Complex reasoning, coding, production agents |
+| **Fast/Efficient** | Sub-200ms, cost-optimized | Gemini 3.1 Flash, GPT-5.5-mini, Claude Haiku 4.5, DeepSeek V4 Flash | High-volume streaming, UI, real-time |
+| **Battle-Tested** | Mature, widely-deployed, stable | Claude Sonnet 4.6, GPT-5.5 Instant, Gemini 3.1 Pro | Enterprise production workloads |
 | **Small/Edge** | Private, edge, specialized | Llama 4 Scout, Mistral Small 4, Phi-4 | Local privacy, on-device, MoE-efficient |
-| **Reasoning-Heavy** | Extended internal CoT | GPT-5.4 Pro, DeepSeek-R1, Claude Opus 4.6 (thinking) | Math, code debug, multi-step logic |
+| **Reasoning-Heavy** | Extended internal CoT | GPT-5.5 reasoning, DeepSeek-R1, Claude Opus 4.7 (thinking), Gemini 3.1 Pro Deep Think | Math, code debug, multi-step logic |
 
 ### By Reasoning Mode (2025–2026)
 
 | Mode | Capability | Models | Use Case |
 |------|------------|--------|----------|
-| **Standard** | Fast, intuitive response | GPT-5.4-mini, Claude Sonnet 4.6 | Chat, simple extraction |
-| **Extended Thinking** | Internal scratchpad CoT before output | Claude Opus 4.6, GPT-5.4 Pro, DeepSeek-R1 | Math, code debugging, planning |
-| **Hybrid** | User-controllable reasoning depth | Claude Opus 4.6, GPT-5.4 | Variable complexity tasks |
+| **Standard** | Fast, intuitive response | GPT-5.5-mini, Claude Sonnet 4.6 | Chat, simple extraction |
+| **Extended Thinking** | Internal scratchpad CoT before output | Claude Opus 4.7, GPT-5.5 reasoning, DeepSeek-R1 | Math, code debugging, planning |
+| **Hybrid** | User-controllable reasoning depth | Claude Opus 4.7, GPT-5.5 | Variable complexity tasks |
 
 ---
 
-## Frontier Models (April–May 2026)
+## Frontier Models (May 2026)
 
 ### Claude Opus 4.7 (Anthropic) - May 2026 NEW
 
@@ -377,7 +377,7 @@ While frontier models lead on benchmarks, many enterprise systems rely on **batt
 
 ## Specialized Models
 
-### Coding Mastery (April 2026)
+### Coding Mastery (May 2026)
 
 | Model | Specialization | Why it wins |
 |-------|----------------|-------------|
@@ -409,7 +409,7 @@ While frontier models lead on benchmarks, many enterprise systems rely on **batt
 
 ## Embedding Models
 
-### API Embedding Models (April 2026)
+### API Embedding Models (May 2026)
 
 | Model | Dimensions | Max Tokens | MTEB Score | Cost/1M |
 |-------|------------|------------|------------|---------|
@@ -470,8 +470,8 @@ What is your primary constraint?
 
 ### Semantic Routing
 
-In 2025-26, static decision trees are being replaced by **Semantic Routers**:
-- **How it works**: A small, fast embedding model vectorises the query. If it matches a "known easy" cluster → cheap model (e.g., Gemini 3.1 Flash). If it hits an "agentic/logic" cluster → Claude Opus 4.6 or GPT-5.4.
+Static decision trees are being replaced by **Semantic Routers**:
+- **How it works**: A small, fast embedding model vectorises the query. If it matches a "known easy" cluster → cheap model (Gemini 3.1 Flash, Claude Haiku 4.5, DeepSeek V4 Flash). If it hits an "agentic/logic" cluster → Claude Opus 4.7 or GPT-5.5 with reasoning.
 - **Benefit**: Automates cost-optimization without hardcoded rules.
 - **Implementation**: Tools like `semantic-router` (Python) or custom Weaviate/Pinecone classifiers.
 
@@ -493,7 +493,7 @@ Enterprises must comply with GDPR (EU), DPDPA (India), Saudi Arabia PDPL, and se
 
 **Tradeoff**: Sovereign clouds carry a **20-30% premium** over standard global regions but are mandatory for finance and government.
 
-### Cost Comparison at Scale (April 2026)
+### Cost Comparison at Scale (May 2026)
 
 Assume 1M requests/day, 1K input + 500 output tokens:
 
@@ -513,7 +513,7 @@ Assume 1M requests/day, 1K input + 500 output tokens:
 
 ## Capability Comparison
 
-### Benchmark Performance (April 2026)
+### Benchmark Performance (May 2026)
 
 | Model | MMLU | HumanEval | SWE-bench Verified | Notes |
 |-------|------|-----------|--------------------|-------|
@@ -527,7 +527,7 @@ Assume 1M requests/day, 1K input + 500 output tokens:
 
 *Source: Respective technical reports and LMSYS Chatbot Arena / LMArena, April 2026. Benchmark scores for newest models (Opus 4.6, GPT-5.4, Gemini 3.1) are evolving rapidly -- always verify with current leaderboards.*
 
-### Task-Specific Recommendations (April 2026)
+### Task-Specific Recommendations (May 2026)
 
 | Task | Recommended Models | Why |
 |------|--------------------|-----|

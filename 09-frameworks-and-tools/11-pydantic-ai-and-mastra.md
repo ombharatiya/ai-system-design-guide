@@ -32,7 +32,7 @@ The differences are mostly stack-shaped: one targets Python services that alread
 
 ### Current State
 
-[Pydantic AI](https://ai.pydantic.dev/) shipped v1.0 in September 2025 and reached **v1.85** by May 2026 ([PyPI release history](https://pypi.org/project/pydantic-ai/#history)). The library is built by the team behind Pydantic itself, which also runs [Pydantic Logfire](https://pydantic.dev/logfire). It is open source under MIT.
+[Pydantic AI](https://ai.pydantic.dev/) shipped v1.0 in September 2025, settled the 1.x line at **v1.85.1** in April 2026, and entered the **v2.0 beta cycle on May 21, 2026** ([PyPI release history](https://pypi.org/project/pydantic-ai/#history)). The library is built by the team behind Pydantic itself, which also runs [Pydantic Logfire](https://pydantic.dev/logfire). It is open source under MIT.
 
 Key surface area:
 
@@ -95,7 +95,7 @@ The [Pydantic AI evals docs](https://ai.pydantic.dev/evals/) describe a typical 
 
 ### Current State
 
-[Mastra](https://mastra.ai/) was founded by the team behind Gatsby and announced a **$13M seed** led by Lightspeed in October 2025 ([TechCrunch coverage](https://techcrunch.com/2025/10/16/mastra-typescript-agent-framework-seed/)). By May 2026 the GitHub repository sits over **22K stars** ([mastra-ai/mastra](https://github.com/mastra-ai/mastra)). Mastra is open source under Elastic License v2.
+[Mastra](https://mastra.ai/) was founded by the team behind Gatsby (graduated YC W25), announced a **$13M seed** led by Lightspeed in October 2025 ([TechCrunch coverage](https://techcrunch.com/2025/10/16/mastra-typescript-agent-framework-seed/)), and **shipped v1.0 in January 2026**. By May 2026 the GitHub repository has crossed **22.3K stars** with **300K+ weekly npm downloads** ([mastra-ai/mastra](https://github.com/mastra-ai/mastra)). Mastra is open source under Elastic License v2.
 
 Key surface area:
 

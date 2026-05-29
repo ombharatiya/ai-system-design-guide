@@ -2,9 +2,13 @@
 ### The Complete Interview & Production Reference
 
 <p align="center">
-  <a href="https://github.com/ombharatiya"><img src="https://img.shields.io/badge/GitHub-ombharatiya-181717?logo=github" alt="GitHub"></a>
-  <a href="https://x.com/ombharatiya"><img src="https://img.shields.io/badge/Twitter-@ombharatiya-1DA1F2?logo=twitter" alt="Twitter"></a>
-  <a href="https://linkedin.com/in/ombharatiya"><img src="https://img.shields.io/badge/LinkedIn-ombharatiya-0A66C2?logo=linkedin" alt="LinkedIn"></a>
+  <a href="https://github.com/ombharatiya"><img src="https://img.shields.io/badge/Follow%20on%20GitHub-ombharatiya-181717?style=for-the-badge&logo=github" alt="Follow on GitHub"></a>
+  <a href="https://x.com/ombharatiya"><img src="https://img.shields.io/badge/Follow%20on%20Twitter-@ombharatiya-1DA1F2?style=for-the-badge&logo=x" alt="Follow on Twitter"></a>
+  <a href="https://linkedin.com/in/ombharatiya"><img src="https://img.shields.io/badge/Connect%20on%20LinkedIn-ombharatiya-0A66C2?style=for-the-badge&logo=linkedin" alt="Connect on LinkedIn"></a>
+</p>
+
+<p align="center">
+  <b>If this guide helps you, follow <a href="https://github.com/ombharatiya">@ombharatiya</a> on GitHub, <a href="https://x.com/ombharatiya">X</a>, and <a href="https://linkedin.com/in/ombharatiya">LinkedIn</a> to get notified when new chapters, model refreshes, and interview prompts ship.</b>
 </p>
 
 <p align="center">
@@ -264,7 +268,7 @@ This guide tracks:
 - Updated pricing and rate limits
 - Deprecations and best practice changes
 
-**⭐ Star and Watch** to get notified when updates are pushed.
+**⭐ Star and Watch** the repo to get notified when updates are pushed.
 
 ---
 
@@ -275,6 +279,22 @@ See [Contributing Guide](CONTRIBUTING.md).
 
 ---
 
+## 👋 Stay Connected
+
+If this guide helps you, the easiest way to support it is to follow along where new chapters and refreshes get announced first:
+
+- **GitHub:** [@ombharatiya](https://github.com/ombharatiya) - follow for the repo, star the project, and watch for new releases.
+- **X / Twitter:** [@ombharatiya](https://x.com/ombharatiya) - short takes on model releases, MCP, agents, and interviews.
+- **LinkedIn:** [ombharatiya](https://linkedin.com/in/ombharatiya) - deeper writeups and interview prep tips for senior AI roles.
+
+<p align="center">
+  <a href="https://github.com/ombharatiya"><img src="https://img.shields.io/badge/Follow%20on%20GitHub-ombharatiya-181717?style=for-the-badge&logo=github" alt="Follow on GitHub"></a>
+  <a href="https://x.com/ombharatiya"><img src="https://img.shields.io/badge/Follow%20on%20Twitter-@ombharatiya-1DA1F2?style=for-the-badge&logo=x" alt="Follow on Twitter"></a>
+  <a href="https://linkedin.com/in/ombharatiya"><img src="https://img.shields.io/badge/Connect%20on%20LinkedIn-ombharatiya-0A66C2?style=for-the-badge&logo=linkedin" alt="Connect on LinkedIn"></a>
+</p>
+
+---
+
 ## 📄 License
 
 MIT License. See [LICENSE](LICENSE).
@@ -282,8 +302,5 @@ MIT License. See [LICENSE](LICENSE).
 ---
 
 <p align="center">
-  <b>Built by <a href="https://github.com/ombharatiya">Om Bharatiya</a></b><br/>
-  <a href="https://github.com/ombharatiya"><img src="https://img.shields.io/badge/GitHub-Follow-181717?logo=github" alt="GitHub"></a>
-  <a href="https://x.com/ombharatiya"><img src="https://img.shields.io/badge/Twitter-Follow-1DA1F2?logo=twitter" alt="Twitter"></a>
-  <a href="https://linkedin.com/in/ombharatiya"><img src="https://img.shields.io/badge/LinkedIn-Connect-0A66C2?logo=linkedin" alt="LinkedIn"></a>
+  <b>Built and maintained by <a href="https://github.com/ombharatiya">Om Bharatiya</a> · <a href="https://github.com/ombharatiya">GitHub</a> · <a href="https://x.com/ombharatiya">Twitter</a> · <a href="https://linkedin.com/in/ombharatiya">LinkedIn</a></b>
 </p>

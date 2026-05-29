@@ -408,14 +408,17 @@ jobs:
 | **Open source** | ❌ | ❌ | ✅ | ✅ |
 | **Best for** | Backend devs, CI/CD | UI/frontend devs, visual | Any developer | Self-hosted teams |
 
-### SWE-bench Verified Scores (March 2026)
+### SWE-bench Verified Scores (May 2026)
 
 | Agent | Score | Notes |
 |-------|-------|-------|
-| Claude Code (claude-3-7-sonnet) | ~70% | Anthropic's official agent |
-| OpenHands + claude-3-7-sonnet | ~60% | Open-source framework |
-| Devin (commercial) | ~45% | Cognition AI product |
-| SWE-agent + GPT-4o | ~38% | Princeton research |
+| GPT-5.5 (raw model leader) | 88.7% | #1 on SWE-Bench Verified leaderboard |
+| Claude Opus 4.7 (raw model) | 87.6% | Leads SWE-Bench Pro at 64.3% |
+| Claude Code (Opus 4.7 / Sonnet 4.6) | ~87% | Anthropic's official agent |
+| OpenHands + Claude Sonnet 4.6 | ~75% | Open-source framework |
+| Aider + Claude Sonnet 4.6 / GPT-5.5 | ~74% | Open-source CLI |
+| Devin (commercial) | ~65% | Cognition AI product |
+| SWE-agent + GPT-5.5 | ~55% | Princeton research baseline |
 
 ---
 

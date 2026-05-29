@@ -301,7 +301,7 @@ Flash:    Q, K -> Tiles (block_size x block_size) -> Incremental Output
 Optimized for A100/H100 by improving parallelism across heads and sequence length.
 
 ### FlashAttention-3 (FP8 & H100 Optimization)
-**The 2025 Standard for H100/B200 Clusters:**
+**The current standard for H100/B200 clusters:**
 - **Asynchronous Execution**: Overlaps GEMM (matrix mult) and softmax operations using TMA (Tensor Memory Accelerator) on H100.
 - **FP8 Support**: Native support for FP8 precision, doubling throughput compared to FP16 while maintaining attention accuracy via stochastic rounding.
 - **Speedup**: ~1.5x-2.0x faster than FlashAttention-2 for long context prefill.
