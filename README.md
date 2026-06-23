@@ -29,6 +29,14 @@
 
 > **The living reference for production AI systems.** Continuously updated. Interview-ready depth.
 
+<p align="center">
+  <a href="https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=ai-system-design-guide">
+    <img src="assets/atlas-cloud-logo.png" alt="Atlas Cloud" width="140" />
+  </a>
+  <br />
+  <sub><strong>Atlas Cloud</strong> provides OpenAI-compatible LLM APIs and async image/video generation APIs for production AI systems, agents, and multimodal applications.</sub>
+</p>
+
 A practical, continuously updated guide to AI system design, RAG architectures, LLM engineering, agentic AI, MCP and A2A protocols, and AI engineering interview preparation. Covers production patterns, model selection, evaluation, and real-world case studies from staff-level interviews.
 
 **New here?** Jump to the [116-question Interview Bank](00-interview-prep/01-question-bank.md), the [RAG Fundamentals chapter](06-retrieval-systems/01-rag-fundamentals.md), or pick the [right LLM for production](02-model-landscape/01-model-taxonomy.md).
