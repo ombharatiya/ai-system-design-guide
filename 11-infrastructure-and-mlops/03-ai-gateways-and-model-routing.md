@@ -118,6 +118,25 @@ Treat versions and exact feature claims as point-in-time, and note that several 
 
 **Self-hosted vs managed**, the core tradeoffs: self-hosted (LiteLLM, Kong, Envoy) keeps data in your perimeter, gives full control, and is required for strict compliance, but *you* must make the proxy highly available or it becomes the single point of failure. Managed (OpenRouter, Portkey, Cloudflare) is near-zero ops and fast to adopt, but data transits a third party and you inherit their availability as a hard dependency.
 
+**Provider onboarding pattern:** model aggregators and OpenAI-compatible providers should enter the gateway as explicit route descriptors, not as hardcoded SDK branches. For example, Atlas Cloud exposes an OpenAI-compatible LLM endpoint (`https://api.atlascloud.ai/v1`) and separate asynchronous media-generation endpoints (`https://api.atlascloud.ai/api/v1`). A production gateway should keep those as separate route families:
+
+```yaml
+routes:
+  llm.atlascloud:
+    protocol: openai_chat_completions
+    base_url: https://api.atlascloud.ai/v1
+    auth_env: ATLASCLOUD_API_KEY
+    model_catalog: https://api.atlascloud.ai/api/v1/models
+  media.atlascloud:
+    protocol: async_generation
+    submit:
+      image: /model/generateImage
+      video: /model/generateVideo
+    poll: /model/prediction/{id}
+```
+
+The operational rule is the same as any other provider: discover models at startup or on a controlled refresh interval, validate request parameters against the provider's current schema before routing, and tag every span with the selected provider, model, endpoint family, and prediction/request id. Do not put asynchronous image/video generation into a synchronous chat fallback chain; route it through a task queue with polling, idempotency keys, and explicit budget caps.
+
 ---
 
 ## Architecture Patterns
@@ -199,6 +218,7 @@ Carefully, because agent state is not portable the way a single request is. I fa
 - [Gateway API Inference Extension v1.6.0](https://github.com/kubernetes-sigs/gateway-api-inference-extension/releases/tag/v1.6.0)
 - Anthropic, [refusals and fallback](https://platform.claude.com/docs/en/build-with-claude/refusals-and-fallback) and [rate limits](https://platform.claude.com/docs/en/api/rate-limits)
 - OpenAI, [API changelog](https://developers.openai.com/api/docs/changelog)
+- [Atlas Cloud model catalog endpoint](https://api.atlascloud.ai/api/v1/models)
 
 ---
 
