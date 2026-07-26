@@ -114,6 +114,7 @@ The fastest-moving area, because agents are where 2026 production value is. Most
 | **GAIA** | General-assistant tasks needing multi-step tool use, web browsing, files | Saturated at the top (~92%) by orchestrated ensembles | Top entries are multi-model ensembles and scaffolds, not base models, so it measures the orchestration more than the model. |
 | **OSWorld-Verified** | Computer-use agent on a real OS, execution-scored | Not saturated, approaching the human band | Cleaned and standardized successor to OSWorld (which launched with a best score of ~12% vs ~72% human). Vendor numbers exceed public-harness numbers. |
 | **Online-Mind2Web / WebArena** | Live web-agent tasks | Mixed | Online-Mind2Web's "illusion of progress" finding: many commercial agents underperformed a 2024 academic baseline once judged transparently. Judge methodology varies wildly, so scores are often not comparable. |
+| **ClawBench** | Browser agents completing 153 everyday tasks across 144 live production websites | Active, not saturated | Request interception and five-layer traces make failures auditable, but live-site drift and anti-bot systems limit run-to-run comparability. |
 | **GDPval** | Real economically valuable knowledge work across 44 occupations, graded by human experts | Active, not saturated | The forward-looking "can it do a day of real work" signal; frontier approaches expert deliverable quality at ~100x lower cost. Pairwise Elo variants (GDPval-AA) differ from the win-rate version. |
 | **METR time-horizon** | The task length (in human-minutes) a model completes at 50% reliability | Active research standard | Not a leaderboard but a trend: the horizon doubles roughly every 7 months overall and faster on coding. The cleanest way to talk about agent autonomy growth. |
 
@@ -267,6 +268,7 @@ As one signal of general chat preference, never as a measure of correctness or r
 - Jain et al. "LiveCodeBench" arXiv:2403.07974
 - [Berkeley Function Calling Leaderboard (BFCL)](https://gorilla.cs.berkeley.edu/leaderboard.html)
 - [Sierra tau2-bench](https://github.com/sierra-research/tau2-bench)
+- Zhang et al., ["ClawBench: Can AI Agents Complete Everyday Online Tasks?"](https://arxiv.org/abs/2604.08523), [official repository](https://github.com/TIGER-AI-Lab/ClawBench), and [project site](https://claw-bench.com/)
 - "GDPval" arXiv:2510.04374 and [OpenAI GDPval](https://openai.com/index/gdpval/)
 - [METR, measuring AI task-completion time horizons](https://metr.org/blog/2025-03-19-measuring-ai-ability-to-complete-long-tasks)
 - "RULER" arXiv:2404.06654 and [NVIDIA/RULER](https://github.com/NVIDIA/RULER)
