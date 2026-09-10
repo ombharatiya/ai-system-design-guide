@@ -83,6 +83,7 @@ Treat versions and exact feature claims as point-in-time, and note that several 
 - **LiteLLM** (open-source, self-hosted proxy plus SDK) is the de-facto standard: 100+ providers behind an OpenAI-format API, routing strategies (latency, usage, cost, least-busy), ordered fallbacks, virtual keys with dollar budgets, and native OpenTelemetry. The common critique is that YAML config strains at enterprise-governance scale.
 - **OpenRouter** (managed aggregator) gives the fastest breadth and zero ops across 200+ models, with pass-through provider pricing (a documented BYOK fee applies). The tradeoffs are an external hop and data leaving your perimeter.
 - **Portkey** (managed, with a self-host tier) positions as a full control plane: routing, fallbacks, token-level observability, semantic caching, and guardrails.
+- **Bifrost** (open-source, self-hosted) provides an OpenAI-compatible gateway for 20+ providers, with automatic failover, load balancing, virtual keys, budgets, and observability.
 - **Cloudflare AI Gateway** (managed, edge) is strong on observability and caching with sequential provider fallback, but lighter on routing logic and budget enforcement.
 - **Kong AI Gateway** (API-management platform) brings LLM routing (including semantic), retry/fallback, semantic caching, and a PII sanitizer into a mature gateway; best when you already run Kong.
 - **Envoy AI Gateway** (open-source, CNCF ecosystem) offers infra-grade priority-based fallback, retries, and timeouts, Kubernetes-native.
