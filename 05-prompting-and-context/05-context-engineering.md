@@ -204,6 +204,7 @@ This is **context rot**: the window fills with stale tool output and the model l
 - [Anthropic. "Effective harnesses for long-running agents" (2026)](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents)
 - Anthropic. "Extended Thinking: Technical Guide": https://docs.anthropic.com/
 - OpenAI. "o3 and o3-mini System Card" (2025)
+- [Continuum AI. OrcaPromptVault — system prompts and tool schemas of shipped agents](https://github.com/Continuum-AI-Corp/OrcaPromptVault) — dated wire captures showing how much of the window a production harness consumes before any user content, per model and per entry point
 
 ---
 
