@@ -70,7 +70,7 @@ In DSPy, your prompt is like a weight in a neural network. You don't "hardcode" 
 
 Optimization requires a **Metric** (a function that returns a score).
 - **Exact Match**: `prediction.answer == target.answer`
-- **LLM-as-Judge**: Use a stronger model (Claude Opus 5.5, GPT-6.1 Sol) to grade the output of a smaller one (Claude Haiku 4.5, GPT-6 Luna, Gemini 3.8 Flash). Calibrate the judge against human labels first: an optimizer will exploit any blind spot in the metric.
+- **LLM-as-Judge**: Use a stronger model (Claude Opus 5.5, GPT-6.1 Sol) to grade the output of a smaller one (Claude Haiku 5.5, GPT-6 Luna, Gemini 3.8 Flash). Calibrate the judge against human labels first: an optimizer will exploit any blind spot in the metric.
 - **Judge cost**: an optimizer run scores hundreds to thousands of candidate outputs, so the judge often dominates the bill. For binary checklist criteria, typed-decision models are a cheaper option: one comparison (arXiv 2609.29769) found LLM rubric judges cost 16 to 325x as much as TypeSafe's Jev (early access), with accuracy differing significantly in at most 8 of 27 paired comparisons. They also failed together: on Jev's most confident errors, about 96% of LLM verdicts repeated the same wrong answer, so swapping judges does not replace the human calibration set.
 - **Textual feedback**: GEPA works best when the metric returns *why* an output failed, not just a number.
 

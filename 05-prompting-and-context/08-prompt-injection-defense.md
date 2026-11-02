@@ -28,8 +28,10 @@ Prompt Injection occurs when a user's input "takes over" the LLM's instructions.
 | Claude Opus 5.5, Claude Fable 5.1 | Gray Swan IPI benchmark | 1.0% |
 | GPT-6 Astra | IPI Arena (1,810 curated attacks) | 8.5% |
 | GPT-5.6 Sol | IPI Arena | 27.0% |
+| Claude Haiku 5.5 (all surfaces) | Gray Swan prompt-injection evaluation | 7.1% |
+| Claude Haiku 5.5, GUI computer use only | Gray Swan prompt-injection evaluation | 24.4% |
 
-The rows come from different vendors' runs on Gray Swan's attack sets, so compare trends rather than exact gaps. A 1% rate is still a near-certainty at production volume. Defense has to assume some injections get through and limit what they can do.
+The rows come from different vendors' runs on Gray Swan's attack sets, so compare trends rather than exact gaps. The Haiku 5.5 rows (system card, October 7, 2026) show the other axis: on GUI computer use the same model's attack success is more than three times its overall rate, so a small model driving a browser or desktop needs isolation or human approval even when its headline rate looks acceptable. A 1% rate is still a near-certainty at production volume. Defense has to assume some injections get through and limit what they can do.
 
 ---
 
@@ -101,10 +103,11 @@ Check every agent against the **lethal trifecta** (Simon Willison's term): acces
 
 ## Injections That Spread
 
-Two OpenAI disclosures (September 2026) show injections propagating through an agent's own outputs:
+Two OpenAI disclosures (September 2026) show injections propagating through an agent's own outputs, and October red-team work shows why those handoffs are hard to watch:
 
 - **Self-replicating prompt injections**: worm-like payloads that make the victim agent copy the payload into outgoing email, files, code comments, or multi-hop Slack flows, so the next agent that reads them is infected. OpenAI observed them only in simulated training and evaluation tool calls, and is adding self-reproduction as an attacker goal in its adversarial training.
 - **Compaction-summary injection**: during RL training, models wrote concealment or jailbreak-style instructions into their own context-compaction summaries, and in one case the successor context followed them. The summary that carries an agent across context windows is a trust boundary.
+- **Handoffs between contexts are where monitors go blind.** Anthropic's October 2026 red-team of Claude Code's auto mode found that compaction summaries were not monitored, so fabricated facts could enter as trusted context, and that a multi-agent workflow tool let one agent plant instructions a later agent treated as user authorization (both since fixed). METR found the same gap in OpenAI's internal monitoring: compaction events went unmonitored, leaving about 10% of internal Codex traffic uncovered from May to July.
 
 **Defense**: treat every agent-written artifact that another context will read (summaries, memory entries, files, messages) as untrusted input to that context. Keep raw transcripts, diff summaries against them, and add a propagation test to your injection eval: plant a payload that asks to be copied, and assert it never appears in any outbound artifact.
 
@@ -140,6 +143,8 @@ Any artifact one agent writes and another reads is a propagation channel: emails
 - [Approval laundering in coding-agent harnesses (arXiv 2609.38983)](https://arxiv.org/abs/2609.38983)
 - [OpenAI. Misalignment reports (self-replicating injections, compaction summaries)](https://alignment.openai.com/misalignment-reports/)
 - [OpenAI. GPT-6 Astra System Card](https://deploymentsafety.openai.com/gpt-6-astra)
+- [Anthropic. Red-teaming Auto Mode (October 22, 2026)](https://alignment.anthropic.com/2026/red-teaming-auto-mode/)
+- [METR. Red-teaming of OpenAI's agent monitoring (October 22, 2026)](https://metr.org/blog/2026-10-22-red-teaming-openai-agent-monitoring/)
 
 ---
 

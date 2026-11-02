@@ -191,9 +191,9 @@ class SelfConsistencyDecoder:
 
 The classic recipe tunes temperature for diversity. On frontier APIs that knob is going away:
 
-| Platform | Status (October 2026) |
+| Platform | Status (November 2026) |
 |----------|-----------------------|
-| Claude API | Returns 400 for non-default sampling values on Opus 4.7 and later and on Sonnet 5 and later; the Anthropic Python SDK 1.0 (August 20, 2026) removed `temperature`, `top_p`, and `top_k` from Messages methods, so passing them raises `TypeError` |
+| Claude API | From API version `2026-10-21` (October 21, 2026), `temperature`, `top_p`, and `top_k` return 400 at any value, even the default, on every model; the new SDK majors (Python 2.0.0, TypeScript 1.0.0) send that version by default. Earlier versions already rejected non-default values on Opus 4.7 and later, and the Python SDK 1.0 (August 20, 2026) removed the parameters from Messages methods, so passing them raises `TypeError` |
 | Gemini API | `temperature`, `top_p`, and `top_k` deprecated on July 21, 2026; Gemini 3.8 Flash controls reasoning with `thinking_level` instead of `thinking_budget` |
 | OpenAI GPT-6 Astra | No custom `temperature` or `top_p`, and no `logprobs` |
 
@@ -401,7 +401,7 @@ Synthesize the best answer, combining the strongest elements from each response.
 
 ### Cascades and Cross-Family Critique
 
-Two cheaper patterns are now showing up in developer tools. GitHub's HydraFusion, a research preview in VS Code and the Copilot app since September 30, 2026, orchestrates several models in one of three modes:
+Two cheaper patterns are now shipping in developer tools. GitHub Copilot Fusion (generally available October 28, 2026, after a September research preview as HydraFusion) routes across models at Standard, High, or Max effort and runs one of three workflows:
 
 - **Single:** one model, the baseline.
 - **Cascade:** an efficient model drafts, a quality gate decides, and the work escalates to a stronger model only when the gate fails it. Cost tracks the escalation rate, not the strong model's price.
@@ -490,7 +490,7 @@ The effect column is directional on purpose. Effect sizes depend on the model an
 - Classification: Vote on labels
 - Short-form QA: Vote on answer
 
-The key is you can compare answers for equality. Where the API exposes temperature, 0.5-0.8 provides diversity while maintaining coherence; on models with fixed sampling (newer Claude models, GPT-6 Astra) or deprecated sampling parameters (Gemini since July 2026) I rely on default sampling and add prompt or model variation if the samples agree too readily. I use k=5-10 for most tasks.
+The key is you can compare answers for equality. Where the API exposes temperature, 0.5-0.8 provides diversity while maintaining coherence; on models with fixed sampling (every Claude model under API version `2026-10-21`, GPT-6 Astra) or deprecated sampling parameters (Gemini since July 2026) I rely on default sampling and add prompt or model variation if the samples agree too readily. I use k=5-10 for most tasks.
 
 **Best-of-N** is for open-ended generation where there is no single right answer:
 - Creative writing
@@ -548,6 +548,7 @@ If the panel is accurate on the gold set, 95% agreement means I can probably dro
 - Wang et al. "Large Language Models are not Fair Evaluators" (2023)
 - Rao and Callison-Burch. "JEV vs. LLMs as Rubric Judges: Cheaper, Faster, and Wrong in the Same Places" (arXiv 2609.29769, 2026): https://arxiv.org/abs/2609.29769
 - GitHub changelog, HydraFusion in VS Code and the GitHub Copilot app (September 30, 2026): https://github.blog/changelog/2026-09-30-hydrafusion-in-vs-code-and-the-github-copilot-app
+- GitHub changelog, Copilot Fusion generally available (October 28, 2026): https://github.blog/changelog/2026-10-28-route-and-orchestrate-models-with-github-copilot-fusion/
 - Liu et al. "Scoring Higher, Answering Worse: Mitigating Reward Hacking in Rubric-Based RL via Protocol-Level Rubrics" (arXiv 2609.38847, 2026): https://arxiv.org/abs/2609.38847
 
 ---

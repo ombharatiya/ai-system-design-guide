@@ -51,8 +51,8 @@ The economics changed in 2026 because the example block is a **stable prefix** a
 | Setup (per request, list prices) | Input cost of a 50K-token example block |
 |----------------------------------|------------------------------------------|
 | Claude Sonnet 5.5, uncached ($2/1M) | $0.10 |
-| Claude Sonnet 5.5 or Opus 5.5, cache read ($0.20/1M) | $0.01 |
-| GPT-6.1 Sol, cache read ($0.10/1M) | $0.005 |
+| Claude Opus 5.5, cache read ($0.20/1M) | $0.01 |
+| Claude Sonnet 5.5 or GPT-6.1 Sol, cache read ($0.10/1M) | $0.005 |
 
 At those prices, many-shot ICL beats fine-tuning on iteration speed (change an example, not a training run) and portability (it moves to the next model unchanged). Fine-tuning still wins on per-request latency, on tasks where the examples would not fit, and when you need the behavior without shipping the examples. Platform risk matters too: OpenAI is winding down self-serve fine-tuning, and active customers can no longer create new fine-tuning jobs from January 6, 2027. See [Fine-Tuning Strategies](../03-training-and-adaptation/02-fine-tuning-strategies.md).
 
