@@ -58,7 +58,7 @@ The student samples its own completions and the teacher scores every token, comb
 Student matches the teacher's text responses.
 - **Pros**: Easy to implement via API.
 - **Cons**: Only learns behavioral surface patterns. Closed APIs increasingly return summarized or encrypted reasoning, so raw chain-of-thought is usually not available to distill.
-- **Platform risk**: Vendor-hosted distillation pipelines are shrinking. OpenAI's stored-completions-to-fine-tune path depends on two products being wound down: Evals goes read-only October 31, 2026 and shuts down November 30, and self-serve fine-tuning stops accepting new jobs from active customers on January 6, 2027 (see [Fine-Tuning Strategies](02-fine-tuning-strategies.md#where-fine-tuning-runs)). Keep the dataset, eval suite, and student training on infrastructure you control.
+- **Platform risk**: Vendor-hosted distillation pipelines are shrinking. OpenAI's stored-completions-to-fine-tune path depends on two products being wound down: Evals was scheduled to go read-only on October 31, 2026 and shuts down November 30, and self-serve fine-tuning stops accepting new jobs from active customers on January 6, 2027, while GPT-4o and GPT-4.1 fine-tunes stop serving on January 14, 2027 (see [Fine-Tuning Strategies](02-fine-tuning-strategies.md#where-fine-tuning-runs)). Keep the dataset, eval suite, and student training on infrastructure you control.
 
 ### Feature/Hidden State Distillation
 Student matches the inner **Hidden States** (vector representations) of the teacher.

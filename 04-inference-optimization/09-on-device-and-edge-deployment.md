@@ -22,7 +22,7 @@ The key mental model: these tools are **not substitutes**. They occupy different
 
 | Tool | Layer | What it is for |
 |------|-------|----------------|
-| **Ollama** | Experience layer / local daemon | One-command model pull and run, OpenAI-ish API, single-user dev. Builds on llama.cpp; on Apple Silicon it is moving to MLX by default for supported architectures (v0.40.0 release candidate, September 2026). |
+| **Ollama** | Experience layer / local daemon | One-command model pull and run, OpenAI-ish API, single-user dev. Builds on llama.cpp; on Apple Silicon it is moving to MLX by default for supported architectures (starting with the v0.40.0 release candidate, September 2026). Keep it on the current release and off untrusted networks (see below). |
 | **LM Studio** | Experience layer / GUI | A desktop GUI for browsing and running local models. Single-user focused. |
 | **llama.cpp** | Inference engine | Portable C/C++ CPU/GPU inference (the GGUF format); runs almost anywhere; powers the experience-layer tools. |
 | **MLX** | Inference engine | Apple's array framework; the fastest Apple Silicon path; research and fine-tuning. |
@@ -60,6 +60,8 @@ Check which of these models the Foundation Models framework exposes to third-par
 Ollama and LM Studio are excellent for prototyping and wrong for a shared production endpoint, for an architectural reason worth teaching.
 
 Ollama defaults to serving requests with very limited parallelism and queues excess requests first-in-first-out; a full queue returns an error. Each parallel slot also statically multiplies the context memory allocation. LM Studio is built for single-user scenarios without rate limiting or auth. Neither is designed to turn concurrent demand into throughput.
+
+Nor is either hardened for exposure. Ollama's CVE-2026-103663 (CVSS v4 9.4, October 2026) is a path traversal in the `/api/pull` model download path: a malicious layer digest can write a binary into Ollama's library directory, which is writable in most Docker images, and that binary runs as root on the next restart. An Ollama port reachable from a shared network is a remote-code-execution surface. Stay on current releases, bind to localhost or a private interface, never expose `/api/pull`, and pull models only from a registry you mirror.
 
 **vLLM** is, via two mechanisms: **PagedAttention** (the KV cache stored in non-contiguous blocks like OS paging, cutting the 60-80% KV memory waste of naive serving to under ~4%) and **continuous batching** (swap a finished request out and a queued one in mid-batch). The clearest first-party benchmark, from Red Hat: on a single datacenter GPU running an 8B model, vLLM reached roughly **793 tokens/sec versus Ollama's ~41**, about 19x, with far lower tail latency, and even a tuned Ollama trailed across all concurrency levels.
 

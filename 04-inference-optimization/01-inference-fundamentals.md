@@ -61,7 +61,7 @@ Memory bandwidth has not scaled as fast as compute. An H100 offers roughly 1 PFL
 
 Throughput and per-user speed trade off against each other through batch size, so any single number hides the operating point. Vendor "tokens per second" headlines are usually batch-1 top speeds that customers rarely see under load. Compare systems on a **throughput-versus-interactivity curve** at your SLO and on traffic that looks like yours.
 
-How much the operating point matters: SemiAnalysis's InferenceX AgentX scenario (agentic, multi-turn, high prefix reuse) reports Vera Rubin NVL72 at about **67x** the throughput per TCO of GB300 on DeepSeek V4 Pro at 170 tok/s per user under ownership-cost assumptions, but only **62% more** total tokens than GB300 NVL72 at a more realistic 80 tok/s P90 on 3-year rental pricing. Same hardware, same model, a 40x difference in the headline, purely from the operating point and the cost model. MLPerf Inference v6.1 (September 2026) added agentic and end-to-end RAG tests for the same reason.
+How much the operating point matters: SemiAnalysis's InferenceX AgentX scenario (agentic, multi-turn, high prefix reuse) reports Vera Rubin NVL72 at about **67x** the throughput per TCO of GB300 on DeepSeek V4 Pro at 170 tok/s per user under ownership-cost assumptions, but only **62% more** total tokens than GB300 NVL72 at a more realistic 80 tok/s P90 on 3-year rental pricing. Same hardware, same model, a 40x difference in the headline, purely from the operating point and the cost model. Independent measurement shrinks it further: Artificial Analysis's AA-AgentPerf (October 15, 2026) found Rubin at **1.14x to 1.45x** GB300's peak throughput per megawatt depending on the model, with larger leads only at high per-user speeds. Treat any large vendor or analyst multiple as one point on a curve until someone else measures the curve. MLPerf Inference v6.1 (September 2026) added agentic and end-to-end RAG tests for the same reason.
 
 ---
 
@@ -94,7 +94,7 @@ To optimize **TPOT**, you must optimize the Memory Bandwidth during Decode: use 
 ### Q: A vendor pitches an accelerator at "3,000 tokens per second." How do you evaluate it?
 
 **Strong answer:**
-I would ask what that number is a point on. A per-user top speed at batch 1 says little about cost, because cost comes from aggregate throughput at the interactivity my product needs. So I would ask for, or measure, the full throughput-versus-per-user-speed curve on my model, at my context lengths, with my prefix-reuse pattern (agentic traffic reuses long prefixes heavily), and read off goodput at my TTFT and ITL SLOs. Then I would convert to cost per million tokens using real rental or ownership pricing, not list TCO. The spread can be enormous: one 2026 benchmark showed the same Rubin-versus-GB300 comparison ranging from 67x to 1.6x depending on the operating point and whether you own or rent. I would also check memory limits at long context (SRAM-heavy designs can cap batch size sharply), whether speculative decoding was on, and whether the result came from an independent harness such as MLPerf or InferenceX rather than the vendor's own setup.
+I would ask what that number is a point on. A per-user top speed at batch 1 says little about cost, because cost comes from aggregate throughput at the interactivity my product needs. So I would ask for, or measure, the full throughput-versus-per-user-speed curve on my model, at my context lengths, with my prefix-reuse pattern (agentic traffic reuses long prefixes heavily), and read off goodput at my TTFT and ITL SLOs. Then I would convert to cost per million tokens using real rental or ownership pricing, not list TCO. The spread can be enormous: one 2026 analyst benchmark showed the same Rubin-versus-GB300 comparison ranging from 67x to 1.6x depending on the operating point and whether you own or rent, and the first independent run (Artificial Analysis's AA-AgentPerf) measured only 1.14x to 1.45x peak throughput per megawatt. I would also check memory limits at long context (SRAM-heavy designs can cap batch size sharply), whether speculative decoding was on, and whether the result came from an independent harness such as MLPerf or InferenceX rather than the vendor's own setup.
 
 ---
 
@@ -103,6 +103,7 @@ I would ask what that number is a point on. A per-user top speed at batch 1 says
 - NVIDIA. "Transformer Engine Documentation" (2024)
 - vLLM Blog. "Understanding LLM Inference Latency" (2023)
 - SemiAnalysis. ["Vera Rubin NVL72: agentic inference"](https://newsletter.semianalysis.com/p/vera-rubin-nvl72-agentic-inference) (2026)
+- Artificial Analysis. ["Vera Rubin NVL72 on AA-AgentPerf"](https://artificialanalysis.ai/articles/vera-rubin-nvl72-agentperf) (2026)
 - MLCommons. [MLPerf Inference v6.1 results](https://mlcommons.org/2026/09/mlperf-inference-v6-1-results/) (2026)
 
 ---
