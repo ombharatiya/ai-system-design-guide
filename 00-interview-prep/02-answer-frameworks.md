@@ -528,12 +528,13 @@ What types of documents? What volume? What accuracy is needed?"
 **Right:**
 ```
 "Model selection depends on the quality bar and volume. For high-volume, 
-lower-stakes queries, I might use GPT-6 Luna ($0.10/$0.50 per 1M), 
-Gemini 3.8 Flash, or DeepSeek V4.1-Flash and reserve Claude Sonnet 5.5 
-or GPT-6.1 Sol ($2/$10) for complex cases. At 1M queries/day with ~1.5K 
-input and 300 output tokens, sending everything to a $2/$10 model costs 
-about $180K/month; routing 70% to a $0.10/$0.50 tier brings that to 
-about $60K, provided evals show the cheap tier holds the bar on that 70%."
+lower-stakes queries, I might use GPT-6 Luna or Claude Haiku 5.5 
+($0.10/$0.50 per 1M), Gemini 3.8 Flash, or DeepSeek V4.1-Flash and 
+reserve Claude Sonnet 5.5 or GPT-6.1 Sol ($2/$10) for complex cases. 
+At 1M queries/day with ~1.5K input and 300 output tokens, sending 
+everything to a $2/$10 model costs about $180K/month; routing 70% to 
+a $0.10/$0.50 tier brings that to about $60K, provided evals show the 
+cheap tier holds the bar on that 70%."
 ```
 
 ---

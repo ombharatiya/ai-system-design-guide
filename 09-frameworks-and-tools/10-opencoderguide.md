@@ -1,6 +1,6 @@
 # OpenCoder: AI Coding Agents Landscape
 
-The AI coding agent landscape has exploded and then consolidated. By October 2026 it has three clear shapes: terminal agents backed by labs or large communities (Claude Code, Codex CLI, OpenCode, Gemini CLI), IDE agents owned by companies that also build models (Cursor has been part of SpaceX since August 2026; Windsurf has been part of Cognition since July 2025), and a split architecture where the vendor runs the control plane while your infrastructure runs the code. This guide covers open-weight coding models, agentic IDEs, open-source agents, and how to choose the right tool for your engineering workflow.
+The AI coding agent landscape has exploded and then consolidated. By November 2026 it has three clear shapes: terminal agents backed by labs or large communities (Claude Code, Codex CLI, OpenCode, Antigravity CLI), IDE agents owned by companies that also build models (Cursor has been part of SpaceX since August 2026; Cognition bought Windsurf in July 2025 and renamed it Devin Desktop in June 2026), and a split architecture where the vendor runs the control plane while your infrastructure runs the code. This guide covers open-weight coding models, agentic IDEs, open-source agents, and how to choose the right tool for your engineering workflow.
 
 ## Table of Contents
 
@@ -31,15 +31,15 @@ flowchart TB
     end
     subgraph L2["Layer 2: AI IDEs and platforms (developer in the loop, plus cloud agents)"]
         B1["Cursor (SpaceX)"]
-        B2["Windsurf (Cognition)"]
+        B2["Devin Desktop (Cognition, formerly Windsurf)"]
         B3["GitHub Copilot"]
         B4["Google Antigravity"]
     end
     subgraph L1["Layer 1: Coding models"]
-        C1["Claude Opus 5.5, Sonnet 5.5, Fable 5.1"]
-        C2["GPT-6 Astra, GPT-6.1 Sol"]
-        C3["Gemini 3.8 Flash, Grok 4.7"]
-        C4["Open weights: MiMo-V2.6, GLM-5.3, Kimi K3, DeepSeek V4.1-Flash"]
+        C1["Claude Opus 5.5, Sonnet 5.5, Haiku 5.5, Fable 5.1"]
+        C2["GPT-6 Astra, GPT-6.1 Sol, GPT-6.1 Terra"]
+        C3["Gemini 4 Argon, Gemini 3.8 Flash, Grok 4.7"]
+        C4["Open weights: MiMo-V2.6, GLM-5.3, Kimi K3, DeepSeek V4.1-Flash, Mistral Large 4"]
     end
     L3 --> L1
     L2 --> L1
@@ -53,21 +53,25 @@ The layers are blurring. IDE vendors train their own models (Cursor's Composer, 
 
 These models can be self-hosted, fine-tuned, and deployed without any API dependency. Read the license before the model card: in 2026 several "open" coding-capable models carry commercial gates.
 
-### The Current Open-Weight Frontier (October 2026)
+### The Current Open-Weight Frontier (November 2026)
 
 | Model | Released | Total / active params | License | Coding-relevant notes |
 |-------|----------|-----------------------|---------|-----------------------|
-| Xiaomi MiMo-V2.6-Pro / -Flash | Sep 21, 2026 | 1.02T / 42B; 309B / 15B | MIT | 1M context; top open model on the Artificial Analysis Intelligence Index v4.3.2 (46) |
-| Z.ai GLM-5.3 | Weights Aug 28, 2026 | 744B / 40B | MIT, plus a security review for MaaS providers above US$10B revenue in 12 months | AA 45; API $1.40/$4.40 per 1M; 211/272 on the SWE-Bench Pro v2 private set |
-| Moonshot Kimi K3 | July 2026 | 2.8T / 104B active | Custom: a separate agreement for companies that run any MaaS business and whose total revenue (with affiliates) exceeds US$20M over 12 months | AA 44; 214/272 on SWE-Bench Pro v2 private; base for Cognition SWE-2 and Fireworks Ember-1 |
-| Z.ai GLM-5.3-Flash | Aug 26, 2026 | 320B / 18B | MIT | AA 42; API $0.15/$0.50 per 1M |
-| DeepSeek V4.1-Flash | Sep 10, 2026 | 552B backbone; 8B active in prefill, 16B in decode | MIT | AA 39; vendor-reported DeepSWE v1.1 74.2 at max effort |
+| Xiaomi MiMo-V2.6-Pro / -Flash | Sep 21, 2026 | 1.02T / 42B; 309B / 15B | MIT | 1M context; led open models on the Artificial Analysis index before v5.0 |
+| Mistral Large 4 | Open weights Oct 29, 2026 | About 1T / 49B (52B with embeddings) | Mistral Ecosystem Open-Weight License: **any** MaaS business needs a separate commercial license, with no revenue threshold | API $0.70/$2.10 per 1M |
+| Meta Muse Spark Open | Oct 15, 2026 | 816B / 42B | Muse Model License, with a MaaS gate above US$20M revenue | Check the gate before building a hosted coding product on it |
+| Z.ai GLM-5.3 | Weights Aug 28, 2026 | 744B / 40B | MIT, plus a security review for MaaS providers above US$10B revenue in 12 months | API $1.40/$4.40 per 1M; 211/272 on the SWE-Bench Pro v2 private set |
+| Moonshot Kimi K3 | July 2026 | 2.8T / 104B active | Custom: a separate agreement for companies that run any MaaS business and whose total revenue (with affiliates) exceeds US$20M over 12 months | 214/272 on SWE-Bench Pro v2 private; base for Cognition SWE-2 and Fireworks Ember-1 |
+| Z.ai GLM-5.3-Flash | Aug 26, 2026 | 320B / 18B | MIT | API $0.15/$0.50 per 1M |
+| DeepSeek V4.1-Flash | Sep 10, 2026; refreshed as V4.1-Flash-1017 (Oct 17), which now serves `deepseek-flash` | 552B backbone; 8B active in prefill, 16B in decode | MIT | Vendor-reported DeepSWE v1.1 74.2 at max effort (original release) |
 | Qwen3.8-Flash-Next | Aug 26, 2026 | 125B / 6B plus a 51B n-gram table | Qwen Community License 1.0 | Any MaaS or AI coding-assistant **business** needs a separate license from Qwen, with no revenue floor; purely internal use is exempt |
 | Qwen3.8-27B | 2026 | 27B dense | Apache 2.0 | Single-GPU class; also the base of Ternary Bonsai 2 27B (1.72 bits per weight, 5.95 GB) |
 | IBM Granite 4.2 | Aug 25, 2026 | 3B / 8B / 30B dense | Apache 2.0 | 128K context (extendable to 512K); vendor-reported SWE-bench Verified 57 for the 30B |
 | MiMo-V2.6-Distill-Qwen-9B | Sep 21, 2026 | 9B | MIT | Vendor-reported 61.1% SWE-bench Verified, 44.6% SWE-bench Pro |
 
-**The license trap**: under the Qwen Community License 1.0, a startup building a coding agent on Qwen3.8-Flash-Next needs Alibaba's permission from day one, which is stricter than the license on Qwen's own 2.4T flagship (gate above US$50M revenue). Mistral Medium 3.5's Modified MIT license grants no rights above US$20M monthly revenue. Put license review in the model-selection checklist, next to evals.
+**The license trap**: under the Qwen Community License 1.0, a startup building a coding agent on Qwen3.8-Flash-Next needs Alibaba's permission from day one, which is stricter than the license on Qwen's own 2.4T flagship (gate above US$50M revenue). Mistral Large 4 does the same for anyone selling it as a service, at any revenue, and Mistral Medium 3.5's Modified MIT license grants no rights above US$20M monthly revenue (Mistral deprecated Medium 3.5 and Large 3 on October 31; they retire April 30, 2027). Put license review in the model-selection checklist, next to evals.
+
+**Reading the general-intelligence gap**: on Artificial Analysis Intelligence Index v5.0 (October 27, 2026; 60% private or held-out sets, scores not comparable with v4.x), the top open-weight models score about 32 against 58 for Claude Opus 5.5 and 54 for Sonnet 5.5. On Scale's clean SWE-Bench Pro v2 private set, Kimi K3 and GLM-5.3 sit within about 3 to 4 points of Opus 5. Both can be true: open weights are close on well-scoped repository tasks and much further behind on broad, held-out evaluation, so test on your own task mix before assuming either number transfers.
 
 ### Older Small Models Still Used for Completions
 
@@ -82,8 +86,8 @@ The 2024-era coder models remain popular for low-latency fill-in-the-middle (FIM
 | StarCoder2-15B / 7B / 3B | 15B / 7B / 3B | 16K | 37.8% (15B base; 63.4% for StarCoder2-15B-Instruct-v0.1) | BigCode OpenRAIL-M |
 
 ```python
-# Self-hosted with vLLM (use vLLM >= 0.30.0: earlier releases have
-# published RCE and engine-kill advisories)
+# Self-hosted with vLLM (use vLLM >= 0.32.0: earlier releases, 0.30.x included,
+# have published advisories; 0.32.0 also removed the default CORS wildcard)
 from vllm import LLM
 
 model = LLM(
@@ -134,32 +138,32 @@ Cursor is the leading AI-native IDE, and since August 14 to 15, 2026 it is **par
 
 **Best for**: Frontend/full-stack developers who want agentic editing within a familiar GUI, and teams that want cloud agents without running the orchestration themselves.
 
-**Limitations**: Closed-source; code goes to Cursor's servers unless you use Privacy Mode and self-hosted machines; ownership by a frontier-model company raises model-neutrality and data-governance questions for some buyers.
+**Limitations**: Closed-source; code goes to Cursor's servers unless you use Privacy Mode and self-hosted machines; ownership by a frontier-model company raises model-neutrality and data-governance questions for some buyers. A forked IDE also means a separate extension marketplace, which is a separate supply chain: on Oct 29, 2026, Cursor's marketplace served a trojanized Claude Code extension that Anthropic did not build ([details](../07-agentic-systems/09-agentic-security-and-sandboxing.md#the-developer-workstation-became-the-target)). Allowlist publishers and pin extension versions.
 
-### Windsurf (Cognition)
+### Devin Desktop (Cognition, formerly Windsurf)
 
-**Website:** windsurf.com | **Base:** VS Code fork | **Pricing:** Free tier plus paid plans
+**Docs:** docs.devin.ai/desktop | **Base:** VS Code fork | **Version:** 3.11.238 (Oct 30, 2026)
 
-Windsurf was built by Codeium and has been owned by **Cognition**, the maker of Devin, since July 2025. Cognition raised more than $2B at a $48B valuation (Sep 8, 2026), reports more than $1B in annualized revenue run rate (vendor-reported), and shipped SWE-2, its own flagship coding model, available only inside Devin.
+Windsurf was built by Codeium, bought by **Cognition**, the maker of Devin, in July 2025, and renamed **Devin Desktop** in v3.0.12 (June 2, 2026). Tutorials and procurement documents that still say "Windsurf" describe the same product line. Cognition raised more than $2B at a $48B valuation (Sep 8, 2026), reports more than $1B in annualized revenue run rate (vendor-reported), and shipped SWE-2, its own flagship coding model, available only inside Devin.
 
 | Feature | Description |
 |---------|-------------|
-| **Cascade** | Windsurf's agentic editing mode |
-| **Flows** | Shared agent-and-developer sessions where Cascade tracks your edits and actions as context; not to be confused with CrewAI Flows |
+| **Agentic editing** | Called Cascade in the Windsurf era; not to be confused with the Cascade workflow in GitHub Copilot Fusion |
+| **Flows** | Shared agent-and-developer sessions where the agent tracks your edits and actions as context; not to be confused with CrewAI Flows |
 | **Model choice** | Multiple vendors' frontier models plus Cognition's own |
-| **Free tier** | Free credits for individuals |
+| **One vendor, two loops** | The IDE and the autonomous Devin agent come from the same company |
 
-**Best for**: Teams that want a Cursor-like experience with a free tier and model flexibility, and shops already buying Devin.
+**Best for**: Teams that want a Cursor-like IDE with model flexibility, and shops already buying Devin that want the IDE and the autonomous agent from one vendor.
 
 ### GitHub Copilot (Microsoft/OpenAI)
 
-| Feature | Status (October 2026) |
+| Feature | Status (November 2026) |
 |---------|---------------------|
 | Completions | Still the market leader by install base |
 | Coding agent | Assign an issue, get a PR (Copilot Workspace's preview ended in 2025) |
 | Code review approvals | Copilot reviews can count toward required approvals (public preview, off by default, Sep 1, 2026); admins choose which paths it may approve; its approval is dismissed on new commits |
 | Computer use and dynamic workflows | Public preview Oct 1, 2026 in the Copilot CLI and app; workflows are code-defined stages with checkpoints for human review |
-| HydraFusion | Research preview (Sep 30, 2026): cascade (cheap model drafts, a quality gate escalates) and cross-family critique modes |
+| Copilot Fusion | GA Oct 28, 2026, on all plans. Routes each task across models with Standard, High and Max effort and Single, Cascade (a cheap model drafts, a quality gate escalates) or Critique (cross-family review) workflows, the modes first previewed as HydraFusion (Sep 30) |
 | Local sandboxing | Per-project filesystem, network and credential limits in the Copilot app (public preview, Sep 23, 2026, off by default) |
 | Model | Auto model selection with efficiency, balance and intelligence tiers; OpenAI, Anthropic and Google models available |
 | Enterprise features | IP protection, org policies, code referencing controls |
@@ -179,9 +183,9 @@ Antigravity is Google's agentic development platform, an **agent-first workspace
 | **Built-in browser** | Agents can run and visually test the UI they build |
 | **Model optionality** | Gemini models by default, with support for Anthropic Claude and open models |
 | **Enterprise** | Included in eligible Gemini Enterprise Standard and Plus subscriptions since Aug 20, 2026, with sandbox and policy limits on browser and MCP permissions, budget caps, central audit logging, Workforce Identity Federation, and extensions for VS Code, Visual Studio, JetBrains, Zed and Xcode |
-| **API agent** | `antigravity-preview-09-2026` replaced `antigravity-preview-05-2026` on Sep 17 (the May version shuts down Oct 5, 2026) with breaking tool changes: PascalCase parameters, line-range edits instead of full rewrites, new `find_by_name` and `grep_search` tools |
+| **API agent** | `antigravity-preview-09-2026` replaced `antigravity-preview-05-2026` on Sep 17 (the May version was scheduled to shut down Oct 5, 2026) with breaking tool changes: PascalCase parameters, line-range edits instead of full rewrites, new `find_by_name` and `grep_search` tools |
 
-Google positions the Antigravity CLI as the successor to Gemini CLI; it replaced Gemini CLI for free, Google AI Pro and Ultra users in June 2026. Gemini CLI is still maintained (v0.62.0, Sep 29, 2026) for Gemini Code Assist Standard and Enterprise and paid API keys.
+Google positions the Antigravity CLI as the successor to Gemini CLI; it replaced Gemini CLI for free, Google AI Pro and Ultra users on June 18, 2026. Gemini CLI is still maintained (v0.66.0, Oct 27, 2026), but its README now scopes it to Gemini Code Assist Standard and Enterprise and Code Assist for GitHub (plus legacy paid API and Vertex keys) and says it is not tuned for the Gemini 4 series, so use the Antigravity CLI for Gemini 4 Argon. Google is also shutting down **Jules**, its asynchronous cloud coding agent: it goes read-only after November 11 and winds down December 31, 2026, so move any Jules workflows to Antigravity or another agent now.
 
 **Best for**: Developers who want to operate at the "task" level (delegate a goal, review the plan and result) rather than the "edit" level, and Google Cloud shops that want one licensed harness across IDE, CLI and SDK.
 
@@ -193,16 +197,16 @@ Google positions the Antigravity CLI as the successor to Gemini CLI; it replaced
 
 **GitHub:** github.com/anomalyco/opencode | **License:** MIT
 
-The most-starred open-source coding agent (211.3K stars, Oct 1, 2026; v1.18.34 on Sep 30; about 9.6M npm downloads in the prior month). A terminal agent with a TUI that works with any provider, including local models, and supports MCP. It is the default answer to "open-source Claude Code with model choice."
+The most-starred open-source coding agent (about 224K stars on Nov 2, 2026; v1.19.5 on Oct 28; about 12.4M npm downloads of `opencode-ai` in October). A terminal agent with a TUI that works with any provider, including local models, and supports MCP. It is the default answer to "open-source Claude Code with model choice."
 
 ### Codex CLI (OpenAI)
 
 **GitHub:** github.com/openai/codex | **License:** Apache-2.0
 
-OpenAI's open-source terminal agent (127.5K stars; rust-v0.159.3 on Sep 30, 2026; about 88.8M npm downloads in the prior month). Key 2026 facts:
+OpenAI's open-source terminal agent (about 133K stars on Nov 2, 2026; rust-v0.166.0 on Oct 29; about 82.3M npm downloads of `@openai/codex` in October). Key 2026 facts:
 
 - **Default model**: GPT-6.1 Sol since rust-v0.159.1 (Sep 29), including Amazon Bedrock catalogs. A CLI upgrade swapped the model for everyone who had not pinned one.
-- **DevDay (Sep 29)**: reusable cloud environments, a `/agents` view for parallel tasks, Code Review for GitHub PRs and GitLab MRs, Codex Security Cloud, and an **Ultrafast** tier (available on GPT-6 Astra, coming to Sol; OpenAI says up to 8x faster generation in Codex; global processing or US residency only, no EU endpoint).
+- **DevDay (Sep 29)**: reusable cloud environments, a `/agents` view for parallel tasks, Code Review for GitHub PRs and GitLab MRs, Codex Security Cloud, and an **Ultrafast** tier (launched on GPT-6 Astra; GPT-6.1 Sol Ultrafast reached all API users on Oct 8 at $12/$60 per 1M; OpenAI says up to 8x faster generation in Codex; global processing or US residency only, no EU endpoint).
 - **Security fixes**: GitSpawn in 0.131.0, Plugin4Shell in 0.146.0.
 - **Headless**: `codex exec` for CI.
 
@@ -210,7 +214,7 @@ OpenAI's open-source terminal agent (127.5K stars; rust-v0.159.3 on Sep 30, 2026
 
 **GitHub:** github.com/OpenHands/OpenHands (moved from `All-Hands-AI/OpenHands`) | **License:** MIT
 
-OpenHands now ships as **Agent Canvas** (v1.24.0, Sep 25, 2026, shipping roughly weekly): a self-hosted control center that runs the open-source OpenHands agent, or any agent that speaks the Agent Client Protocol (Claude Code, Codex, Gemini), against interchangeable backends. Older tutorials that mount the Docker socket into `docker.all-hands.dev/all-hands-ai/openhands` describe the previous architecture.
+OpenHands has shipped as **Agent Canvas** since v1.24.0 (Sep 25, 2026), and releases roughly weekly (v1.34.0 on Oct 27): a self-hosted control center that runs the open-source OpenHands agent, or any agent that speaks the Agent Client Protocol (Claude Code, Codex, Gemini), against interchangeable backends. Older tutorials that mount the Docker socket into `docker.all-hands.dev/all-hands-ai/openhands` describe the previous architecture.
 
 ```bash
 # Docker sandbox option from the upstream README (pin the tag you tested)
@@ -263,7 +267,7 @@ aider --model claude-3-7-sonnet-20250219
 
 **GitHub:** github.com/cline/cline | **License:** Apache 2.0
 
-Open-source VS Code extension for autonomous coding, now at v4.1.22 with an SDK for embedding it elsewhere:
+Open-source VS Code extension for autonomous coding (v4.1.26, Oct 26, 2026; about 71K stars), with an SDK for embedding it elsewhere:
 
 ```
 VS Code
@@ -294,7 +298,7 @@ SWE-bench Verified stopped separating frontier agents: scores cluster near the c
 | Benchmark | Results | Runner | Why it matters |
 |-----------|---------|--------|----------------|
 | SWE-Bench Pro v2, private set (272 tasks) | Claude Opus 5 222 (81.6%), Kimi K3 214 (78.7%), GLM-5.3 211, Gemini 3.8 Flash 211, Inkling 184 | Scale, Sep 22, 2026; network-locked sandbox, pristine re-grade | Clean measurement; open-weight Kimi K3 and GLM-5.3 are within about 3 to 4 points of Opus 5. The public 642-task split is saturated (Opus 5 99.4%) |
-| Terminal-Bench 4.0 | GPT-6 Astra 58.18% (max), Claude Fable 5.1 57.88% (max/xhigh), Claude Opus 5 53.94% (xhigh) | tbench.ai leaderboard, Sep 21 | Released after that snapshot, vendor-reported only: Opus 5.5 66.4% (xhigh), Sonnet 5.5 70.6% (Anthropic) |
+| Terminal-Bench 4.0 | Claude Opus 5.5 64.85%, Claude Sonnet 5.5 61.82%, GPT-6 Astra and GPT-6.1 Sol tied at 58.18%, Claude Fable 5.1 57.88% (all at max effort) | tbench.ai leaderboard; the Opus 5.5, Sonnet 5.5 and GPT-6.1 Sol entries were added Oct 6 | GPT-6.1 Sol matches Astra for about $634 of run cost against $3.3K. Anthropic's own runs are higher (vendor-reported): Opus 5.5 66.4% (xhigh), Sonnet 5.5 70.6% |
 | DeepSWE v1.1 (113 commissioned tasks) | 74% three-way tie: GPT-6 Astra (xhigh, $4.43/task), Gemini 3.8 Flash (high, $2.36/task), Opus 5 (max, $11.84/task) | DeepSWE leaderboard, Sep 22 | Same pass rate, 5x spread in cost per task |
 
 > [!NOTE]
@@ -326,16 +330,16 @@ Both are retired as frontier signals: HumanEval is saturated, and Artificial Ana
 
 ### Closed API vs. Open Self-Hosted
 
-**Scenario: 1,000 agentic bug-fix tasks/day.** Per task: about 15 model calls, 750K input tokens (mostly re-sent context, 90% served from cache, the uncached 10% billed at the cache-write rate where one exists) and 2.5K output tokens. These are illustrative estimates from list prices, not measurements; quality is the Artificial Analysis Intelligence Index v4.3.2.
+**Scenario: 1,000 agentic bug-fix tasks/day.** Per task: about 15 model calls, 750K input tokens (mostly re-sent context, 90% served from cache, the uncached 10% billed at the cache-write rate where one exists) and 2.5K output tokens. These are illustrative estimates from list prices, not measurements; quality is the Artificial Analysis Intelligence Index v5.0 (Oct 27, 2026; not comparable with v4.x scores).
 
-| Approach | Cost per task | Monthly (30 days) | AA Index | Notes |
+| Approach | Cost per task | Monthly (30 days) | AA Index v5.0 | Notes |
 |----------|---------------|-------------------|----------|-------|
-| Claude Sonnet 5.5 (API) | ~$0.35 | ~$10,500 | 56 | Cache read $0.20 per 1M |
-| Claude Opus 5.5 (API) | ~$0.56 | ~$16,800 | 58 | Same $0.20 cache read, so only ~1.6x Sonnet here |
-| GPT-6.1 Sol (API) | ~$0.28 | ~$8,400 | 52 | Cache read $0.10 per 1M (0.05x) |
-| GPT-6 Astra (API) | ~$1.74 | ~$52,000 | 53 | Cache read $1 per 1M; reserve for the hardest tasks |
-| DeepSeek V4.1-Flash (API, peak list, no cache discount assumed) | ~$0.23 | ~$6,900 | 39 | Off-peak hours are half price; check the provider's cache-hit rate |
-| Self-hosted GLM-5.3-Flash (one 8×H100 node, 24/7) | Depends on utilization | ~$16,000 infra | 42 | $2.77/GPU-hr (Silicon Data H100 index, Oct 1, 2026), before engineering and on-call time |
+| Claude Sonnet 5.5 (API) | ~$0.28 | ~$8,400 | 54 | Cache read $0.10 per 1M (0.05x) since Oct 7 |
+| Claude Opus 5.5 (API) | ~$0.56 | ~$16,800 | 58 | Every rate is exactly 2x Sonnet's, so 2x on any mix |
+| GPT-6.1 Sol (API) | ~$0.28 | ~$8,400 | 55 | Cache read $0.10 per 1M (0.05x); now level with Sonnet 5.5 on this workload |
+| GPT-6 Astra (API) | ~$1.74 | ~$52,000 | 57 | Cache read $1 per 1M; reserve for the hardest tasks |
+| DeepSeek V4.1-Flash (API, peak list, no cache discount assumed) | ~$0.23 | ~$6,900 | About 32 or lower (the top open-weight score) | Off-peak hours are half price; check the provider's cache-hit rate |
+| Self-hosted GLM-5.3-Flash (one 8×H100 node, 24/7) | Depends on utilization | ~$16,900 infra | 28 | $2.93/GPU-hr (Silicon Data H100 index, Nov 1, 2026), before engineering and on-call time |
 
 **Key insights**:
 - For agentic coding, **input dominates** (Anthropic's telemetry puts Claude Code at 324:1 input to output), so the cache-read price and your hit rate move the bill more than the headline input price.
@@ -354,7 +358,7 @@ What is your primary need?
 ├─ IDE coding assistance (completions + chat + agent)?
 │  ├─ Microsoft ecosystem / enterprise? → GitHub Copilot
 │  ├─ Want best quality and cloud agents? → Cursor
-│  └─ Want free + model choice? → Windsurf or Cline
+│  └─ Want free + model choice? → Cline (Devin Desktop for a full IDE with model choice)
 │
 ├─ Autonomous agent for standalone coding tasks?
 │  ├─ Best quality, Claude models acceptable? → Claude Code
@@ -371,7 +375,7 @@ What is your primary need?
 └─ CI/CD pipeline integration?
    ├─ Best results? → Claude Agent SDK or `claude -p` (headless), `codex exec`
    ├─ Open-source? → OpenHands automations (webhook-triggered) or OpenCode
-   └─ Managed loop? → OpenAI Agents API or Claude Managed Agents (check residency and ZDR)
+   └─ Managed loop? → OpenAI Agents API or Claude Managed Agents (both still beta; check residency and ZDR)
 ```
 
 ### Comparison Matrix
@@ -445,7 +449,7 @@ Here's how to build an internal AI coding platform. The 2026 shape is a **split 
 | Code execution | Local, Docker, microVM, self-hosted runner | Container or microVM inside your perimeter with an egress allowlist |
 | Human review | PR, Slack approval, automated | Required human PR review, never auto-merge; agent approvals do not count toward required reviews |
 | Cost control | Max turns, budgets, model routing, caching | Turn and spend budgets per task, cache hit-rate alerts, cheaper model for simple tasks |
-| Version policy | Float, pin, pin with floor | Pin agent CLI versions with a security floor (Claude Code >= 2.1.196, Codex >= 0.146.0 for the GitSpawn and Plugin4Shell fixes) |
+| Version policy | Float, pin, pin with floor | Pin agent CLI versions with a security floor (Claude Code >= 2.1.292 and Codex >= 0.146.0 cover the GitSpawn and Plugin4Shell fixes, plus Claude Code's October fix for permission bypass on network-path reads) |
 
 ---
 
@@ -456,11 +460,11 @@ Here's how to build an internal AI coding platform. The 2026 shape is a **split 
 **Strong answer:**
 It depends on three axes:
 
-1. **Interface need**: If developers want GUI (see changes in context), use Cursor or Windsurf. If the task is scripted/headless (bug fixing, test generation in CI), use Claude Code, Codex CLI or OpenHands.
+1. **Interface need**: If developers want GUI (see changes in context), use Cursor or Devin Desktop. If the task is scripted/headless (bug fixing, test generation in CI), use Claude Code, Codex CLI or OpenHands.
 
 2. **Model control**: If you need to use any model (or your own fine-tuned model), use OpenCode or OpenHands. If you're okay with Claude only and want best-in-class results, use Claude Code; Codex CLI is the equivalent for OpenAI shops.
 
-3. **Open-source and vendor requirements**: Enterprise security teams often require open-source tools they can audit. OpenCode (MIT), OpenHands (MIT) and Codex CLI (Apache-2.0) are the answer. Ownership is now part of the review too: Cursor is part of SpaceX and Windsurf part of Cognition, both of which build their own models. That risk is no longer hypothetical: OpenAI is winding down its model supply to Cursor (proposed shutoff Nov 12, 2026) after the SpaceX deal. I would ask for contractual commitments on third-party model access and data use, and keep model routing for batch and CI work in a layer we control.
+3. **Open-source and vendor requirements**: Enterprise security teams often require open-source tools they can audit. OpenCode (MIT), OpenHands (MIT) and Codex CLI (Apache-2.0) are the answer. Ownership is now part of the review too: Cursor is part of SpaceX and Devin Desktop (formerly Windsurf) part of Cognition, both of which build their own models. That risk is no longer hypothetical: OpenAI is winding down its model supply to Cursor (proposed shutoff Nov 12, 2026) after the SpaceX deal. I would ask for contractual commitments on third-party model access and data use, and keep model routing for batch and CI work in a layer we control.
 
 For a typical startup, I'd recommend: Cursor for daily development, Claude Code or Codex for batch tasks (PRs from GitHub issues), and OpenHands or OpenCode for self-hosted CI pipelines.
 
@@ -475,7 +479,7 @@ Three reasons:
 
 3. **Independence**: No silent model swaps on someone else's release schedule, and no per-platform retirement calendar.
 
-The quality gap has narrowed sharply: on Scale's clean SWE-Bench Pro v2 private set, Kimi K3 (78.7%) and GLM-5.3 (77.6%) sit within about 3 to 4 points of Claude Opus 5 (81.6%). The cost argument is weaker than it used to be, because cache-heavy agent workloads are cheap on APIs, and the licenses need reading: Qwen3.8-Flash-Next cannot back a commercial coding assistant without a separate license.
+The quality gap has narrowed sharply on repository tasks: on Scale's clean SWE-Bench Pro v2 private set, Kimi K3 (78.7%) and GLM-5.3 (77.6%) sit within about 3 to 4 points of Claude Opus 5 (81.6%). It is still wide on broad held-out evaluation (top open-weight models score about 32 on Artificial Analysis Intelligence Index v5.0, against 58 for Claude Opus 5.5), so I would validate on our own task mix before moving hard work in-house. The cost argument is weaker than it used to be, because cache-heavy agent workloads are cheap on APIs, and the licenses need reading: Qwen3.8-Flash-Next cannot back a commercial coding assistant without a separate license.
 
 ### Q: How would you design the testing strategy for an AI coding agent in CI?
 
@@ -527,7 +531,10 @@ Only narrowly. The feature (public preview since Sep 1, 2026, off by default) le
 - Aider: https://aider.chat/
 - Cline: https://github.com/cline/cline
 - Cursor: https://cursor.com/
-- Windsurf: https://windsurf.com/
+- Devin Desktop changelog (renamed from Windsurf in v3.0.12, Jun 2, 2026): https://docs.devin.ai/desktop/changelog
+- GitHub. "Route and orchestrate models with GitHub Copilot Fusion" (Oct 28, 2026): https://github.blog/changelog/2026-10-28-route-and-orchestrate-models-with-github-copilot-fusion/
+- Cursor. Claude Code extension security notice (Oct 2026): https://cursor.com/blog/claude-code-extension-security-notice
+- Jules changelog (turndown notice, Oct 29, 2026): https://jules.google/docs/changelog/
 - Google Antigravity: https://developers.googleblog.com/build-with-google-antigravity-our-new-agentic-development-platform/
 - LiveCodeBench: https://livecodebench.github.io/
 

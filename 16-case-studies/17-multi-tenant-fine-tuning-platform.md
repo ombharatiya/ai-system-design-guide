@@ -55,7 +55,7 @@ flowchart TB
 | Base model | Llama 3.3 70B, 4-bit (AWQ) | Shared across all tenants |
 | Adapter | LoRA r=16 on attention layers, ~120 MB per tenant | Per-tenant adaptation |
 | Training | DeepSpeed ZeRO-3 on 8x H100 nodes | Tenant-isolated jobs |
-| Serving | vLLM 0.30+ with PagedAttention and multi-LoRA | One base, many adapters; 0.30.0 is the security floor |
+| Serving | vLLM 0.32+ with PagedAttention and multi-LoRA | One base, many adapters; 0.32.0 is the security floor (it also made Python 3.11 the minimum and closed CORS by default) |
 | Adapter store | S3 with per-tenant KMS keys | Encrypted at rest |
 | Eval store | Per-tenant golden set, run on every retrain | Eval-as-PRD per tenant |
 
@@ -99,7 +99,7 @@ Multi-tenancy is a defense-in-depth problem. Training jobs run in per-tenant nam
 
 The base model is shared. The adapter is per-tenant. The KV cache is per-request. PagedAttention ([vLLM paper](https://arxiv.org/abs/2309.06180)) ensures KV blocks are isolated per request, so even though Tenant A and Tenant B share a GPU during a single inference batch, their attention computations and KV state do not mix. We audited this with red-team prompts: no cross-tenant leakage in 50K adversarial pairs.
 
-One feature breaks that guarantee on purpose: **automatic prefix caching** reuses KV blocks across requests that share a prefix, and a cache hit shows up as lower latency. That turns the prefix cache into a membership oracle: a tenant can time requests to learn whether someone else recently sent a given contract clause. We set a per-tenant `cache_salt` on every request so prefix blocks are never shared across tenants, and we pin vLLM at 0.30.0 or later, because a September 2026 advisory (GHSA-935w-9g4m-p28p) found that tool-continuation turns on vLLM's GPT-OSS `/v1/responses` path dropped the salt and reopened the oracle. We do not serve that path, but the lesson carries: salt handling lives in each code path, so every endpoint we enable gets its own cross-tenant timing test. The same floor also carries the 0.28.0 fixes, including CVE-2026-90553, where a malicious model repository's processor code ran even with `trust_remote_code` off; on a server that loads new artifacts all day, treat every artifact as untrusted input.
+One feature breaks that guarantee on purpose: **automatic prefix caching** reuses KV blocks across requests that share a prefix, and a cache hit shows up as lower latency. That turns the prefix cache into a membership oracle: a tenant can time requests to learn whether someone else recently sent a given contract clause. We set a per-tenant `cache_salt` on every request so prefix blocks are never shared across tenants, and we pin vLLM at 0.32.0 or later, the current security floor. The salt lesson came from a September 2026 advisory (GHSA-935w-9g4m-p28p, fixed in 0.30.0): tool-continuation turns on vLLM's GPT-OSS `/v1/responses` path dropped the salt and reopened the oracle. We do not serve that path, but the lesson carries: salt handling lives in each code path, so every endpoint we enable gets its own cross-tenant timing test. The same floor also carries the 0.28.0 fixes, including CVE-2026-90553, where a malicious model repository's processor code ran even with `trust_remote_code` off; on a server that loads new artifacts all day, treat every artifact as untrusted input.
 
 ### 6. Model lifecycle and base-model refresh
 

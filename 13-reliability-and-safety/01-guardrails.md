@@ -46,7 +46,7 @@ LLMs are probabilistic and can produce:
 
 ### Guardrails Are Becoming Legal Requirements
 
-Some guardrails are no longer a product choice. Each row below names a control a regulator can ask you to demonstrate (status as of October 1, 2026; see [AI Governance and Compliance](04-ai-governance-and-compliance.md) for the full picture):
+Some guardrails are no longer a product choice. Each row below names a control a regulator can ask you to demonstrate (status as of November 2, 2026; see [AI Governance and Compliance](04-ai-governance-and-compliance.md) for the full picture):
 
 | Requirement | Status | Guardrail it implies |
 |-------------|--------|----------------------|
@@ -55,6 +55,7 @@ Some guardrails are no longer a product choice. Each row below names a control a
 | California SB 1119, companion chatbots used by children | Signed September 10, 2026 | Crisis protocols for suicidal ideation, parental controls, independent child-safety audits |
 | Companion-chatbot laws in nine more states (Colorado, Connecticut, Georgia, Hawaii, Idaho, Iowa, Nebraska, Oregon, Washington) | Hawaii in effect since July 2026; the rest in 2027 | AI disclosure and self-harm and sexual-content protections for minors; Oregon adds a private right of action |
 | California SB 947, workplace AI | Signed September 30, 2026 | No sole reliance on AI for discipline or termination: a human makes the final call |
+| FCC 26-67 consent-revocation rules, reaching AI voice calls through the FCC's 2024 "artificial voice" ruling | Effective November 25, 2026 | Outbound voice agents recognize a revocation of consent during the call and record it where the dialer checks before the next call |
 
 The design consequence: a consumer chatbot needs one disclosure-and-crisis-protocol design that satisfies all of these at once, and the evidence that it fires (logged triggers, tested escalation paths) matters as much as the guardrail itself.
 
@@ -435,7 +436,7 @@ Provide a helpful response.
 
 Pattern lists and prompt wrappers are speed bumps. Treat them as cheap first layers, not as the control:
 
-- **Frontier models resist better, not perfectly.** Vendor-reported indirect-injection success on Gray Swan's benchmarks, with 15 attempts per scenario, is 1.0% for Claude Opus 5.5 and 8.5% for GPT-6 Astra (each vendor ran its own setup, so read these as levels, not a head-to-head; see [LLM Security](../12-security-and-access/01-llm-security.md#indirect-prompt-injection-ipi-defense-in-depth)). At 1%, an agent that reads thousands of attacker-reachable documents a day still lets attacks through every day.
+- **Frontier models resist better, not perfectly.** Vendor-reported indirect-injection success on Gray Swan's benchmarks, with 15 attempts per scenario, is 1.0% for Claude Opus 5.5 and 8.5% for GPT-6 Astra (each vendor ran its own setup, so read these as levels, not a head-to-head; see [LLM Security](../12-security-and-access/01-llm-security.md#indirect-prompt-injection-ipi-defense-in-depth)). At 1%, an agent that reads thousands of attacker-reachable documents a day still lets attacks through every day, and small models on GUI surfaces do much worse: Claude Haiku 5.5 reports 7.1% overall but 24.4% on GUI computer use.
 - **User-pasted content is untrusted too.** Anthropic reported that early Claude Opus 5.5 snapshots regressed by treating text pasted into the user turn as unable to contain injections. A document the user pastes deserves the same suspicion as a retrieved web page.
 - **Exfiltration does not need a suspicious URL.** LLMLeak (arXiv 2610.01768) encodes secrets into ordinary-looking reference URLs that the model's normal web-fetch tool requests, reaching 79.7% attack success across 11 open-parameter models. An output filter looking for markdown images misses it; an egress allowlist on fetch tools does not.
 
@@ -818,7 +819,7 @@ What to know about this layer:
 - **It costs money.** Since September 24, 2026, pre-output refusals in `bio`, `frontier_llm`, and `reasoning_extraction` are billed on every platform, and all refusals count against rate limits. Break out refusal counts and spend by category on the guardrail dashboard, and budget for it when red-team suites probe those categories.
 - **Your own guardrail prompts can trigger it.** A judge or verifier prompt that asks for a `reasoning` field in JSON or a `<thinking>` section can be refused as `reasoning_extraction`. Ask for a short explanation or the evidence instead.
 - **Fallback is a configuration, not a hope.** Anthropic's server-side fallback (`fallbacks: "default"`, in beta on the Claude API) retries on the model it recommends for the category, or on up to three targets you name from the model's allowed list. It is not available on Bedrock, Google Cloud, or Foundry, where the Anthropic SDK's refusal-fallback middleware does the same retry client-side, and a Message Batches item that sets `fallbacks` comes back as an errored result. Run your own output guardrails on whatever model answered, since the response names it. See [Reliability Patterns](03-reliability-patterns.md#handling-safety-refusals).
-- **Some task classes are refused by design.** GPT-6 Astra's general release restricts scaled vulnerability research and exploit chaining, with looser access through OpenAI's Daybreak trusted-access program; Claude Fable 5.1 may find vulnerabilities but not develop exploits, while Mythos 5.1, the same model with looser safeguards, is limited to vetted programs. If your product lives in security or life sciences, plan for verified-access tiers, not prompt workarounds.
+- **Some task classes are refused by design.** GPT-6 Astra's general release restricts scaled vulnerability research and exploit chaining, with looser access through OpenAI's Daybreak trusted-access program; Claude Fable 5.1 may find vulnerabilities but not develop exploits, while Mythos 5.1, the same model with looser safeguards, is available through the three tiers of Anthropic's Cyber Verification Program (expanded October 6, 2026, with data retention required). If your product lives in security or life sciences, plan for verified-access tiers, not prompt workarounds.
 
 ### Human Escalation
 
@@ -1030,7 +1031,7 @@ Multi-layer approach:
 **2. Prompt engineering:**
 - Explicit instruction: "Answer only from context"
 - Encourage abstention: "If not in context, say you don't know"
-- Low temperature (0.1-0.3) where the API still accepts it; newer Claude models (Opus 4.7 and later, Sonnet 5 and later) reject non-default sampling values, Gemini deprecated them in July 2026, and GPT-6 Astra does not support them, so grounding has to come from retrieval, instructions, and verification
+- Low temperature (0.1-0.3) where the API still accepts it; the Claude API rejects sampling parameters at any value on every model from API version `2026-10-21` (and non-default values on Claude 4.7 and later models before it), Gemini deprecated them in July 2026, and GPT-6 Astra does not support them, so grounding has to come from retrieval, instructions, and verification
 
 **3. Output validation:**
 - Factuality checking: NLI model or LLM judge

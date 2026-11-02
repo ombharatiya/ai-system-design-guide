@@ -11,7 +11,7 @@ Tools are the "hands" of an agent. The industry has standardized on the **Model 
 - [Streaming Tool Calls](#streaming-tool-calls)
 - [The 2025 Revisions: Streamable HTTP and Auth](#the-2025-revisions-streamable-http-and-auth)
 - [MCP 2026-07-28: The Stateless Rewrite](#mcp-2026-07-28-the-stateless-rewrite)
-- [MCP Extensions and Ecosystem (October 2026)](#mcp-extensions-and-ecosystem-october-2026)
+- [MCP Extensions and Ecosystem (November 2026)](#mcp-extensions-and-ecosystem-november-2026)
 - [Agent Plugins](#agent-plugins)
 - [Agent-to-Agent Protocol (A2A)](#agent-to-agent-protocol-a2a)
 - [The Protocol Landscape: Tools, Agents, and Payments](#the-protocol-landscape-tools-agents-and-payments)
@@ -32,11 +32,12 @@ Tool use occurs in a 3-step cycle:
 
 **Nuance**: Production stacks no longer "hardcode" tool definitions into the system prompt. They use **Dynamic Manifests** that fetch only necessary tools based on the user's intent.
 
-Three provider-side changes in 2026 matter for harness code:
+Four provider-side changes in 2026 matter for harness code:
 
-- **Forced tool use is gone on the newest Claude models.** Fable 5.1, Mythos 5.1, Opus 5.5, and Sonnet 5.5 return HTTP 400 for `tool_choice` of `any` or `tool`; only `auto` and `none` remain. The old "force a tool call to get JSON" extraction pattern must move to `auto` plus strict tool use, or to structured outputs.
+- **Forced tool use is gone on the largest Claude models.** Fable 5.1, Mythos 5.1, Opus 5.5, and Sonnet 5.5 return HTTP 400 for `tool_choice` of `any` or `tool`; only `auto` and `none` remain. Haiku 5.5 still accepts a forced `tool_choice`, but the response then starts with the tool call and carries no thinking block. The old "force a tool call to get JSON" extraction pattern must move to `auto` plus strict tool use, or to structured outputs.
 - **Tools can change mid-conversation without losing the cache.** Anthropic's `inline-tools-2026-09-15` beta (September 22) defines, replaces, or removes tools inside a mid-conversation system message without invalidating the prompt cache, and can pin a fetched MCP tool list in an `mcp_tool_listing` block so a server cannot swap definitions mid-session.
 - **Tool calling on GPT-6 Astra requires the Responses API**, and Astra drops `temperature`, `top_p`, and logprobs, so harnesses that tuned sampling or read logprobs for tool routing need another mechanism.
+- **Sampling knobs are gone on Claude too.** Under Anthropic API version `2026-10-21` (October 21), `temperature`, `top_p`, and `top_k` return HTTP 400 on every model, even at their default values. The new SDK majors (Python 2.0.0, TypeScript 1.0.0, Go 2.0.0, among others) send that version by default and are relicensed Apache 2.0, so a routine SDK upgrade breaks any tool-routing code that still passes `temperature=0`.
 
 ---
 
@@ -141,7 +142,8 @@ flowchart LR
     B --> C[Jan 26, 2026<br>MCP Apps ships as<br>first official extension]
     C --> D[Jun 18, 2026<br>Enterprise-Managed<br>Authorization stable]
     D --> E[Jul 28, 2026<br>Stateless core<br>MRTR, extensions framework]
-    E --> F[Aug to Sep 2026<br>New roadmap,<br>Skills extension Final]
+    E --> F[Aug to Sep 2026<br>New roadmap,<br>Skills SEP Final]
+    F --> G["Oct 2026<br>Extension maturity stages;<br>next release moved to Mar 30, 2027"]
 ```
 
 ### Three Generations of MCP, Compared
@@ -183,7 +185,7 @@ All results now carry a required `resultType` field (`complete` or `input_requir
 
 ### What Is Deprecated or Removed
 
-The revision also adopts a formal feature lifecycle (Active, Deprecated, Removed) with a minimum twelve-month deprecation window and a public deprecated-features registry. For features newly deprecated in this revision (Roots, Sampling, Logging, DCR) the earliest removal is July 28, 2027; HTTP+SSE, deprecated back in March 2025, runs on an earlier clock.
+The revision also adopts a formal feature lifecycle (Active, Deprecated, Removed) with a minimum twelve-month deprecation window and a public deprecated-features registry. For features newly deprecated in this revision (Roots, Sampling, Logging, DCR) the earliest removal is July 28, 2027; HTTP+SSE, deprecated back in March 2025, runs on an earlier clock. Under the March and September release cadence adopted in October (SEP-3398), the first release that could actually drop the 2026-07-28 deprecations is the September 2027 one, which gives server fleets a concrete migration deadline to plan against.
 
 | Feature | Status in 2026-07-28 | Migrate to |
 |---------|----------------------|------------|
@@ -202,13 +204,27 @@ Two smaller but design-relevant transport changes: `Mcp-Method` and `Mcp-Name` H
 
 ### The Extensions Framework
 
-The core is now deliberately small; everything else is an **extension**, identified by reverse-DNS ID, versioned independently of the core spec, and governed through an Extensions Track in the SEP process. The official extensions include:
+The core is now deliberately small; everything else is an **extension**, identified by reverse-DNS ID, versioned independently of the core spec, and governed through an Extensions Track in the SEP process.
+
+**Maturity stages (SEP-3392, Final October 29, 2026).** Every extension now sits in one of three stages, and the spec directory it lives in (`specification/experimental/`, `beta/`, or `stable/`) shows which:
+
+| Stage | What can change | What you can rely on |
+|-------|-----------------|----------------------|
+| **Experimental** | Anything, at any time, without notice | Nothing; the design may disappear |
+| **Beta** | Any change; breaking changes should be rare, batched, and documented | Real usage is welcome, but budget for breaks |
+| **Stable** | Only alongside a new core protocol revision | Behavior is fixed within a protocol revision |
+
+Promotion into the core specification is an exit, not a fourth stage. From Beta an extension either becomes Stable or a Standards Track SEP promotes it into core, and a Stable extension can be promoted later. Once promoted in protocol revision R, the feature is core behavior for requests that declare R or later, the extension's final revision still governs earlier revisions, and its spec moves to `specification/archived/`. Each Beta extension states its intended destination: Tasks is headed for core, while Skills and Server Cards have not named one.
+
+The initial classification put MCP Apps and enterprise auth at **Stable**; Tasks, Skills, and Server Cards at **Beta**; and interceptors, variants, triggers and events, and tool annotations at **Experimental**. The lesson for interviews: a Final SEP is not a stable interface. Skills and Server Cards both have Final SEPs and can still break.
+
+The official extensions include:
 
 | Extension | Status | What it does |
 |-----------|--------|--------------|
-| **Tasks** (`io.modelcontextprotocol/tasks`) | Official; redesigned poll-based lifecycle, contributed by AWS | A tool call can answer with a task handle; the client polls `tasks/get`, pushes mid-task input with `tasks/update`, cancels with `tasks/cancel`. The standard answer for work that outlives a request. |
-| **MCP Apps** | Official since January 26, 2026 | A tool declares a `ui://` template; the host renders it in a sandboxed iframe (no DOM access, deny-by-default CSP), UI-to-host communication is postMessage-carried JSON-RPC, and UI-triggered actions go through the same tool-call consent path. Rendered by Claude, ChatGPT, VS Code, Goose, and Microsoft 365 Copilot, among others. |
-| **Enterprise-Managed Authorization (EMA)** | Stable since June 18, 2026 | An organization provisions MCP server access centrally through its IdP: an OIDC or SAML assertion is exchanged (RFC 8693) for an ID-JAG, which a JWT bearer grant (RFC 7523) trades for an MCP access token, with no per-user consent screens. Okta is the first supported IdP; Claude and VS Code shipped support at launch. The ID-JAG grant itself is still an IETF OAuth working-group Internet-Draft (-04), not an RFC, so expect wire-level changes. |
+| **Tasks** (`io.modelcontextprotocol/tasks`) | Beta; redesigned poll-based lifecycle, contributed by AWS | A tool call can answer with a task handle; the client polls `tasks/get`, pushes mid-task input with `tasks/update`, cancels with `tasks/cancel`. The standard answer for work that outlives a request. |
+| **MCP Apps** | Stable; official since January 26, 2026 | A tool declares a `ui://` template; the host renders it in a sandboxed iframe (no DOM access, deny-by-default CSP), UI-to-host communication is postMessage-carried JSON-RPC, and UI-triggered actions go through the same tool-call consent path. Rendered by Claude, ChatGPT, VS Code, Goose, and Microsoft 365 Copilot, among others. |
+| **Enterprise-Managed Authorization (EMA)** | Stable; shipped June 18, 2026 | An organization provisions MCP server access centrally through its IdP: an OIDC or SAML assertion is exchanged (RFC 8693) for an ID-JAG, which a JWT bearer grant (RFC 7523) trades for an MCP access token, with no per-user consent screens. Okta is the first supported IdP; Claude and VS Code shipped support at launch. The ID-JAG grant itself is still an IETF OAuth working-group Internet-Draft (-04), not an RFC, so expect wire-level changes. |
 
 ### Migration Checklist
 
@@ -223,29 +239,31 @@ Sources: modelcontextprotocol.io/specification/2026-07-28/changelog, blog.modelc
 
 ---
 
-## MCP Extensions and Ecosystem (October 2026)
+## MCP Extensions and Ecosystem (November 2026)
 
-The roadmap items this chapter tracked through May 2026 have largely shipped. Status as of October 2026:
+The roadmap items this chapter tracked through May 2026 have largely shipped. Status as of early November 2026:
 
-| Roadmap item (May 2026 framing) | Status (October 2026) |
-|---------------------------------|--------------------|
+| Roadmap item (May 2026 framing) | Status (November 2026) |
+|---------------------------------|------------------------|
 | Transport scalability / stateless core | **Shipped** in the 2026-07-28 revision (see [the stateless rewrite](#mcp-2026-07-28-the-stateless-rewrite)). The August 22 roadmap goes further: Streamable HTTP as the single binding, spoken over stdin/stdout for local servers too |
-| MCP Apps (server-rendered UIs) | **Shipped** January 26, 2026 as the first official extension; rendered by Claude, ChatGPT, VS Code, Goose, and Microsoft 365 Copilot, among others. The Apps SDK moved onto the v2 TypeScript packages in ext-apps 2.0.0 (September 8) with the wire protocol unchanged, so 2.x Views run in 1.x hosts and 2.x hosts render 1.x Views: SDK-level breaks without wire breaks, which is what the extensions framework was designed for |
-| Tasks extension (long-running work) | **Shipped** as `io.modelcontextprotocol/tasks` in the 2026-07-28 revision, redesigned around poll-based task handles, but the extension repository still carries only pre-release tags (v0.2.0 to v0.2.2, September 23 to 30), so treat the interface as settling. The August 22 roadmap targets Tasks (SEP-2663) for eventual inclusion in the core protocol, after a composition review so tasks, subscriptions, and progress notifications share one lifecycle, cancellation model, and error surface |
-| Enterprise authentication | **Shipped** June 18, 2026 as the Enterprise-Managed Authorization extension (Okta first IdP; Claude and VS Code at launch). Next is agent identity: DPoP sender-constrained tokens (SEP-1932) and Workload Identity Federation (SEP-1933) are still open drafts, though the TypeScript client 2.1.0 already ships DPoP |
-| MCP Server Cards (pre-connection discovery) | Still experimental (SEP-2127, under review). Cards are now served at `GET <streamable-http-url>/server-card`, and clients find them through an entry in the domain's AI Catalog at `/.well-known/ai-catalog.json`, a cross-protocol index maintained by the Agent Card Working Group under the Linux Foundation that also lists A2A agent cards and Claude Code plugins. Distinct from the core `server/discover` RPC |
+| MCP Apps (server-rendered UIs) | **Stable.** Shipped January 26, 2026 as the first official extension; rendered by Claude, ChatGPT, VS Code, Goose, and Microsoft 365 Copilot, among others. The Apps SDK moved onto the v2 TypeScript packages in ext-apps 2.0.0 (September 8) with the wire protocol unchanged, so 2.x Views run in 1.x hosts and 2.x hosts render 1.x Views: SDK-level breaks without wire breaks, which is what the extensions framework was designed for |
+| Tasks extension (long-running work) | **Beta.** Shipped as `io.modelcontextprotocol/tasks` in the 2026-07-28 revision, redesigned around poll-based task handles, but the extension repository still carries only v0.2.x pre-release tags, and the Beta stage allows documented breaking changes, so treat the interface as settling. A new Tasks and Events Working Group (formed in October) owns it. The August 22 roadmap targets Tasks (SEP-2663) for eventual inclusion in the core protocol, after a composition review so tasks, subscriptions, and progress notifications share one lifecycle, cancellation model, and error surface |
+| Enterprise authentication | **Stable.** Shipped June 18, 2026 as the Enterprise-Managed Authorization extension (Okta first IdP; Claude and VS Code at launch). Next is agent identity: DPoP sender-constrained tokens (SEP-1932) and Workload Identity Federation (SEP-1933) are still open drafts, though the TypeScript client 2.1.0 already ships DPoP |
+| MCP Server Cards (pre-connection discovery) | **Beta.** SEP-2127 went Final on October 6 (extension `io.modelcontextprotocol/server-card`). A card can live at any URI; `<streamable-http-url>/server-card` is the recommended location, not a required one. Clients find cards through the domain's AI Catalog at `/.well-known/ai-catalog.json`, a cross-protocol index maintained by the Agent Card Working Group under the Linux Foundation that also lists A2A agent cards and Claude Code plugins. Cards deliberately carry no tool, resource, or prompt lists, so a client still learns the tool surface from runtime list calls. Distinct from the core `server/discover` RPC |
 | MCP Registry | Still in preview (`registry.modelcontextprotocol.io`), API frozen at v0.1; GA timing unannounced. Release v1.8.1 (August 6) fixed a GitHub Pages organization-namespace takeover |
-| Skills over MCP (new) | **Final** September 13, 2026 as the `io.modelcontextprotocol/skills` extension (SEP-2640); see below |
+| Skills over MCP (new) | **Beta.** The SEP (SEP-2640) went Final September 13, 2026 as the `io.modelcontextprotocol/skills` extension, and the TypeScript SDK shipped it in 2.4.0 (October 23); see below |
 
-**Discovery now has two layers worth keeping straight:** pre-connection discovery through a domain's AI Catalog pointing at server cards (experimental; feeds registries, crawlers, and allowlisting) versus the in-protocol `server/discover` RPC (mandatory core since 2026-07-28; feeds version negotiation). Because the same catalog document indexes MCP servers and A2A agents, an enterprise platform can allowlist remote capabilities of both kinds from one place, but present it as direction, not standard.
+**Discovery now has two layers worth keeping straight:** pre-connection discovery through a domain's AI Catalog pointing at server cards (a Beta extension; feeds registries, crawlers, and allowlisting) versus the in-protocol `server/discover` RPC (mandatory core since 2026-07-28; feeds version negotiation). Because the same catalog document indexes MCP servers and A2A agents, an enterprise platform can allowlist remote capabilities of both kinds from one place, but present it as direction, not standard.
 
 ### What the August 22 Roadmap Prioritizes
 
-The core maintainers published a 6-to-12-month roadmap on August 22, 2026, with expedited SEP review for five areas. No date was given for the next spec revision.
+The core maintainers published a 6-to-12-month roadmap on August 22, 2026, with expedited SEP review for five areas.
+
+**When the next revision lands.** SEP-3398 (Accepted, merged October 27) moves the release that had been targeted for December 2026 to **March 30, 2027**, "subject to confirmation in the transition calendar," and sets spec releases generally on the last Tuesday of March and September. Each release runs an eight-month cycle: a soft freeze 2.5 months out, SDK betas 1.5 months out, and a hard freeze one month out. A SEP now needs a working group or Core Maintainer sponsor before formal review. Two planning consequences: anything not Final by a soft freeze slips a full six months, and SDK upgrades can be scheduled against fixed dates instead of tracked as surprises.
 
 | Priority area | What it means for builders |
 |---------------|----------------------------|
-| **Agentic messaging primitives** | Server-initiated events and webhooks (Triggers and Events WG); Tasks, subscriptions, and progress notifications converge on one lifecycle |
+| **Agentic messaging primitives** | Server-initiated events and webhooks (now owned by the Tasks and Events WG); Tasks, subscriptions, and progress notifications converge on one lifecycle |
 | **HTTP-native transport** | One binding (Streamable HTTP) everywhere, including over stdio for local servers; caching extended from `ttlMs` / `cacheScope` to ETags, including versioned tool-call results |
 | **Agent identity and enterprise security** | An Agent Identity WG (forming) to finalize DPoP and a delegated identity model built on workload identity federation, ID-JAG, and RFC 8693 token exchange, coordinated with the IETF OAuth and WIMSE groups; attesting whether a human is present (interactive client vs headless agent) is under discussion |
 | **Improved primitives** | Redesign the `tools/call` result shape (returning both `content` and `structuredContent` produced diverging implementations); an experimental server-side progressive discovery mechanism for large tool catalogs |
@@ -255,7 +273,7 @@ The two forward-looking interview questions this sets up: how a headless agent w
 
 ### Skills over MCP
 
-Agent Skills (`SKILL.md` folders) left beta on the Claude API on August 19, 2026, and the MCP skills extension (Final September 13) lets a server publish skills next to the tools they describe instead of copying them into a filesystem or plugin. Servers that declare it implement `skills/list` and `skills/get`, and skill files are read with ordinary `resources/read`. Each skill entry carries its frontmatter and a complete file manifest with a per-file SHA-256 digest and size.
+Agent Skills (`SKILL.md` folders) left beta on the Claude API on August 19, 2026, and the format itself became an Agentic AI Foundation project on October 22. The MCP skills extension (SEP Final September 13, Beta stage since October 29) lets a server publish skills next to the tools they describe instead of copying them into a filesystem or plugin. Servers that declare it implement `skills/list` and `skills/get`, and skill files are read with ordinary `resources/read`. Each skill entry carries its frontmatter and a complete file manifest with a per-file SHA-256 digest and size.
 
 The host rules are the part to learn, because they answer "how do you stop a remote server from silently changing the instructions my agent loads," the skill version of a tool rug pull:
 
@@ -263,15 +281,15 @@ The host rules are the part to learn, because they answer "how do you stop a rem
 - Hosts **must not** prefetch skill files and **must** treat skill content as untrusted.
 - A skill's `allowed-tools` grants or any host-side code execution need explicit per-skill approval, and a cross-server read needs per-call approval naming both servers.
 
-Adoption is early: Hugging Face's MCP server implements it and MCP Inspector 2.6.0 has partial support, while the official SDK pull requests were still open in late September. Skills are becoming versioned production artifacts elsewhere too (AWS added `update-skill` commands for its agent toolkit on September 30), so give them the same pinning and update review as package dependencies.
+Adoption is early. Hugging Face's MCP server implements it, and the TypeScript SDK 2.4.0 (October 23) ships Skills over MCP (`loadSkills` on the server, and a `SkillsClient` that verifies size, digest, and frontmatter on every read; only the `attach` wiring is marked experimental); the Python SDK's latest release (2.3.0, October 2) predates it. Because the extension is Beta, pin the SDK version and expect a documented break before it reaches Stable. Skills are becoming versioned production artifacts elsewhere too (AWS added `update-skill` commands for its agent toolkit on September 30), so give them the same pinning and update review as package dependencies.
 
 **Ecosystem scale:** SDK downloads run in the hundreds of millions per month. The protocol's own July 28 release post cited close to half a billion monthly across Tier 1 SDKs; Anthropic separately reported 400M monthly and a 4x increase across the year, so treat the aggregate as an order of magnitude rather than a precise figure and check the metric definition before quoting it. In August one connector directory alone listed **over 950 MCP servers**. At the July 28 final release AWS, Cloudflare, Google Cloud, Microsoft, and Netlify announced launch support. Microsoft rolled out MCP-based Federated Copilot Connectors manageable from the Microsoft 365 admin center, Apple made Xcode an MCP host for external coding agents, and Bloomberg has published a production case study of MCP as its internal agent-tool layer.
 
-**The migration to the stateless revision is real but slow.** npm downloads for September 2026: about 231.9M for the v1 TypeScript SDK (`@modelcontextprotocol/sdk`) against about 30.6M for `@modelcontextprotocol/core`, 25.4M for `@modelcontextprotocol/server`, and 19.1M for `@modelcontextprotocol/client`. On a single-package comparison v2 is now roughly 8 to 13 percent of v1 volume, up from low single digits in mid-August, and v1 is still growing (about 207M in the 30 days to August 14). Plan for a long dual-version period: the C# SDK v2.2.0 (August 13) added an `HttpServerSessionMode` that lets a single endpoint serve both 2025-11-25 stateful clients and 2026-07-28 stateless clients, the pattern to copy if you operate a server fleet with mixed clients.
+**The migration to the stateless revision is real but slow.** npm downloads for October 2026: about 245.8M for the v1 TypeScript SDK (`@modelcontextprotocol/sdk`) against about 62.1M for `@modelcontextprotocol/core`, 49.2M for `@modelcontextprotocol/server`, and 32.9M for `@modelcontextprotocol/client`. On a single-package comparison v2 is now roughly 13 to 25 percent of v1 volume, about double September's 8 to 13 percent, and v1 is still growing (about 207M in the 30 days to August 14, 231.9M in September). Downloads count CI installs and transitive dependencies, so read the ratio as a trend, not a census of servers. Plan for a long dual-version period: the C# SDK v2.2.0 (August 13) added an `HttpServerSessionMode` that lets a single endpoint serve both 2025-11-25 stateful clients and 2026-07-28 stateless clients, the pattern to copy if you operate a server fleet with mixed clients.
 
-The SDK majors break code even where the wire protocol does not. In Python, `pip install mcp` has resolved to 2.x since 2.0.0 (July 28): `FastMCP` became `MCPServer`, a single `Client` replaced v1's transport-plus-`ClientSession` layering, and v1 gets security and critical fixes only, so tutorials that import `FastMCP` break on a fresh install. Agent frameworks followed within weeks (OpenAI Agents SDK 0.20.0 supports both majors; LangChain 1.4.0 gates MCP interrupt routing on the negotiated protocol era), which shows the blast radius of a major version in a dependency every framework shares. Tier 1 SDKs are now TypeScript, Python, C#, Go, Rust (promoted August 21), and Ruby (promoted September 28); Java is Tier 2, and Swift, PHP, and Kotlin are Tier 3. The conformance suite publishes frozen requirement sets for the revision (0.2.0-alpha.12 as of October 1).
+The SDK majors break code even where the wire protocol does not. In Python, `pip install mcp` has resolved to 2.x since 2.0.0 (July 28): `FastMCP` became `MCPServer`, a single `Client` replaced v1's transport-plus-`ClientSession` layering, and v1 gets security and critical fixes only, so tutorials that import `FastMCP` break on a fresh install. Agent frameworks followed within weeks (OpenAI Agents SDK 0.20.0 supports both majors; LangChain 1.4.0 gates MCP interrupt routing on the negotiated protocol era), which shows the blast radius of a major version in a dependency every framework shares. Tier 1 SDKs are now TypeScript, Python, C#, Go, Rust (promoted August 21), and Ruby (promoted September 28); Java is Tier 2, and Swift, PHP, and Kotlin are Tier 3. The conformance suite publishes frozen requirement sets for the revision (still 0.2.0-alpha.12 in early November).
 
-**Governance**: MCP is governed under the Linux Foundation's Agentic AI Foundation (AAIF), which now hosts six projects (MCP, goose, AGENTS.md, agentgateway, A2A, and Agent Router, the former Envoy AI Gateway) and reported 247 member organizations on August 12. The Governance Working Group runs a Contributor Ladder and a delegation model allowing domain-specific working groups to accept SEPs (Specification Enhancement Proposals) without full core-maintainer review; the 2026-07-28 revision added a formal Extensions Track, and since September 28 SEP authors must discuss a proposal with the relevant working or interest group before opening the SEP pull request. AAIF also launched the first vendor-neutral MCP credential on September 14, the Model Context Protocol Associate (MCPA): $250, 90 minutes, aligned to 2026-07-28, with 24 percent of the exam on security and governance.
+**Governance**: MCP is governed under the Linux Foundation's Agentic AI Foundation (AAIF), which on October 22 added four projects (Agent Skills from Anthropic, Open Responses from OpenAI, OpenEnv from Hugging Face, and OpenSandbox from Alibaba) to the original six (MCP, goose, AGENTS.md, agentgateway, A2A, and Agent Router, the former Envoy AI Gateway), for **10 hosted projects and 305 member organizations**. The practical point: the skills format, an open Responses-style API, agent environments, and sandboxes now share the foundation that governs the tool protocol, so the "is this a single-vendor bet" question has the same answer for most of the agent stack. The Governance Working Group runs a Contributor Ladder and a delegation model allowing domain-specific working groups to accept SEPs (Specification Enhancement Proposals) without full core-maintainer review; the 2026-07-28 revision added a formal Extensions Track, since September 28 SEP authors must discuss a proposal with the relevant working or interest group before opening the SEP pull request, and under SEP-3398 a SEP needs a working group or Core Maintainer sponsor before formal review. AAIF also launched the first vendor-neutral MCP credential on September 14, the Model Context Protocol Associate (MCPA): $250, 90 minutes, aligned to 2026-07-28, with 24 percent of the exam on security and governance.
 
 Sources: modelcontextprotocol.io (specification, roadmap, extensions), blog.modelcontextprotocol.io, github.com/modelcontextprotocol, aaif.io
 
@@ -310,7 +328,7 @@ flowchart TD
 
 | Layer | Standardizes | Unit | Governance |
 |-------|--------------|------|------------|
-| **Agent Skills** (`SKILL.md`) | Procedures and domain knowledge the agent applies | A folder with frontmatter plus optional scripts and assets; can also be served remotely through the MCP skills extension | agentskills.io |
+| **Agent Skills** (`SKILL.md`) | Procedures and domain knowledge the agent applies | A folder with frontmatter plus optional scripts and assets; can also be served remotely through the MCP skills extension | Linux Foundation, Agentic AI Foundation (since October 22, 2026); spec at agentskills.io |
 | **MCP** | Access to tools, data, and resources | A server speaking JSON-RPC over stdio or Streamable HTTP | Linux Foundation, Agentic AI Foundation |
 | **Agent Plugins** | Distribution and installation of the two above | A directory with `plugin.json` | Agent Plugins TSC |
 | **A2A** | Delegation between agents across vendor or org boundaries | An agent endpoint described by an Agent Card (signing optional) | Linux Foundation, Agentic AI Foundation (since August 2026) |
@@ -352,13 +370,13 @@ The v1.0 methods are `SendMessage`, `SendStreamingMessage`, `GetTask`, `ListTask
 
 A2A tasks support long-running operations with streaming status updates, making it suitable for enterprise workflows spanning minutes or hours.
 
-**What v1.1 adds (unreleased).** Work on the `dev-1.1` branch includes a monotonically increasing `Task.generation` field (merged August 12, 2026). Clients use it to detect missed events, long-poll with `current_generation`, and do compare-and-set with `if_generation_match`, which fails with HTTP 412 or gRPC `ABORTED` on a mismatch. That is the textbook answer to several clients safely steering one long-running remote task without lost updates. The roadmap (September 15) also lists bidirectional streaming and an official A2A CLI for coding-harness integration.
+**What v1.1 adds (unreleased).** Work on the `dev-1.1` branch includes a monotonically increasing `Task.generation` field (merged August 12, 2026). Clients use it to detect missed events, long-poll with `current_generation`, and do compare-and-set with `if_generation_match`, which fails with HTTP 412 or gRPC `ABORTED` on a mismatch. That is the textbook answer to several clients safely steering one long-running remote task without lost updates. October added more to the same branch: a `SendLiveMessage` method for bidirectional interaction (merged October 19), client-written artifacts on `SendMessage` (October 20), `SubscribeToTask` moved from POST to GET (October 13), and discovery guidance that now prefers the AI Catalog over `/.well-known/agent-card.json` (October 21). The official A2A CLI for coding-harness integration, a roadmap item in September, was introduced October 2 (a2a-cli v0.3.1 on October 16).
 
 ### Industry Adoption
 
 - Backed by 50+ technology partners at launch, including Atlassian, Salesforce, SAP, LangChain, and PayPal
 - Donated to the **Linux Foundation** in June 2025, and accepted into the **Agentic AI Foundation** as a Growth Stage project on August 17, 2026, so MCP and A2A now share one neutral foundation; AAIF cites 150+ supporting organizations and native A2A support in Google Cloud, Amazon Bedrock AgentCore, and Microsoft Azure AI Foundry
-- **Version 0.3** (July 2025) added gRPC support, signed Agent Cards, and extended Python SDK support. **v1.0.0** shipped March 12, 2026, and **v1.0.1** (May 28, 2026) is still the latest specification release as of October 2026; there is no protocol v1.2. Higher numbers belong to SDKs: a2a-python 1.2.1 (the 1.2 line added a multi-replica cluster mode), a2a-js 1.3.0, a2a-java 1.4.0.Final, and a2a-go v2.6.0
+- **Version 0.3** (July 2025) added gRPC support, signed Agent Cards, and extended Python SDK support. **v1.0.0** shipped March 12, 2026, and **v1.0.1** (May 28, 2026) is still the latest specification release in early November 2026; there is no protocol v1.2. Higher numbers belong to SDKs: a2a-python 1.3.0 (October 27; the 1.2 line added a multi-replica cluster mode), a2a-js 1.3.0, a2a-java 1.4.0.Final, and a2a-go v2.7.0 (October 21)
 - NIST launched an "AI Agent Standards Initiative" in February 2026 partly in response to A2A/MCP momentum
 
 Sources: github.com/a2aproject/A2A (releases, specification, roadmap), aaif.io/blog/a2a-joins-aaif
@@ -471,6 +489,18 @@ The reason this matters more than it sounds: in the stateful era the session its
 
 The advisory flow since then confirms it. Between August 15 and October 1, 2026 the GitHub Advisory Database published 73 reviewed advisories with MCP in the title (9 critical), led by arbitrary file read, write, or path traversal (about 24), authentication or authorization bypass (about 20), SSRF, and DNS rebinding or missing Origin checks (8). The popular community **mcp-atlassian** server (Jira and Confluence) took 25 on one day, September 22 (fixed in 0.22.0): the critical one (CVE-2026-77244) was an HTTP-transport token verifier that accepted any non-empty string, and several `upload_attachment` flaws read arbitrary server-local files and exfiltrated them as Jira or Confluence attachments. IBM's ContextForge sandbox server (CVE-2026-53710, CVSS 10.0, fixed in 1.0.2) showed that a regex-guarded Python sandbox is not a sandbox: dunder names built at runtime walked the class hierarchy to `subprocess.Popen` through the `execute_code` tool. Four rules fall out: verify tokens cryptographically, never by presence; treat upload and attachment tools as exfiltration channels; allowlist arguments, not executables; and give containers an egress policy, not just isolation.
 
+### Stateless Protocol, Shared Object: CVE-2026-111770
+
+The stateless core invites a tempting shortcut: if no request depends on a session, build one server object and one transport at startup and let every client use them. In the official TypeScript SDK that pattern was a cross-tenant leak. **CVE-2026-111770** (CVSS 7.7, October 2026): a server or transport shared across clients could deliver one client's responses to another. It affects `@modelcontextprotocol/server` 2.0.0 through 2.2.x and is fixed in 2.3.0, but the fix is not a drop-in upgrade: 2.3.0 enforces one server and one transport per request (stateless) or per session, so applications that created them once at startup must be restructured.
+
+The same release cycle exposed a second default worth knowing. The audience check that rejects tokens issued for some other service (CVE-2026-111771) is fixed in `sdk` 1.32.0 and `server` 2.3.0, but it is **opt-in**: nothing changes until you pass `expectedResource`. Upgrading without configuring it leaves the hole open.
+
+The lessons generalize beyond one SDK:
+
+- **"Stateless" describes the wire, not your process.** Response routing, in-flight request maps, and buffers still live in memory; scope those objects to a request or session, and test with two concurrent clients whose responses must never cross.
+- **A security fix can require code changes**, so a dependency bot that bumps the version and passes CI is not evidence the vulnerability is gone. Read the advisory, not just the changelog.
+- **Opt-in fixes need an owner.** Track them as configuration work items, and add a test that a token minted for another resource is rejected.
+
 ### OAuth Mix-Up: The Multi-Server Client Is the Confused Deputy
 
 On September 28 and 30, 2026 the official SDKs published advisories for an authorization-server mix-up (TypeScript CVE-2026-104850 / GHSA-6qxp-vccf-f47h and Python GHSA-qx49-fqc8-xw99, both CVSS 7.5). The SDK OAuth clients let the MCP server decide which authorization server received the client's credentials, so a malicious or compromised server could name its own authorization server and, with no user interaction, receive stored refresh tokens, client secrets, or a bundled provider's signed assertion. Fixed in TypeScript 1.31.0 / 2.2.0 and Python 1.30.0 / 2.2.0, but upgrading is not the whole fix:
@@ -489,7 +519,8 @@ The design rule: **bind every credential to its issuer, and never let a resource
 
 ### Defense-in-Depth Checklist for Production MCP
 
-- All remote MCP servers run behind OAuth 2.1 with PKCE and audience-bound tokens (RFC 8707), and verify signature, issuer, and audience on every request.
+- All remote MCP servers run behind OAuth 2.1 with PKCE and audience-bound tokens (RFC 8707), and verify signature, issuer, and audience on every request. The SDK audience checks are off by default (`expectedResource` in TypeScript), so turn them on explicitly.
+- Server and transport objects are created per request or per session, never shared across clients (CVE-2026-111770).
 - Clients bind every stored credential to its issuer and refuse to send it to an authorization server the MCP server names.
 - Write-capable and sensitive tools demand step-up scopes (403 `insufficient_scope`); high-value deployments use DPoP-bound tokens.
 - Local HTTP servers bind to loopback and validate `Origin` and `Host`; request bodies are capped (4 MiB) and server sessions are capped and reclaimed.
@@ -524,6 +555,7 @@ The pipeline is deliberately conservative. Every layer can reject; only the resu
 - [A2A v1.0.1 release](https://github.com/a2aproject/A2A/releases/tag/v1.0.1) and [A2A joins AAIF](https://aaif.io/blog/a2a-joins-aaif)
 - [MCP roadmap](https://modelcontextprotocol.io/development/roadmap) and [The New MCP Roadmap (August 22, 2026)](https://blog.modelcontextprotocol.io/posts/mcp-roadmap/)
 - [MCP TypeScript SDK OAuth mix-up advisory (GHSA-6qxp-vccf-f47h)](https://github.com/modelcontextprotocol/typescript-sdk/security/advisories/GHSA-6qxp-vccf-f47h)
+- [MCP TypeScript SDK shared server and transport advisory, CVE-2026-111770 (GHSA-jm63-cq47-j5jp)](https://github.com/advisories/GHSA-jm63-cq47-j5jp)
 - [GitHub Advisory Database: reviewed MCP advisories](https://github.com/advisories?query=type%3Areviewed+mcp)
 - [RFC 8707: Resource Indicators for OAuth 2.0](https://www.rfc-editor.org/rfc/rfc8707)
 - [Adversa AI: Top MCP Security Resources May 2026](https://adversa.ai/blog/top-mcp-security-resources-may-2026/)
@@ -559,7 +591,7 @@ response = client.messages.create(  # GA: no beta namespace or beta header
 )
 ```
 
-**Migration trap:** Claude Opus 5.5 and Sonnet 5.5 return HTTP 400 for the older `computer_20251124` tool on the Claude API and Google Cloud (Bedrock still accepts it), and samples that target `claude-3-7-sonnet-20250219` or `claude-sonnet-4-20250514` point at retired models.
+**Migration trap:** the Claude 5.5 models (Opus, Sonnet, and Haiku) return HTTP 400 for the older `computer_20251124` tool on the Claude API and Google Cloud (Bedrock still accepts it), and samples that target `claude-3-7-sonnet-20250219` or `claude-sonnet-4-20250514` point at retired models.
 
 **Batch actions move the human gate.** Claude can now return several computer `tool_use` blocks in one turn. The executor runs them in order and halts at the first failure, answering each later block with `is_error` and "Not executed: an earlier computer action in this turn failed." One model round trip can therefore complete a multistep consequential action, which cuts per-step latency and cost but means a confirmation placed between model turns arrives too late. Anthropic's docs put the human check before each block runs: inspect every action in the batch when it arrives, and pause before each consequential one executes, including one in the middle of a batch. Treat a rejection like a failure: return `is_error` for that block, answer the rest of the batch with the halt text, and let the model replan.
 
@@ -636,6 +668,11 @@ This is the OAuth mix-up attack with the agent client as the confused deputy, an
 
 The principle: a resource server never gets to choose where secrets go.
 
+### Q: The 2026-07-28 revision made MCP stateless. Can you now run one server object for all clients behind a load balancer?
+
+**Strong answer:**
+Run many instances, yes; share one object across clients, no. Stateless means no protocol session ties a client to an instance, so any replica can serve any request. It does not mean the in-process objects are safe to share: the server and transport still hold in-flight request maps and response routing. The official TypeScript SDK proved it with CVE-2026-111770: a server or transport shared across clients could hand one client's responses to another, and the fix in 2.3.0 required code changes, one server and transport per request or session. My design: construct the server per request on stateless endpoints, keep cross-call state in server-minted handles bound to the authenticated user, turn on the SDK audience check explicitly (it ships off), and add a concurrency test with two tenants whose responses must never cross. I would also expect wrappers built on the SDK to pick up such fixes weeks later, so I check which SDK version my framework actually bundles.
+
 ---
 
 ## References
@@ -643,6 +680,11 @@ The principle: a resource server never gets to choose where secrets go.
 - Model Context Protocol. "Authorization" (revision 2026-07-28). https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization
 - Model Context Protocol blog. "The New MCP Roadmap" (August 22, 2026). https://blog.modelcontextprotocol.io/posts/mcp-roadmap/
 - Model Context Protocol. "Skills extension overview" (September 2026). https://modelcontextprotocol.io/extensions/skills/overview
+- Model Context Protocol. "SEP-3398: Release Cycle Updates" (accepted October 2026). https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/seps/3398-release-cycle-updates.md
+- Model Context Protocol. "SEP-3392: Extension Lifecycle" (final October 2026). https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/seps/3392-extension-lifecycle.md
+- Model Context Protocol. "Extensions overview" (stages, promotion to core, and each extension's current stage). https://modelcontextprotocol.io/extensions/overview
+- Model Context Protocol. "SEP-2127: MCP Server Cards" (final October 2026). https://github.com/modelcontextprotocol/modelcontextprotocol/pull/2127
+- Linux Foundation. "Agentic AI Foundation announces four new projects" (October 22, 2026). https://www.linuxfoundation.org/press/agentic-ai-foundation-announces-four-new-projects-agent-skills-open-responses-openenv-and-opensandbox
 - Model Context Protocol blog. "Enterprise-Managed Authorization" (June 2026). https://blog.modelcontextprotocol.io/posts/enterprise-managed-auth/
 - Anthropic. "The Model Context Protocol Specification" (2025)
 - A2A Project. "Agent2Agent Protocol Specification v1.0.1" (May 2026). https://github.com/a2aproject/A2A/releases/tag/v1.0.1

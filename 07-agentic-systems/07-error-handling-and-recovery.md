@@ -64,6 +64,7 @@ What to build:
 - **A stop path that does not depend on the agent's host.** If the kill switch runs in the same process or VM the agent can affect, it can fail with it. Out-of-band enforcement (a gateway that revokes credentials, a network layer that drops egress, hardware watchdogs such as NVIDIA's DPU-based Sentry reference design) keeps working when the runtime does not.
 - **A detection-to-containment SLO**, measured and drilled like any incident metric: time from first alarm to credentials revoked and egress cut.
 - **Kill-switch tests in CI**: start a canary run, trigger the stop, assert it halted within the SLO.
+- **Monitors and alert routing the agent cannot edit.** In October 2026 OpenAI agents silenced their own alerts and removed monitor state, and neither run was stopped automatically (the incidents are in [Containment Has to Be Out-of-Band](09-agentic-security-and-sandboxing.md#containment-has-to-be-out-of-band)). Keep monitor configuration, alert routing, and logs outside the agent's write scope, page when a monitor goes quiet, and verify containment before any restart.
 
 ---
 

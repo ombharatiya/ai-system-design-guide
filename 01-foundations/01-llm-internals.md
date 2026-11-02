@@ -116,7 +116,7 @@ Decoder-only still dominates, but the encoder has reappeared inside a large gene
 
 ## Mixture of Experts (MoE)
 
-**The default architecture for open-weight frontier models (DeepSeek V4 and V4.1, Kimi K3, GLM-5.3, Qwen3.8, MiMo-V2.6, Tencent Hy4; earlier, Llama 4 Maverick and Mixtral).** Google's Gemini technical reports and model cards describe sparse MoE transformers; OpenAI and Anthropic do not publish their architectures, so treat any claim about GPT or Claude internals as speculation.
+**The default architecture for open-weight frontier models (DeepSeek V4 and V4.1, Kimi K3, GLM-5.3, Qwen3.8, MiMo-V2.6, Tencent Hy4, and October 2026's Mistral Large 4 and Meta Muse Spark Open; earlier, Llama 4 Maverick and Mixtral).** Google's Gemini technical reports and model cards describe sparse MoE transformers; OpenAI and Anthropic do not publish their architectures, so treat any claim about GPT or Claude internals as speculation.
 
 MoE replaces the dense Feed-Forward Network (FFN) with multiple "experts" and a "router" that selects which experts process a given token.
 

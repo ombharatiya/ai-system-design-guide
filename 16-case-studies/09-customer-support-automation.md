@@ -136,7 +136,7 @@ flowchart LR
 
 **Why not translate to English and back?**
 
-Earlier versions of this design pivoted through English to keep one prompt and one knowledge base. Current small models (GPT-6 Luna, Gemini 3.8 Flash, Claude Haiku 4.5) handle the major languages directly, so the pivot now costs more than it saves: two extra model calls per turn, more latency, and lost tone, which the escalation logic needs for its sentiment signal. Keep the knowledge base in English and retrieve across languages with a multilingual embedding model (Cohere Embed 5 covers 100+ languages). Translate only where a human needs it, such as the handoff summary for an agent who does not read the customer's language. Validate the long-tail languages on your own eval set; quality is not uniform across all 12.
+Earlier versions of this design pivoted through English to keep one prompt and one knowledge base. Current small models (GPT-6 Luna, Gemini 3.8 Flash, Claude Haiku 5.5) handle the major languages directly, so the pivot now costs more than it saves: two extra model calls per turn, more latency, and lost tone, which the escalation logic needs for its sentiment signal. Keep the knowledge base in English and retrieve across languages with a multilingual embedding model (Cohere Embed 5 covers 100+ languages). Translate only where a human needs it, such as the handoff summary for an agent who does not read the customer's language. Validate the long-tail languages on your own eval set; quality is not uniform across all 12.
 
 ---
 
@@ -175,7 +175,7 @@ Treat the escalation reason as product data, not just routing data. Anthropic's 
 
 ## Cost Analysis
 
-October 2026 list prices; assumes ~3 turns per ticket at ~4K input tokens per turn.
+November 2026 list prices; assumes ~3 turns per ticket at ~4K input tokens per turn.
 
 | Component | Cost per Ticket |
 |-----------|-----------------|

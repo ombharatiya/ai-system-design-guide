@@ -365,7 +365,7 @@ DevOps / Platform Engineer
 #### Your 90-Day Plan
 
 **Month 1: LLM Serving**
-- Deploy vLLM 0.30.0 or later (the current security floor after more than 20 advisories in August and September 2026, including a model-load remote-code-execution bug) serving a small Apache-2.0 model such as IBM Granite 4.2 8B
+- Deploy vLLM 0.32.0 or later (the security floor since October 18, 2026: 0.30.0 closed more than 20 advisories from August and September, including a model-load remote-code-execution bug, and 0.32.0 fixes two October CVEs that affect it; note that 0.32.0 requires Python 3.11 and no longer allows all CORS origins by default) serving a small Apache-2.0 model such as IBM Granite 4.2 8B
 - Add Prometheus metrics: tokens/sec, latency P50/P95/P99, queue depth
 - Set up auto-scaling based on request queue
 - Read this repo: [04-inference-optimization](04-inference-optimization/), [11-infrastructure-and-mlops](11-infrastructure-and-mlops/)
@@ -541,7 +541,7 @@ The breakout hybrid role of 2026 is the **Forward Deployed Engineer (FDE)**, an 
 1. **GitHub portfolio**: One polished end-to-end project beats 10 toy projects
 2. **Write a blog post**: Describing one real problem you solved and how (error analysis, eval pipeline, RAG latency fix)
 3. **Contribute to open source**: OpenHands, LlamaIndex, DSPy, RAGAS. Even documentation PRs get you noticed.
-4. **Use this repo's interview prep**: [00-interview-prep/01-question-bank.md](00-interview-prep/01-question-bank.md) has 147 questions with strong answers
+4. **Use this repo's interview prep**: [00-interview-prep/01-question-bank.md](00-interview-prep/01-question-bank.md) has 155 questions with strong answers
 5. **Get a mock interview or a mentor**: a career switch goes faster with someone who has sat on the other side of the table. Om offers 1:1 mock AI system design interviews and transition mentorship on [EngineBogie](https://enginebogie.com/u/ombharatiya) and [Topmate](https://topmate.io/ombharatiya)
 
 **What to say in interviews:**

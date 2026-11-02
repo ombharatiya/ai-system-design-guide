@@ -126,7 +126,7 @@ Anthropic and Google do not publish vocabulary sizes for Claude and Gemini, and 
 **The vocab-expansion deep dive:**
 - **Llama 3 (128K)**: Meta combined 100K tokens from tiktoken with 28K extra tokens aimed at non-English languages, and reported up to 15% fewer tokens than Llama 2 for the same text. Llama 4 went to ~202K.
 - **GPT-4o through GPT-5.x (o200k_base)**: Doubling cl100k's vocabulary improved compression for code and non-English text, which lowers cost per unit of meaning even at the same per-token price.
-- **Same price, different bill**: a tokenizer change moves your bill without any list-price change. Anthropic's docs say Claude 4.7 and later models use a newer tokenizer that produces roughly 30% more tokens than earlier Claude models for the same text, with the exact increase depending on content. Re-baseline token counts whenever you switch model families.
+- **Same price, different bill**: a tokenizer change moves your bill without any list-price change. Anthropic's docs say Claude 4.7 and later models use a newer tokenizer that produces roughly 30% more tokens than earlier Claude models for the same text, with the exact increase depending on content. Claude Haiku 5.5 brought it to the small tier: about 30% more tokens than Haiku 4.5, so its list price, a tenth of Haiku 4.5's, is a smaller cut per unit of text than the rate card says. Re-baseline token counts whenever you switch model families.
 
 ### Character vs Subword vs Word
 
@@ -247,7 +247,7 @@ Images are split into patches (e.g., 14x14 pixels). Each patch is passed through
 ### Audio/Video Tokenization
 - **Audio**: Compressed into discrete units using codecs like EnCodec, then represented as a sequence of audio tokens.
 - **Video**: Treated as a sequence of image frames (temporal tokenization). A 1-second video @ 1FPS might cost as much as 1 high-res image.
-- **Agentic video processing**: Since September 1, 2026 the Gemini API offers an opt-in `"processing": "agentic"` mode on Gemini 3.7 Flash, 3.6 Flash and 3.5 Flash-Lite (Google's docs also list 3.8 Flash). The model decides which segments to inspect, at what speed and through which modality (frames, audio or transcript) instead of sampling at a fixed rate. Google reports up to 88% fewer tokens and up to 66% lower cost on standard video benchmarks, billed at normal token prices. Static 1 FPS sampling remains the default, so a cost model built on fixed-rate sampling can overestimate agentic-mode tokens by up to roughly 8x.
+- **Agentic video processing**: Since September 1, 2026 the Gemini API offers an opt-in `"processing": "agentic"` mode on Gemini 3.8 Flash, 3.6 Flash and 3.5 Flash-Lite (requests to `gemini-3.7-flash`, also supported at launch, have routed to 3.8 Flash since October 8). The model decides which segments to inspect, at what speed and through which modality (frames, audio or transcript) instead of sampling at a fixed rate. Google reports up to 88% fewer tokens and up to 66% lower cost on standard video benchmarks, billed at normal token prices. Static 1 FPS sampling remains the default, so a cost model built on fixed-rate sampling can overestimate agentic-mode tokens by up to roughly 8x.
 
 ---
 
@@ -305,13 +305,15 @@ With reasoning models, the visible answer is only part of the output bill. Think
 ### Cost Calculation
 
 ```python
-# USD per 1M tokens, standard tier list prices as of October 2026.
+# USD per 1M tokens, standard tier list prices as of November 2026.
 # Excludes cache reads/writes, batch discounts and long-context surcharges
-# (OpenAI bills the whole request at higher rates above 272K input tokens).
+# (OpenAI bills the whole request at higher rates above 272K input tokens,
+# Claude Haiku 5.5 at 5x once the prompt passes 100K tokens).
 PRICING = {
     "gpt-6-sol": {"input": 2.00, "output": 10.00},
     "gpt-6-luna": {"input": 0.10, "output": 0.50},
     "claude-sonnet-5-5": {"input": 2.00, "output": 10.00},
+    "claude-haiku-5-5": {"input": 0.10, "output": 0.50},
 }
 
 def calculate_cost(input_tokens: int, output_tokens: int, model: str) -> float:

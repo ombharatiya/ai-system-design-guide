@@ -1,6 +1,6 @@
 # Claude Code: The Autonomous Coding Agent
 
-Claude Code is Anthropic's **terminal-native autonomous coding agent**. Unlike IDE plugins that started as completion engines, Claude Code was built as an agent from day one: it reads your codebase, edits files, runs commands, executes tests, and iterates until the task is done. It ships as a CLI (2.1.287 on Oct 1, 2026), IDE extensions, desktop and web sessions, and as a library through the Claude Agent SDK.
+Claude Code is Anthropic's **terminal-native autonomous coding agent**. Unlike IDE plugins that started as completion engines, Claude Code was built as an agent from day one: it reads your codebase, edits files, runs commands, executes tests, and iterates until the task is done. It ships as a CLI (npm `latest` 2.1.316 and `stable` 2.1.309 on Oct 31, 2026), IDE extensions, desktop and web sessions, and as a library through the Claude Agent SDK.
 
 ## Table of Contents
 
@@ -60,7 +60,7 @@ flowchart TD
     T --> X["MCP servers and plugins<br/>DB, APIs, internal tools"]
 ```
 
-Claude Code is **model-selectable**, and the defaults move with CLI releases: Opus 5.5 became the default Opus in 2.1.280 (Sep 22, 2026) and Sonnet 5.5 the default Sonnet in 2.1.284 (Sep 28). On these models thinking is adaptive and controlled through the effort setting; Opus 5.5 thinking cannot be switched off. Pin `--model` in CI so a CLI upgrade does not change your model, cost and behavior at the same time.
+Claude Code is **model-selectable**, and the defaults move with CLI releases: Opus 5.5 became the default Opus in 2.1.280 (Sep 22, 2026), Sonnet 5.5 the default Sonnet in 2.1.284 (Sep 28), and Haiku 5.5 the default Haiku on the Anthropic API in 2.1.293 (October). On these models thinking is adaptive and controlled through the effort setting; Opus 5.5 thinking cannot be switched off. Pin `--model` in CI so a CLI upgrade does not change your model, cost and behavior at the same time. Retirements reach the CLI too: fast mode on Opus 4.8 was deprecated on October 30, 2026 and is removed November 30, after which fast-mode requests on Opus 4.8 return an error instead of falling back to standard Opus 4.8.
 
 ---
 
@@ -208,6 +208,7 @@ from claude_agent_sdk import query, ClaudeAgentOptions, ResultMessage
 async def run_coding_task(task: str) -> str | None:
     options = ClaudeAgentOptions(
         model="claude-sonnet-5-5",        # pin it: CLI defaults change between releases
+        permission_mode="dontAsk",        # explicit: the implicit headless mode varies (2.1.302)
         max_turns=30,
         max_budget_usd=5.0,               # hard stop on spend
         allowed_tools=["Read", "Edit", "Bash"],
@@ -229,7 +230,7 @@ result = asyncio.run(run_coding_task(
 ))
 ```
 
-The package was renamed from `claude_code_sdk` / `ClaudeCodeOptions` to `claude_agent_sdk` / `ClaudeAgentOptions`; older tutorials use the old names. The SDK bundles the CLI, which is why its own CI had to pin models when the CLI's default changed in September 2026.
+The package was renamed from `claude_code_sdk` / `ClaudeCodeOptions` to `claude_agent_sdk` / `ClaudeAgentOptions`; older tutorials use the old names. The SDK bundles the CLI, which is why its own CI had to pin models when the CLI's default changed in September 2026, and why the CLI's October change to the headless permission default (below) reaches SDK callers too.
 
 ---
 
@@ -299,7 +300,7 @@ dontAsk             Only pre-approved rules; the rest is denied  CI and other he
 bypassPermissions   Everything but a short never-auto list       Disposable sandboxes only
 ```
 
-**Auto mode is a convenience, not a boundary.** Anthropic made classifier-based auto mode the default for new Pro, Max and Team sessions from Aug 14, 2026, citing a 1,053-tester study in which humans refused a swapped-in dangerous command only 13.6% of the time while the classifier would have blocked 89% (vendor study). By 2.1.284 (Sep 28), any interactive session with no configured permission mode starts in auto. On Aug 26, Johann Rehberger published a "confused environment" attack on Opus 5 in auto mode: an HTTP 415 steered Claude from WebFetch to `curl`, it downloaded encoded files, wrote its own decoder, and a malicious `struct.py` shadowed the standard library. It succeeded in 3 of 5 runs for a C2 chain and 4 of 5 for writes outside the workspace. Anthropic closed the report as informative; Rehberger quotes its position as "The real boundary is OS isolation and network egress control."
+**Auto mode is a convenience, not a boundary.** Anthropic made classifier-based auto mode the default for new Pro, Max and Team sessions from Aug 14, 2026, citing a 1,053-tester study in which humans refused a swapped-in dangerous command only 13.6% of the time while the classifier would have blocked 89% (vendor study). By 2.1.284 (Sep 28), any interactive session with no configured permission mode starts in auto. Headless is different: since 2.1.302 (Oct 16), `claude -p` and Agent SDK sessions with no permission mode start in `default` on third-party providers, with telemetry off, or on a fresh install (interactive sessions still start in auto), so a CI job should always pass `--permission-mode` (or `permission_mode` in the SDK) instead of inheriting one. On Aug 26, Johann Rehberger published a "confused environment" attack on Opus 5 in auto mode: an HTTP 415 steered Claude from WebFetch to `curl`, it downloaded encoded files, wrote its own decoder, and a malicious `struct.py` shadowed the standard library. It succeeded in 3 of 5 runs for a C2 chain and 4 of 5 for writes outside the workspace. Anthropic closed the report as informative; Rehberger quotes its position as "The real boundary is OS isolation and network egress control." Anthropic's own red-team of auto mode (Oct 22) says the same thing in numbers: production monitors failed to block over 55% of attacks, and execute-then-write attacks succeeded 43% of the time against Auto Mode (72% against the Guardian reviewer in OpenAI's Codex, 31% against Guardian Strict).
 
 ### Configuration
 
@@ -323,7 +324,7 @@ bypassPermissions   Everything but a short never-auto list       Disposable sand
 }
 ```
 
-Put team rules in `.claude/settings.json` and organization policy in managed settings, which nothing below them can override. Two caveats a staff engineer should state out loud: deny rules on command strings are a speed bump, since `python -c` can do what `curl` does, and `permissions.defaultMode` values `auto` and `bypassPermissions` are ignored in project or local settings so a cloned repo cannot loosen its own sandbox. Organizations that do not want either mode at all set `permissions.disableAutoMode` or `permissions.disableBypassPermissionsMode` to `"disable"` in managed settings. The `default` mode has been labeled **Manual** in the UI since 2.1.200; both names are accepted.
+Put team rules in `.claude/settings.json` and organization policy in managed settings, which nothing below them can override. Two caveats a staff engineer should state out loud: deny rules on command strings are a speed bump, since `python -c` can do what `curl` does, and `permissions.defaultMode` values `auto` and `bypassPermissions` are ignored in project or local settings so a cloned repo cannot loosen its own sandbox. Organizations that do not want either mode at all set `permissions.disableAutoMode` or `permissions.disableBypassPermissionsMode` to `"disable"` in managed settings. Since 2.1.314, `permissions.blockWritesOutsideWorkingDirectories` makes Write, Edit and NotebookEdit refuse paths outside the working directories in every permission mode, a cheap backstop against the "writes outside the workspace" class of attack. The `default` mode has been labeled **Manual** in the UI since 2.1.200; both names are accepted.
 
 ### Production Safety Rules
 
@@ -332,8 +333,8 @@ Put team rules in `.claude/settings.json` and organization policy in managed set
 3. **Human checkpoint**: For prod deployments, require human review of the final diff. GitHub now lets Copilot code review approvals count toward required reviews (public preview, off by default, Sep 1, 2026), so set branch protection so an agent-authored PR cannot be approved by an agent alone.
 4. **Secret and destination scanning**: Run `truffleHog` or `git-secrets` on every Claude Code output, and block new public repositories, gists and pushes to personal accounts from agent sessions (the PixelLeak channel).
 5. **Budgets**: Set `--max-turns` (recommended: 20-30) and `max_budget_usd` in the SDK to stop runaway loops.
-6. **Version floor**: Plugin4Shell (swapped SHA-pinned plugins) was fixed in 2.1.179 and the GitSpawn `fsmonitor` path in 2.1.196; Manifold reported a second path through `claude ultrareview` still open on 2.1.252. Enforce a floor with the managed `requiredMinimumVersion` setting.
-7. **Extensions are code**: Plugins, hooks and the new mods (2.1.287, Oct 1, 2026) are not sandboxed and run with Claude Code's own access to the machine. Review them like dependencies.
+6. **Version floor**: Plugin4Shell (swapped SHA-pinned plugins) was fixed in 2.1.179 and the GitSpawn `fsmonitor` path in 2.1.196; Manifold reported a second path through `claude ultrareview` still open on 2.1.252; and 2.1.292 fixed hook approvals and auto mode bypassing the permission prompt for file reads from network (UNC) paths. Enforce a floor with the managed `requiredMinimumVersion` setting.
+7. **Extensions are code**: Plugins, hooks and mods (2.1.287, Oct 1, 2026) are not sandboxed and run with Claude Code's own access to the machine. Review them like dependencies, and treat each IDE marketplace as its own supply chain: on Oct 29, 2026, Cursor's marketplace served trojanized `Anthropic.claude-code` versions that Anthropic did not build ([details](../07-agentic-systems/09-agentic-security-and-sandboxing.md#the-developer-workstation-became-the-target)). Allowlist publishers and pin extension versions on developer machines.
 
 ### Enterprise Controls
 
@@ -378,7 +379,7 @@ jobs:
           GIT_CONFIG_KEY_1: core.hooksPath
           GIT_CONFIG_VALUE_1: /dev/null
         run: |
-          npm install -g @anthropic-ai/claude-code@2.1.287   # pin the CLI version
+          npm install -g @anthropic-ai/claude-code@2.1.309   # pin the CLI version (stable channel)
 
           printf '%s' "$ISSUE_BODY" | claude -p "Fix the bug described in the issue text on stdin.
           Rules:
@@ -399,30 +400,30 @@ jobs:
           branch: "ai-fix/${{ github.event.issue.number }}"
 ```
 
-Three details carry the security weight. The issue body is attacker-controlled, so it reaches the shell only through an environment variable (direct `${{ }}` interpolation into `run:` is a classic Actions injection) and reaches the model as data with a narrow tool allowlist. The checkout does not leave the job's write token in `.git/config`, so only the separate PR step can push. And the job pins both the CLI and the model, so a Claude Code release cannot silently change either. Anthropic's `anthropics/claude-code-action` packages the same pattern if you prefer not to maintain the script.
+Three details carry the security weight. The issue body is attacker-controlled, so it reaches the shell only through an environment variable (direct `${{ }}` interpolation into `run:` is a classic Actions injection) and reaches the model as data with a narrow tool allowlist. The checkout does not leave the job's write token in `.git/config`, so only the separate PR step can push. And the job pins the CLI, the model and the permission mode, so a Claude Code release cannot silently change any of them. Anthropic's `anthropics/claude-code-action` packages the same pattern if you prefer not to maintain the script.
 
 ### Cost Model for CI
 
 Coding-agent cost is dominated by **input**, most of it re-sent context. Anthropic's Claude Code telemetry (Sep 24, 2026, vendor-reported) puts the input-to-output token ratio at 324:1, up from 189:1 in March, with context per request up 2.6x. So the cached-input price and the cache hit rate matter far more than the output price.
 
-Illustrative estimates, not measurements. Assumptions: about 300 input tokens per output token; uncached input billed at the 5-minute cache-write rate; list prices per 1M tokens of Sonnet 5.5 ($2 input, $10 output, $2.50 cache write, $0.20 cache read) and Opus 5.5 ($4, $20, $5, $0.20).
+Illustrative estimates, not measurements. Assumptions: about 300 input tokens per output token; uncached input billed at the 5-minute cache-write rate; list prices per 1M tokens of Sonnet 5.5 ($2 input, $10 output, $2.50 cache write, $0.10 cache read since Oct 7, 2026) and Opus 5.5 ($4, $20, $5, $0.20).
 
 | Task Type | Model calls | Input tokens | Output tokens | Sonnet 5.5, 90% cache hits | Opus 5.5, 90% cache hits | Sonnet 5.5, 70% cache hits |
 |-----------|-------------|--------------|---------------|----------------------------|--------------------------|----------------------------|
-| Bug fix (small) | 15 | 750K | 2.5K | $0.35 | $0.56 | $0.69 |
-| Test generation | 25 | 1.75M | 6K | $0.81 | $1.31 | $1.62 |
-| Feature implementation | 50 | 5M | 15K | $2.30 | $3.70 | $4.60 |
-| Large refactor | 120 | 18M | 50K | $8.24 | $13.24 | $16.52 |
+| Bug fix (small) | 15 | 750K | 2.5K | $0.28 | $0.56 | $0.64 |
+| Test generation | 25 | 1.75M | 6K | $0.66 | $1.31 | $1.50 |
+| Feature implementation | 50 | 5M | 15K | $1.85 | $3.70 | $4.25 |
+| Large refactor | 120 | 18M | 50K | $6.62 | $13.24 | $15.26 |
 
-*At 100 CI runs/day (60 bug fixes, 30 test generations, 10 features): about $68/day on Sonnet 5.5 and $110/day on Opus 5.5 at a 90% hit rate; drop the hit rate to 70% and the Sonnet bill roughly doubles to about $136/day.*
+*At 100 CI runs/day (60 bug fixes, 30 test generations, 10 features): about $55/day on Sonnet 5.5 and $110/day on Opus 5.5 at a 90% hit rate; drop the hit rate to 70% and the Sonnet bill more than doubles to about $126/day.*
 
-Three things fall out of the table. Cache hit rate moves cost more than model choice. Opus 5.5 costs roughly 1.6x Sonnet 5.5 here, not 2x, because both read cache at $0.20 per 1M (Opus 5.5's cache-read rate is 0.05x its input price). And Anthropic says harness changes cut Claude Code's cache-miss input by more than half (vendor-reported), which is why a CLI upgrade can change your bill even with the same model.
+Three things fall out of the table. Cache hit rate moves cost more than model choice: losing 20 points of hit rate costs Sonnet about 2.3x, more than switching to Opus. Opus 5.5 now costs exactly 2x Sonnet 5.5 on any mix, because since Sonnet's cache-read cut on Oct 7 every Opus rate is double the Sonnet rate (both read cache at 0.05x input); before the cut, when both read cache at $0.20, cache-heavy work made Opus only about 1.6x. And Anthropic says harness changes cut Claude Code's cache-miss input by more than half (vendor-reported), which is why a CLI upgrade can change your bill even with the same model.
 
 ---
 
 ## Comparison: Claude Code vs Alternatives
 
-| Feature | Claude Code | Codex CLI | Cursor/Windsurf | Cline | OpenHands |
+| Feature | Claude Code | Codex CLI | Cursor / Devin Desktop | Cline | OpenHands |
 |---------|-------------|-----------|-----------------|-------|-----------|
 | **Interface** | CLI + IDE extensions + desktop/web | CLI + IDE extension + cloud | IDE (VS Code fork) + cloud agents | VS Code extension + SDK | Web UI + CLI |
 | **Model** | Claude models (Claude API, Bedrock, Google Cloud, Foundry) | OpenAI models (GPT-6.1 Sol default since rust-v0.159.1) | Any (GPT, Claude, Gemini, Grok, own models) | Any | Any |
@@ -433,16 +434,17 @@ Three things fall out of the table. Cache hit rate moves cost more than model ch
 | **Open source** | No | Yes (Apache-2.0) | No | Yes | Yes |
 | **Best for** | Backend devs, CI/CD | OpenAI shops, CI/CD | UI/frontend devs, visual | Any developer | Self-hosted teams |
 
-### Coding-Agent Benchmarks (late September 2026)
+### Coding-Agent Benchmarks (September and October 2026)
 
 SWE-bench Verified no longer separates frontier agents: scores cluster near the ceiling, and an audit (arXiv 2609.34262) found that 24% (Opus 4.7) to 73% (Fable 5) of passing SWE-Bench Pro v1.0 runs were unearned, mostly through git-history leakage. Use contamination-resistant benchmarks and always cite the effort level and who ran it.
 
 | Benchmark | Result | Runner and effort | Note |
 |-------|-------|-------|-------|
-| Terminal-Bench 4.0 | GPT-6 Astra 58.18% | tbench.ai leaderboard (Sep 21), max | 66 tasks, 8-hour timeout; not comparable to 3.0 |
+| Terminal-Bench 4.0 | Claude Opus 5.5 64.85% (first); Sonnet 5.5 61.82% | tbench.ai leaderboard, max, both in Claude Code (entries added Oct 6) | 66 tasks, 8-hour timeout; not comparable to 3.0. Sonnet's run cost about $7.3K against $4.7K for Opus |
+| Terminal-Bench 4.0 | GPT-6 Astra and GPT-6.1 Sol tied at 58.18% | Leaderboard, max, in Codex | GPT-6.1 Sol's run cost about $634 against $3.3K for Astra |
 | Terminal-Bench 4.0 | Claude Fable 5.1 57.88% | Leaderboard, max/xhigh | |
-| Terminal-Bench 4.0 | Claude Opus 5 53.94% | Leaderboard, xhigh | |
-| Terminal-Bench 4.0 | Claude Opus 5.5 66.4%; Sonnet 5.5 70.6% | Anthropic, vendor-reported (Opus at xhigh) | Released after the Sep 21 leaderboard snapshot |
+| Terminal-Bench 4.0 | Claude Opus 5.5 66.4%; Sonnet 5.5 70.6% | Anthropic, vendor-reported (Opus at xhigh) | Higher than the leaderboard's own runs, and the order of the two models flips |
+| Terminal-Bench 4.0 | Claude Haiku 5.5 39.2% | Anthropic, vendor-reported (Oct 7) | The small-model reference point when routing trivial edits |
 | SWE-Bench Pro v2, private set (272 tasks) | Claude Opus 5 81.6% | Scale (Sep 22), network-locked, pristine re-grade | The public 642-task split is saturated (Opus 5 99.4%) |
 | DeepSWE v1.1 | Three-way tie at 74%: GPT-6 Astra (xhigh, $4.43/task), Gemini 3.8 Flash (high, $2.36/task), Opus 5 (max, $11.84/task) | DeepSWE leaderboard (Sep 22) | Same pass rate, 5x spread in cost per task |
 
@@ -455,7 +457,7 @@ The harness matters as much as the model: the same model scores differently insi
 ### Q: How does Claude Code differ from GitHub Copilot?
 
 **Strong answer:**
-Copilot started as a **completion tool**: it predicts the next few lines of code as you type. Claude Code started as an **autonomous agent**: you give it a task (e.g., "add authentication to this API"), and it reads the codebase, plans the implementation, edits multiple files, runs tests, fixes failures, and only finishes when tests pass. By late 2026 the products have converged (Copilot has a coding agent, desktop computer use in preview and dynamic workflows), so the useful distinction is architectural: where the loop runs (terminal, CI, a vendor cloud, or a self-hosted runner), who controls the model and permissions, and how the result enters review. Copilot is strongest inside the GitHub workflow; Claude Code is strongest as a scriptable agent you embed in your own pipelines.
+Copilot started as a **completion tool**: it predicts the next few lines of code as you type. Claude Code started as an **autonomous agent**: you give it a task (e.g., "add authentication to this API"), and it reads the codebase, plans the implementation, edits multiple files, runs tests, fixes failures, and only finishes when tests pass. By late 2026 the products have converged (Copilot has a coding agent, desktop computer use and dynamic workflows in preview, and Copilot Fusion, GA Oct 28, which routes each task across models with Standard, High or Max effort and Single, Cascade or Critique workflows), so the useful distinction is architectural: where the loop runs (terminal, CI, a vendor cloud, or a self-hosted runner), who controls the model and permissions, and how the result enters review. Copilot is strongest inside the GitHub workflow; Claude Code is strongest as a scriptable agent you embed in your own pipelines.
 
 ### Q: What is CLAUDE.md and why is it critical?
 
@@ -467,13 +469,13 @@ CLAUDE.md is like a `README` specifically written for an AI colleague. Without i
 **Strong answer:**
 Three layers:
 1. **Sandbox**: Run Claude Code inside a container or microVM with a default-deny egress allowlist. Only the git repo, the package mirror and the model endpoint are reachable. Repository git hooks and `fsmonitor` are disabled for agent runs.
-2. **Permission allow-list**: Run headless in `dontAsk` mode with an explicit tool allowlist (test runners, linters, file edits), pin the CLI version and the model, and treat any untrusted text (issue bodies, PR comments) as data passed through environment variables, never interpolated into the workflow script.
+2. **Permission allow-list**: Run headless in `dontAsk` mode, set explicitly because the implicit headless mode differs by environment since 2.1.302, with an explicit tool allowlist (test runners, linters, file edits); pin the CLI version and the model, and treat any untrusted text (issue bodies, PR comments) as data passed through environment variables, never interpolated into the workflow script.
 3. **Human gate**: Claude Code outputs a branch with a diff. A human reviews the diff in a PR and merges. No agent approves an agent-authored PR, even though GitHub now allows Copilot approvals to count toward required reviews.
 
 ### Q: Your team wants to run Claude Code in auto mode on developer laptops. Is that safe?
 
 **Strong answer:**
-It is safer than click-through approvals, and that is all it is. Anthropic's own study found humans refused a swapped-in dangerous command only 13.6% of the time while the classifier would have blocked 89%, so auto mode beats approval fatigue. But Rehberger's August attack got Opus 5 in auto mode to run a C2 chain in 3 of 5 runs by shaping the environment rather than the prompt, and Anthropic's position, as he reports it, is that the real boundary is OS isolation and network egress control. So I would allow auto mode only inside a boundary: a devcontainer or VM per repo with an egress allowlist, no long-lived cloud credentials in the environment, managed settings that pin allowed models and a minimum Claude Code version, and plugins and mods reviewed like dependencies because they run unsandboxed. On a laptop with Full Disk Access and production credentials in the shell, auto mode is not acceptable no matter how good the classifier is.
+It is safer than click-through approvals, and that is all it is. Anthropic's own study found humans refused a swapped-in dangerous command only 13.6% of the time while the classifier would have blocked 89%, so auto mode beats approval fatigue. But Rehberger's August attack got Opus 5 in auto mode to run a C2 chain in 3 of 5 runs by shaping the environment rather than the prompt, Anthropic's October red-team found execute-then-write attacks getting past auto mode 43% of the time, and Anthropic's position, as Rehberger reports it, is that the real boundary is OS isolation and network egress control. So I would allow auto mode only inside a boundary: a devcontainer or VM per repo with an egress allowlist, no long-lived cloud credentials in the environment, managed settings that pin allowed models and a minimum Claude Code version, and plugins and mods reviewed like dependencies because they run unsandboxed. On a laptop with Full Disk Access and production credentials in the shell, auto mode is not acceptable no matter how good the classifier is.
 
 ### Q: How do you handle the cost of Claude Code for high-volume CI?
 
@@ -481,8 +483,8 @@ It is safer than click-through approvals, and that is all it is. Anthropic's own
 I start from where the money goes: coding-agent sessions run at roughly 300 input tokens per output token (Anthropic's September telemetry says 324:1), so cache behavior dominates. Then I optimize in four ways:
 1. **Task scoping**: Claude Code is cost-effective for independent, bounded tasks (bug fixes, test generation). I don't use it for open-ended exploration without a budget.
 2. **Budgets**: `--max-turns` and `max_budget_usd` prevent runaway jobs that burn $10+ on circular reasoning.
-3. **Cache hygiene**: Stable system prompts and tool lists at the front of the context, no timestamps or random IDs in the prefix, and alerting on cache hit rate; a drop from 90% to 70% roughly doubles the bill in my cost model.
-4. **Model routing**: Sonnet 5.5 at default effort for most CI tasks, Opus 5.5 for architectural refactors, and Haiku 4.5 only for trivial edits. Haiku 4.5 is still the only Haiku (Haiku 5.5 is announced, not released as of October 1, 2026). Its retirement is "not sooner than October 15, 2026"; with no deprecation notice issued and Anthropic's 60-day notice rule, it should not retire on the Claude API before about December, but Foundry already lists November 15. I would not build a long-term plan on it. Because Opus 5.5 and Sonnet 5.5 both read cache at $0.20 per 1M, the Opus premium on cache-heavy work is closer to 1.6x than 2x.
+3. **Cache hygiene**: Stable system prompts and tool lists at the front of the context, no timestamps or random IDs in the prefix, and alerting on cache hit rate; a drop from 90% to 70% more than doubles the bill in my cost model.
+4. **Model routing**: Sonnet 5.5 at default effort for most CI tasks, Opus 5.5 for architectural refactors, and Haiku 5.5 (GA Oct 7, the default Haiku since Claude Code 2.1.293) for trivial edits. Haiku 5.5 is cheap but has a cliff: $0.10/$0.50 per 1M for prompts up to 100K tokens, and $0.50/$2.50 for the **whole request** above that, where prompt length counts cache reads and writes, so a long agent session crosses it early. Its newer tokenizer also yields about 30% more tokens for the same text, and it rejects `temperature`, `top_p`, `top_k` and assistant prefill, so I route to it only after an eval run, not on list price. Since Sonnet 5.5's cache-read cut, every Opus 5.5 rate is exactly 2x Sonnet's, so the Opus premium is 2x on any workload and the routing decision is purely about quality.
 
 ---
 

@@ -55,7 +55,7 @@ flowchart LR
 | Trace store | S3 plus Langfuse | Sampling and replay |
 | Trainer | DeepSpeed plus FSDP on 8x H100 | One-week training run |
 | Eval | Per-task golden set, on-call paged on regression | Quality gate |
-| Serving | vLLM 0.30+ (security floor), int4 weights, FP8 KV cache | 350 ms p95 |
+| Serving | vLLM 0.32+ (security floor), int4 weights, FP8 KV cache | 350 ms p95 |
 
 ### Data flow
 
@@ -63,7 +63,7 @@ flowchart LR
 2. The sampler pulls stratified samples by task category, with rebalancing to ensure rare categories are represented.
 3. The teacher (frontier model) generates target outputs for each sample, often with chain-of-thought reasoning traces if the task benefits from reasoning distillation.
 4. A 5 percent human spot-check by domain experts catches teacher mistakes; we apply rejection sampling, keeping only pairs where human reviewers agree with the teacher.
-5. The student is fine-tuned for about 1 week on 8x H100 (~$4K to $5.4K compute: 1,344 H100-hours at $2.77 to $3.99 per GPU-hour), producing an 8B model.
+5. The student is fine-tuned for about 1 week on 8x H100 (~$3.9K to $5.4K compute: 1,344 H100-hours at $2.93 to $3.99 per GPU-hour), producing an 8B model.
 6. The model passes per-task evals, runs in shadow against production for 2 weeks, then gradual rollout: 5 percent, 20 percent, 50 percent, 90 percent over 3 weeks, with auto-rollback wired to live quality metrics.
 
 ## Key Design Decisions
@@ -110,7 +110,7 @@ Distillation is not always right. Signals against:
 - Tasks are highly variable. If every request is unique, the student cannot learn a useful distribution.
 - The teacher itself is unstable or rapidly evolving. Re-distilling against a moving target wastes effort.
 - Quality bar is very tight (over 99 percent fidelity required). The distillation gap is real; if you cannot tolerate it, stick with the teacher.
-- A small hosted model already passes your golden set. Hosted prices fell hard in 2026: GPT-6 Luna launched at $0.10/$0.50 per 1M tokens, 40x below Claude Opus 5.5's $4/$20, and the mid tier converged on $2/$10. For high-volume classification and extraction, routing to a small hosted model with a good prompt can land below the student's $9K monthly run rate with no training pipeline at all. Distill when the small hosted models fail your golden set, when latency or residency rules them out, or when volume makes self-hosting cheaper.
+- A small hosted model already passes your golden set. Hosted prices fell hard in 2026: GPT-6 Luna launched at $0.10/$0.50 per 1M tokens, 40x below Claude Opus 5.5's $4/$20, Claude Haiku 5.5 matched that price on October 7 for prompts up to 100K tokens, GPT-6.1 Terra opened a $1/$5 tier, and the mid tier settled at $2/$10. For high-volume classification and extraction, routing to a small hosted model with a good prompt can land below the student's $9K monthly run rate with no training pipeline at all. Distill when the small hosted models fail your golden set, when latency or residency rules them out, or when volume makes self-hosting cheaper.
 
 We use a quick-screen heuristic: at least 60 percent of traffic falls into 5 or fewer task patterns, and monthly spend on those tasks exceeds $20K. If both fail, we pass on distillation.
 
@@ -137,10 +137,10 @@ Production traces contain user PII by definition. Before training we run a redac
 | Monthly run-rate | Before | After |
 |------------------|--------|-------|
 | Frontier model (10 percent of traffic, plus re-distillation harness) | $50K | $5K |
-| Student model serving (vLLM on two dedicated H100s, one for redundancy, about $2,000 each per month at the $2.77/GPU-hr October 1 index) | $0 | ~$4K |
-| **Monthly total** | **$50K** | **$9K** |
+| Student model serving (vLLM on two dedicated H100s, one for redundancy, about $2,100 each per month at the $2.93/GPU-hr November 1 Silicon Data index) | $0 | ~$4.3K |
+| **Monthly total** | **$50K** | **~$9.3K** |
 
-Monthly savings: roughly $41K. Payback: 96K / 41K, about 2.3 months. We quote "under 3-month payback" to finance.
+Monthly savings: roughly $41K. Payback: 96K / 40.7K, about 2.4 months. We quote "under 3-month payback" to finance.
 
 Re-distillation costs about $9K every 5 months on average, which we amortize against the same savings line. Net annual savings: about $470K.
 

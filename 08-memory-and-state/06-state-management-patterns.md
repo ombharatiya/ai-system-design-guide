@@ -1,6 +1,6 @@
 # State Management Patterns
 
-State management in AI systems has moved from simple "sessions" to **Stateful Agent Graphs**. Managing the flow and persistence of an agent's "mind" is as critical as the LLM itself: it is one of the main reasons LangGraph (1.2.12, released September 21, 2026) has become the default control-flow runtime for LangChain-built agents. In 2026 a second question joined "how do I structure state?": **who holds it**, your checkpointer, a durable workflow engine, or a managed agent platform.
+State management in AI systems has moved from simple "sessions" to **Stateful Agent Graphs**. Managing the flow and persistence of an agent's "mind" is as critical as the LLM itself: it is one of the main reasons LangGraph (1.2.19, released October 30, 2026) has become the default control-flow runtime for LangChain-built agents. In 2026 a second question joined "how do I structure state?": **who holds it**, your checkpointer, a durable workflow engine, or a managed agent platform.
 
 ## Table of Contents
 

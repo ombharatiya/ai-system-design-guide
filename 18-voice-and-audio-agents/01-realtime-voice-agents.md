@@ -2,7 +2,7 @@
 
 A voice agent is a soft-real-time media system wrapped around an LLM. The reasoning is the easy part; the hard part is **timing**: get audio in, decide when the human actually stopped talking, think, and get audio back out fast enough that the conversation feels alive. Miss the timing and users talk over the agent, repeat themselves, and hang up. This chapter covers the three architectures, turn-taking and barge-in, latency and cost per minute, telephony, session limits, evaluation, and regulation.
 
-A scoping note: read this if you are building telephony, support, or voice-first products. If you are not, the [agent fundamentals](../07-agentic-systems/01-agent-fundamentals.md) and [tool-use](../17-tool-use-and-computer-agents/01-tool-use-landscape.md) chapters cover the parts that transfer. Model names, prices, and latency figures below are an October 2026 snapshot and move monthly. Numbers marked **vendor-reported** come from the vendor; per-minute figures marked **derived** are arithmetic from list prices.
+A scoping note: read this if you are building telephony, support, or voice-first products. If you are not, the [agent fundamentals](../07-agentic-systems/01-agent-fundamentals.md) and [tool-use](../17-tool-use-and-computer-agents/01-tool-use-landscape.md) chapters cover the parts that transfer. Model names, prices, and latency figures below are an early November 2026 snapshot and move monthly. Numbers marked **vendor-reported** come from the vendor; per-minute figures marked **derived** are arithmetic from list prices.
 
 ## Table of Contents
 
@@ -30,7 +30,7 @@ Until mid-2026 the standard framing had two shapes: a chained pipeline or a sing
 
 **1. Chained pipeline (cascade):** `mic -> VAD -> streaming STT -> turn detection -> LLM -> streaming TTS -> speaker`. Audio becomes **text** at each boundary, and every stage is a swappable component, often from a different vendor.
 
-**2. Single speech-to-speech model (S2S):** one model hears audio, reasons, calls tools, and emits audio, with text only as a transcription side channel. Current examples: OpenAI's Realtime API (`gpt-realtime-2.1` and `-2.1-mini`, July 6, 2026), Google's `gemini-3.8-live` (GA September 15, 2026), Amazon Nova 2 Sonic (Bedrock scheduled Nova Sonic v1's end of life for September 14, 2026), and xAI's `grok-voice-think-fast-2.0`, which speaks Realtime-compatible events. These are **turn-based**, not full duplex: the Realtime API detects turns with `server_vad` or `semantic_vad`, then responds.
+**2. Single speech-to-speech model (S2S):** one model hears audio, reasons, calls tools, and emits audio, with text only as a transcription side channel. Current examples: OpenAI's Realtime API (`gpt-realtime-2.1` and `-2.1-mini`, July 6, 2026), Google's `gemini-3.8-live` (GA September 15, 2026), Amazon Nova 2.5 Sonic (GA on Bedrock October 5, 2026, at Nova 2 Sonic's price, with a 256K context, seven languages, controllable turn-taking, and asynchronous tool calls), and xAI's `grok-voice-3.0`, which speaks Realtime-compatible events. xAI moved its `grok-voice-latest` alias from `grok-voice-2.0` to 3.0 in October and deprecated 2.0, so anyone on the alias was upgraded without a code change: pin the dated ID and re-run voice evals before you move. These are **turn-based**, not full duplex: the Realtime API detects turns with `server_vad` or `semantic_vad`, then responds.
 
 **3. Full-duplex voice front end with a delegated backend (talker and thinker):** a duplex speech model listens while it speaks and owns the timing (when to answer, backchannel, pause, or yield), and hands reasoning and tool calls to a separate text model. OpenAI's `gpt-live-1` (API GA September 10, 2026) is the reference: **Responses delegation** runs an OpenAI model as the backend (OpenAI's guide suggests `gpt-6-luna` to start and `gpt-6-sol` for harder work), and **client delegation** sends tasks to any agent you run. Gemini 3.8 Live Extended Thinking sits between shapes 2 and 3: one model, but it reasons in the background while it keeps talking. LiveKit Agents 1.8.1 (September 10) added a `DuplexModel` interface, and preprints such as arXiv 2609.19334 (a duplex front end that emits a delegation token to a text backend) formalize the split.
 
@@ -91,10 +91,10 @@ Pick a **duplex front end with a backend** when you already have a text agent wi
 
 ## The Stack
 
-| Layer | Current options (October 2026) | Notes |
+| Layer | Current options (November 2026) | Notes |
 |-------|--------------------------------|-------|
-| **Orchestration** | LiveKit Agents 1.8.4 and Pipecat 1.12.0 (open source); Vapi, Retell, Bland, ElevenLabs Agents, Deepgram Voice Agent (managed) | LiveKit puts nine S2S providers behind one interface, so "few S2S vendors" no longer holds |
-| **S2S and duplex models** | `gpt-live-1`, `gpt-realtime-2.1` / `-2.1-mini`, `gemini-3.8-live` / `-extended-thinking`, Nova 2 Sonic, `grok-voice-think-fast-2.0`; Azure Voice Live (Realtime-compatible, serves `gpt-realtime-2.1`, does not list `gpt-live-1`) | Open full duplex: NVIDIA PersonaPlex (7B, built on Moshi; vendor-reported 0.170 s turn-taking) |
+| **Orchestration** | LiveKit Agents 1.8.10 and Pipecat 1.15.0 (open source); Vapi, Retell, Bland, ElevenLabs Agents, Deepgram Voice Agent (managed) | LiveKit puts nine S2S providers behind one interface, so "few S2S vendors" no longer holds |
+| **S2S and duplex models** | `gpt-live-1`, `gpt-realtime-2.1` / `-2.1-mini`, `gemini-3.8-live` / `-extended-thinking`, Nova 2.5 Sonic, `grok-voice-3.0`; Azure Voice Live (Realtime-compatible, serves `gpt-realtime-2.1`, does not list `gpt-live-1`) | Open full duplex: NVIDIA PersonaPlex (7B, built on Moshi; vendor-reported 0.170 s turn-taking) |
 | **Streaming STT** | Deepgram Flux, AssemblyAI Universal-3.5 Pro Realtime, ElevenLabs Scribe v2 Realtime, OpenAI `gpt-live-transcribe`, Gemini 3.5 Transcribe Live, Cartesia Ink-2; self-hosted NVIDIA `nemotron-3.5-asr-streaming-0.6b` | `whisper-1` and the `gpt-4o-*-transcribe` models shut down February 26, 2027 |
 | **Turn detection** | LiveKit audio `TurnDetector`, Pipecat Smart Turn v3, STT-native end of turn (Deepgram Flux, Cartesia Ink-2) | LiveKit's transcript-based detector is deprecated |
 | **TTS** | ElevenLabs Eleven v4 Turbo (about 100 ms median inference) and Flash v2.5 (about 75 ms), Deepgram Flux TTS (first audio "as low as 80 ms"), Cartesia Sonic 3.6, Gemini 3.8 Flash and Flash-Lite TTS, `gpt-4o-mini-tts`; all latencies vendor-reported | `tts-1`, `tts-1-hd`, and the `gpt-4o-mini-tts` snapshots shut down January 6, 2027, and OpenAI names `gpt-realtime-2.1-mini` as the replacement, so an OpenAI-only cascade ends its TTS stage on a speech-to-speech model. Open: Chatterbox Flash (MIT), Kokoro-82M (Apache 2.0), Voxtral-4B-TTS (CC BY-NC, so no commercial self-hosting) |
@@ -141,7 +141,7 @@ In natural human conversation the gap between speakers averages **~200 ms**. Pro
 | Measurement | Value | Source |
 |-------------|-------|--------|
 | Illustrative cascade turn | 1.044 s: endpointing 0.200 + STT 0.125 + LLM 0.336 + turn completion 0.024 + TTS 0.359 | Pipecat 1.9.0 release notes (an example, not a benchmark) |
-| Time to first audio, reasoning-capable S2S | Grok Voice Think Fast 2.0 0.70 s; Gemini 3.8 Live 1.18 s; `gpt-realtime-2.1` (high) 1.21 s; GPT-Live-1 with an Astra backend at medium 1.34 s | Artificial Analysis (independent) |
+| Time to first audio, reasoning-capable S2S | Grok Voice Think Fast 2.0 0.70 s (measured before xAI deprecated Grok Voice 2.0 for 3.0); Gemini 3.8 Live 1.18 s; `gpt-realtime-2.1` (high) 1.21 s; GPT-Live-1 with an Astra backend at medium 1.34 s | Artificial Analysis (independent) |
 | GPT-Live turn-taking | 0.798 s vs 1.41 s for `gpt-realtime-2.1` | OpenAI (vendor-reported) |
 | Voice-tuned LLM, time to first answer token | Mercury Voice (a diffusion reasoning model, enterprise GA September 29, 2026): 320 ms median, 750 ms p95 on production voice prompts | Inception (vendor-reported) |
 
@@ -181,8 +181,8 @@ Voice is billed on three different meters, and mixing them up is the most common
 | **`gpt-realtime-2.1`** | Audio $32 in / $0.40 cached / $64 out per 1M | ~$0.019 per minute of caller audio, ~$0.077 per minute of agent audio (derived) | The whole conversation is re-sent on every response, so cost per minute rises with call length unless the cached rate applies |
 | **`gpt-realtime-2.1-mini`** | Audio $10 / $0.30 / $20 per 1M | ~$0.006 / ~$0.024 (derived) | Same re-send behavior |
 | **Gemini 3.8 Live** (and Extended Thinking) | Audio $3 in / $12 out per 1M; text $0.75 / $4.50 | ~$0.005 in / ~$0.018 out | Thinking tokens bill as output |
-| **xAI Grok voice** | $0.08 per minute | $0.08 | Flat per minute; text inputs billed separately |
-| **Streaming STT** | `gpt-live-transcribe` $0.017/min; Deepgram Flux $0.0077/min ($0.0065 promotional); AssemblyAI Universal-3.5 Pro Realtime $0.45/hr; ElevenLabs Scribe v2 Realtime $0.39/hr; Gemini 3.5 Transcribe Live ~$0.009/min | $0.0065-0.017 | AssemblyAI bills idle socket time |
+| **xAI Grok voice** | $0.08 per minute (`grok-voice-3.0`, same price as 2.0) | $0.08 | Flat per minute; text inputs billed separately |
+| **Streaming STT** | `gpt-live-transcribe` $0.017/min; Deepgram Flux $0.0077/min pay as you go ($0.0065 on the prepaid Growth plan); AssemblyAI Universal-3.5 Pro Realtime $0.45/hr; ElevenLabs Scribe v2 Realtime $0.39/hr; Gemini 3.5 Transcribe Live ~$0.009/min | $0.0065-0.017 | AssemblyAI bills idle socket time |
 | **TTS** | Gemini 3.8 Flash TTS $0.50 in / $9 out per 1M (promotional to December 31, then $1 / $18); Flash-Lite TTS $6 per 1M audio out (then $12); `gpt-4o-mini-tts` $12 per 1M audio tokens (snapshots shut down January 6, 2027) | Varies | Budget for the January 1, 2027 Gemini doubling |
 | **Bundled platforms** | Vapi $0.05/min plus providers at cost (~$0.08-0.13 before telephony); Retell ~$0.13 in a worked example; Bland $0.12-0.14; ElevenLabs Agents $0.08 ($0.16 burst); Deepgram Voice Agent $0.075 ($0.050 bringing your own LLM and TTS); Cartesia $0.06 | $0.05-0.14 | Platform fee plus model choice |
 | **Streaming translation** | `gpt-realtime-translate` $0.034/min; Gemini 3.5 Live Translate (preview) about $0.037/min | $0.034-0.037 per session minute | One session per target language, so sessions scale with speakers times languages |
@@ -215,7 +215,7 @@ Every vendor caps something, and a long call will hit it:
 | **OpenAI Realtime API** | 60-minute session; the whole conversation is re-sent on every response | Trim and summarize; reconnect with seeded state for longer calls |
 | **OpenAI GPT-Live** | 128K context. Past 90% it starts a replacement voice engine seeded with your instructions plus at most 8,192 tokens of history, including a summary of older turns. Instructions up to 16,384 tokens. No published maximum duration, though an `expired` close reason exists. Outbound SIP calls max 2 hours | Keep slots, bookings, and verified identity in application state; version the context |
 | **Gemini Live (3.8)** | Without context compression, 15 minutes audio-only and 2 minutes audio plus video; a single connection lasts about 10 minutes with a GoAway warning; resumption tokens are valid for 2 hours | Turn on sliding-window compression for long calls; build reconnect and resume |
-| **Amazon Nova 2 Sonic** | 8-minute connection limit (AWS documents a renewal pattern) | Connection renewal with state handoff |
+| **Amazon Nova Sonic** | Nova 2 Sonic: 8-minute connection limit (AWS documents a renewal pattern). The Nova 2.5 Sonic launch materials state no limit, so measure it rather than assume it was lifted | Connection renewal with state handoff |
 
 **Treat the voice model's context as a cache, not the system of record.** OpenAI's GPT-Live docs say as much: compacted conversation history is not your booking record. Anything the business depends on (what the caller confirmed, what was booked, who they proved they are) belongs in application state that survives compaction, reconnects, and model swaps. Two client-side traps from September: on Gemini 3.8 Live Extended Thinking, `turnComplete` no longer means the model is idle (check `interaction_status`), and GPT-Live has no "end of spoken response" event. State machines written for the older APIs break on both.
 
@@ -268,14 +268,14 @@ Your STT and platform choice constrains your compliance posture, so check redact
 | Benchmark | What it measures | Current numbers |
 |-----------|------------------|-----------------|
 | **tau-Voice** (Sierra, arXiv 2603.13686, March 2026) | Tool-using tasks over full-duplex voice with noise, accents, interruptions | Text agent 85%; voice 31-51% on clean audio and 26-38% under realistic conditions; 79-90% of failures were agent behavior |
-| **tau-bench voice leaderboard** (Sierra) | Retail, airline, telecom, banking | `gpt-live-1` 81.7% pass@1 (paired with GPT-6 Astra at medium effort, per launch coverage), Pine Voice Preview 75.4%, `grok-voice-think-fast-1.0` 67.3% |
+| **tau-bench voice leaderboard** (Sierra, 1.x) | Retail, airline, telecom, banking | `gpt-live-1` 81.7% pass@1 (paired with GPT-6 Astra at medium effort, per launch coverage), Pine Voice Preview 75.4%, `grok-voice-think-fast-1.0` 67.3%. tau-bench 2.0.0 (October 19) added six-language packs, frozen voice benchmarks, and a 200-task entity-capture domain, and its release notes say "Scores are not comparable with 1.x" |
 | **Vendor-reported** | Same family of tasks | Google: Gemini 3.8 Live Extended Thinking 68.6% vs 30.1% base, and GPT-Live-1 with Astra 67.9% in Google's table. OpenAI: GPT-Live 83.6% first attempt vs 45.7% for `gpt-realtime-2.1`, with an Astra backend. Not comparable with the leaderboard or with each other |
 | **tau-Elicitation** (arXiv 2609.13602, preprint) | Exact capture of names, IDs, dates | 0.14-0.41 robust exact success |
 | **tau-Multilingual** (arXiv 2609.35820, preprint) | Non-English tasks | Spanish, Portuguese, Hindi within 3.2 points of English; Korean -14.7, Mandarin -8.4 |
 | **APEX-Voice** (arXiv 2609.34973, preprint) | Professional multi-step workflows | No frontier voice system above 25% Pass@1; best Reliable@3 10.8%; stateful coordination is the main failure |
 | **Artificial Analysis speech-to-speech** | Reasoning, conversational dynamics, latency | Big Bench Audio is saturated (top scores 97.6% to 99.7%); Conversational Dynamics: StepAudio 3 98.9%, GPT-Live-1 97.3%, Gemini 3.8 Live 96.1% |
 
-Note which backend produced a duplex score: the same voice layer scores very differently depending on the model behind it. Tooling has caught up partly: the OpenAI Agents SDK added voice testing modules in v0.21.0 (with no GPT-Live support as of v0.22.3), and Pipecat ships a scripted-eval CLI with LLM judges. See [Evaluating Agentic Systems](../07-agentic-systems/10-evaluating-agentic-systems.md).
+Note which backend produced a duplex score: the same voice layer scores very differently depending on the model behind it. Tooling has caught up partly: the OpenAI Agents SDK added voice testing modules in v0.21.0 and made `gpt-transcribe` its default voice STT model in 0.23.0 (a silent swap for anyone who did not pin the model), and Pipecat ships a scripted-eval CLI with LLM judges. See [Evaluating Agentic Systems](../07-agentic-systems/10-evaluating-agentic-systems.md).
 
 ---
 
@@ -287,7 +287,7 @@ Note which backend produced a duplex score: the same voice layer scores very dif
 | **EU Code of Practice on marking** (final June 10, 2026) | Voluntary route to compliance | At least two marking layers (signed metadata plus an imperceptible watermark); audio disclaimers are allowed for audio-only content |
 | **US FCC 24-17** (February 2024) | In force | AI-generated voices are "artificial or prerecorded voice" under the TCPA, so outbound AI calls need prior express consent (written consent for telemarketing); keep a consent ledger per call |
 | **FCC 24-84** (August 2024) | Proposed rule; no final rule found | Would require AI disclosure when collecting consent and at the start of each call; disclose anyway |
-| **FCC consent revocation** (adopted September 30, 2026) | Adopted; effective 30 days after Federal Register publication (not yet published as of early October 2026) | Replaces the 2024 revoke-all rule: a caller may limit an opt-out to the category of informational call it targets, but a telemarketing opt-out still ends all telemarketing. A caller may make one method exclusive (for a voice agent, an automated voice or key-press opt-out) only if the call discloses it clearly and conspicuously. Otherwise any reasonable request counts, so the agent must recognize spoken opt-outs and log their scope |
+| **FCC consent revocation** (FCC 26-67, adopted September 30, 2026) | Final rule published in the Federal Register October 26, 2026; **effective November 25, 2026**. A companion proposal (comments due November 25, replies December 28) asks about a shorter deadline to honor revocations, a revoke-all method, two-way texting, and affiliates | Reaches AI voice calls through FCC 24-17, which treats AI voices as artificial voice. Replaces the 2024 revoke-all rule: a caller may limit an opt-out to the category of informational call it targets, but a telemarketing opt-out still ends all telemarketing. A caller may make one method exclusive (for a voice agent, an automated voice or key-press opt-out) only if the call discloses it clearly and conspicuously. Otherwise any reasonable request counts, so the agent must recognize spoken opt-outs and log their scope |
 | **California AB 2905** | Operative January 1, 2025 | A live natural voice must disclose an AI-generated voice before an autodialed message plays |
 | **Texas TRAIGA** | In effect January 1, 2026 | Disclosure duties for government agencies and health-care providers; voiceprints are biometric identifiers |
 | **Companion-chatbot laws** | Enacted in California (SB 243), New York, New Hampshire, and Hawaii; laws in eight more states take effect during 2027 (Connecticut, Oregon, and Washington on January 1) | AI disclosure and minor protections if your voice product is a companion |
@@ -300,7 +300,7 @@ Note which backend produced a duplex score: the same voice layer scores very dif
 
 ## Honest Maturity
 
-What works well in October 2026: duplex turn-taking that handles backchannels and interruptions; audio turn detection that beats silence thresholds; asynchronous tools with spoken progress; direct SIP to model vendors; and raw audio prices low enough that the platform fee, not the model, dominates many bills.
+What works well in November 2026: duplex turn-taking that handles backchannels and interruptions; audio turn detection that beats silence thresholds; asynchronous tools with spoken progress; direct SIP to model vendors; and raw audio prices low enough that the platform fee, not the model, dominates many bills.
 
 What is still hard: exact capture of names, IDs, and dates; stateful multi-step workflows (no system above 25% Pass@1 on APEX-Voice); non-English quality outside the major European languages; session and connection limits on long calls; verbatim compliance language on duplex models; and audio prompt injection.
 
@@ -336,6 +336,8 @@ I start from what the call must guarantee. If I need verbatim disclosures, per-s
 - Artificial Analysis, [speech-to-speech leaderboard](https://artificialanalysis.ai/speech-to-speech)
 - Twilio, [Media Streams WebSocket messages](https://www.twilio.com/docs/voice/media-streams/websocket-messages)
 - FCC, [Declaratory Ruling FCC 24-17 on AI-generated voices](https://docs.fcc.gov/public/attachments/FCC-24-17A1.pdf)
+- Federal Register, [FCC 26-67 final rule on revoking robocall consent](https://www.federalregister.gov/documents/2026/10/26/2026-21821/enhancing-the-ability-of-consumers-to-control-the-robocalls) (October 26, 2026) and the [companion proposed rule](https://www.federalregister.gov/documents/2026/10/26/2026-21820/modernizing-the-ability-of-consumers-to-control-robocalls)
+- AWS, [Amazon Nova 2.5 Sonic general availability](https://aws.amazon.com/about-aws/whats-new/2026/10/amazon-nova-2.5-Sonic/) (October 5, 2026); xAI, [release notes](https://docs.x.ai/docs/release-notes)
 - European Commission, [Article 50 transparency guidelines](https://digital-strategy.ec.europa.eu/en/library/guidelines-transparency-obligations-providers-and-deployers-ai-systems) and [Code of Practice on AI-generated content](https://digital-strategy.ec.europa.eu/en/policies/code-practice-ai-generated-content)
 - Cekura, [voice AI evaluation metrics](https://www.cekura.ai/blogs/voice-ai-evaluation-metrics)
 

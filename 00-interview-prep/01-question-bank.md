@@ -1,6 +1,6 @@
 # AI System Design Interview Question Bank
 
-A topic-organized bank of 147 AI system design interview questions (Q1-Q147, continuously numbered) with model answers, follow-ups, and signals strong candidates show, plus five unnumbered deep-dive scenarios. Updated through September 2026, with a dedicated Voice AI section.
+A topic-organized bank of 155 AI system design interview questions (Q1-Q155, continuously numbered) with model answers, follow-ups, and signals strong candidates show, plus five unnumbered deep-dive scenarios. Updated through October 2026, with a dedicated Voice AI section.
 
 This chapter provides a comprehensive collection of interview questions organized by topic. Each question includes the depth of answer expected and key points that strong candidates cover. Pair this with the [Answer Frameworks](02-answer-frameworks.md) (the meta-skill that turns memorized answers into fluent ones), the [FAQ](07-faq.md) (short answers to the most-asked AI engineering questions), and the [Job Market Trends](06-job-market-trends-2026.md) (the hiring context that shapes what gets asked right now).
 
@@ -10,7 +10,7 @@ This chapter provides a comprehensive collection of interview questions organize
 
 ```mermaid
 mindmap
-  root((147 Questions))
+  root((155 Questions))
     RAG Architecture
       Pipeline design
       Chunking
@@ -72,8 +72,9 @@ mindmap
 - [Advanced Questions - June 2026](#advanced-questions---june-2026) (Q111-Q116)
 - [Advanced Questions - July 2026](#advanced-questions---july-2026) (Q117-Q122)
 - [Advanced Questions - August 2026](#advanced-questions---august-2026) (Q123-Q128)
-- [Advanced Questions - September 2026](#advanced-questions---september-2026) (Q129-Q135) ⭐ *NEW*
-- [Voice AI Questions](#voice-ai-questions) (Q136-Q147) ⭐ *NEW*
+- [Advanced Questions - September 2026](#advanced-questions---september-2026) (Q129-Q135)
+- [Voice AI Questions](#voice-ai-questions) (Q136-Q147)
+- [Advanced Questions - October 2026](#advanced-questions---october-2026) (Q148-Q155) ⭐ *NEW*
 
 ---
 
@@ -192,7 +193,7 @@ For example, at scale I might fine-tune a smaller model to handle 70% of queries
    - Place critical information at start and end of context
    - Use reranking to ensure quality before stuffing context
    - Consider recursive summarization for long contexts
-   - Use models with strong long-context handling, and check how they bill it: Claude Sonnet 5.5 and Opus 5.5 bill flat to 1M, while GPT-6-family models reach 1.05M but bill the whole request at long-context rates once input passes 272K
+   - Use models with strong long-context handling, and check how they bill it: Claude Sonnet 5.5 and Opus 5.5 bill flat to 1M, Claude Haiku 5.5 bills the whole request at 5x once the prompt passes 100K tokens, and GPT-6-family models reach 1.05M but bill the whole request at long-context rates once input passes 272K
 
 **Sample Answer:**
 
@@ -659,7 +660,7 @@ ReAct is simple and works well, but for complex tasks I often prefer more struct
 | Tool choice control | auto/required/none | auto/none on Fable 5.1, Mythos 5.1, Opus 5.5, Sonnet 5.5 (any/tool return 400; use strict tools or structured outputs); auto/any/tool on older models | auto/any/none |
 | Structured output | Native JSON schema | Native JSON schema | Native JSON schema |
 
-Native JSON-schema structured outputs replace the old "force a tool call to get JSON" trick, which no longer works on the newest Claude models anyway. On OpenAI, GPT-6 Astra supports tool calling only through the Responses API.
+Native JSON-schema structured outputs replace the old "force a tool call to get JSON" trick, which no longer works on Claude Opus 5.5, Sonnet 5.5, or Fable 5.1 anyway (Haiku 5.5 still accepts a forced tool call but skips thinking on it). On OpenAI, GPT-6 Astra supports tool calling only through the Responses API.
 
 **Tool design best practices:**
 1. Clear, action-oriented names: `search_database` not `db_tool`
@@ -792,7 +793,7 @@ Standardizes how LLM applications connect to external tools and data sources. Th
 **Ecosystem and governance:**
 - Governed by the Agentic AI Foundation alongside A2A
 - Tier 1 SDKs: TypeScript, Python, C#, Go, Rust and Ruby (`pip install mcp` installs the 2.x line)
-- The maintainers' August 22, 2026 roadmap names the next priorities: server-initiated events and Tasks, Streamable HTTP as the single transport (including for local servers), agent identity for headless agents (DPoP and workload identity federation), a redesigned tool-call result shape, and progressive discovery for large tool catalogs. No date is set for the next revision.
+- The maintainers' August 22, 2026 roadmap names the next priorities: server-initiated events and Tasks, Streamable HTTP as the single transport (including for local servers), agent identity for headless agents (DPoP and workload identity federation), a redesigned tool-call result shape, and progressive discovery for large tool catalogs. No revision has shipped since 2026-07-28: SEP-3398 (accepted October 14, merged October 27) moves the next release, previously targeted for December 2026, to March 30, 2027, subject to confirmation, and puts future releases on the last Tuesday of March and September. SEP-3392 adds extension maturity stages: MCP Apps and enterprise auth are Stable, while Tasks, Skills and Server Cards are Beta and can still break.
 
 Two roadmap items make good forward-looking design prompts: how a headless agent with its own identity reaches an MCP server without borrowing a user's token, and how to expose thousands of tools without flooding the context window.
 
@@ -899,20 +900,20 @@ result = app.invoke(input, config)
 - Decision framework
 - Cost awareness
 
-**Strong answer (October 1, 2026, verify current):**
+**Strong answer (November 2, 2026, verify current):**
 
 | Factor | Claude Sonnet 5.5 | GPT-6.1 Sol | Gemini 3.8 Flash |
 |--------|-------------------|-------------|------------------|
 | Released | Sep 28, 2026 | Sep 29, 2026 | Sep 2, 2026 (GA) |
 | Context / max output | 1M / 128K | 1.05M / 128K | 1,048,576 / 65,536 |
 | Price per 1M (input / output) | $2 / $10 | $2 / $10 up to 272K input | $0.75 / $3.75 intro through Dec 31, 2026; $1.50 / $7.50 from Jan 1, 2027 |
-| Cache reads | $0.20 (0.1x); 5-minute or 1-hour writes | $0.10 (0.05x); writes 1.25x, fixed 30-minute TTL | $0.075 ($0.15 from Jan 1, 2027) plus $0.50 per 1M tokens per hour of storage ($1.00 from Jan 1, 2027) |
+| Cache reads | $0.10 (0.05x); 5-minute or 1-hour writes | $0.10 (0.05x); writes 1.25x for a 30-minute TTL or 2.5x for a 12-hour TTL | $0.075 ($0.15 from Jan 1, 2027) plus $0.50 per 1M tokens per hour of storage ($1.00 from Jan 1, 2027) |
 | Reasoning control | Adaptive thinking on by default and cannot be disabled; API default effort `high`; lowest setting `between_tools` | Effort `low` to `max`; default `medium` | `thinking_level` low / medium / high; default `medium` |
-| Artificial Analysis Index v4.3.2 | 56 (max) | 52 (max) | 41 (high) |
+| Artificial Analysis Index v5.0 | 54 (max) | 55 (max) | 31 (high) |
 | Computer use | `computer_toolset_20260801` (GA on the Claude API, beta on Bedrock and Foundry) | Supported in the Responses API | Google's recommended computer-use model |
-| Migration traps | Forced `tool_choice`, `thinking: disabled` and non-default temperature return 400 | Whole request billed at 2x input and 1.5x output above 272K input | `thinking_budget` replaced by `thinking_level`; sampling parameters deprecated |
+| Migration traps | Forced `tool_choice` and `thinking: disabled` return 400, and under API version `2026-10-21` (the new SDK majors' default) so does any `temperature`, `top_p` or `top_k`, even at default values | Whole request billed at 2x input and 1.5x output above 272K input | `thinking_budget` replaced by `thinking_level`; sampling parameters deprecated |
 
-Artificial Analysis scores Claude models with Anthropic's safeguard fallback active, and scores from earlier index versions are not comparable with v4.3.2.
+Artificial Analysis scores Claude models with Anthropic's safeguard fallback active, and v4.x scores are not comparable with v5.0, which reweighted the index into four 25% categories (Knowledge Work, Coding, Science, General), 60% of it from private or held-out sets.
 
 **Selection framework:**
 
@@ -923,7 +924,7 @@ Choose **Claude Sonnet 5.5** when:
 
 Choose **GPT-6.1 Sol** when:
 - Your stack already runs on the Responses API, Codex, hosted shell, or OpenAI's multi-agent beta
-- Prompts stay under 272K and reuse long prefixes, where 0.05x cache reads ($0.10 per 1M, half of Sonnet 5.5's) pay off
+- Prompts stay under 272K and reuse long prefixes across hours, where the 12-hour cache TTL keeps 0.05x reads ($0.10 per 1M, the same as Sonnet 5.5's) warm between bursts
 - You want GPT-6 Astra on the same API as an escalation tier
 
 Choose **Gemini 3.8 Flash** when:
@@ -935,11 +936,11 @@ Choose **Gemini 3.8 Flash** when:
 
 "My model selection depends on the specific requirements. Here is how I think about it:
 
-**For most production workloads**, I run a bake-off between Claude Sonnet 5.5 and GPT-6.1 Sol. They list at the same $2/$10, so the decision comes from my evals, API behavior, and cache economics rather than sticker price. Sonnet 5.5 bills flat to 1M tokens; GPT-6.1 Sol has cheaper cache reads but bills the whole request at long-context rates once input passes 272K, so prompt size decides a lot.
+**For most production workloads**, I run a bake-off between Claude Sonnet 5.5 and GPT-6.1 Sol. They list at the same $2/$10, so the decision comes from my evals, API behavior, and cache economics rather than sticker price. Both now read cache at $0.10 per 1M. Sonnet 5.5 bills flat to 1M tokens; GPT-6.1 Sol bills the whole request at long-context rates once input passes 272K but offers a 12-hour cache TTL, so prompt size and reuse pattern decide a lot.
 
-**For the capability ceiling**, Anthropic now tells customers to start with Claude Opus 5.5 ($4/$20) and reserve Claude Fable 5.1 ($10/$50) for demanding reasoning and long-horizon agentic work. OpenAI's ceiling is GPT-6 Astra ($10/$50). Google announced Gemini 4 Argon on September 30, 2026, but it is rolling out to vetted cyber defenders first and is not in the Gemini API, so I would not plan capacity on it yet. I route only ceiling-bound work to those tiers.
+**For the capability ceiling**, Anthropic now tells customers to start with Claude Opus 5.5 ($4/$20) and reserve Claude Fable 5.1 ($10/$50) for demanding reasoning and long-horizon agentic work. OpenAI's ceiling is GPT-6 Astra ($10/$50). Google's Gemini 4 Argon (`gemini-4-argon`) went GA on October 13 at an introductory $2/$10 through November 30, 2026, then $4/$20, so I budget at the higher price; it supports implicit caching only, and its 1M output needs the long-decode protocol (the default is 65,536 tokens). I route only ceiling-bound work to those tiers.
 
-**For cost-sensitive high-volume applications**, I use GPT-6 Luna ($0.10/$0.50), Gemini 3.8 Flash, DeepSeek V4.1-Flash ($0.30/$1.20 at peak, half that off-peak), or Claude Haiku 4.5. Haiku 4.5 is still Anthropic's only Haiku. Its Claude API retirement floor is October 15, 2026; no notice has been issued and Anthropic gives at least 60 days, so it should run there until roughly December at the earliest, but Microsoft Foundry retires it on November 15. Haiku 5.5 is announced but not released, so I keep a tested substitute ready. I build cascading systems where simple queries go to these tiers and only hard queries escalate.
+**For cost-sensitive high-volume applications**, I use GPT-6 Luna ($0.10/$0.50), Gemini 3.8 Flash, DeepSeek V4.1-Flash ($0.30/$1.20 at peak, half that off-peak), or Claude Haiku 5.5 ($0.10/$0.50 for prompts up to 100K tokens; above that the whole request bills at $0.50/$2.50, and cache reads and writes count toward the threshold). Haiku 5.5 is not a drop-in swap for Haiku 4.5: `budget_tokens`, sampling parameters and assistant prefill return 400, and its tokenizer produces about 30% more tokens for the same text. Haiku 4.5 is still Active on the Claude API with no deprecation notice, so with Anthropic's 60-day minimum it runs there until about January 2027 at the earliest, but Microsoft Foundry lists its retirement for November 15. Between Luna and Sol, GPT-6.1 Terra ($1/$5) brings back a three-tier OpenAI lineup. I build cascading systems where simple queries go to these tiers and only hard queries escalate.
 
 **For the most demanding reasoning tasks**, effort is the lever. Thinking can no longer be switched off on the newest Claude models, and the defaults differ (Opus 5.5 `medium`, Sonnet 5.5 `high` on the API, GPT-6.1 Sol `medium`), so I set effort explicitly per route and gate higher effort behind a complexity classifier.
 
@@ -1005,7 +1006,7 @@ I never rely solely on benchmark scores. A model that ranks lower on a public le
 - Trade latency and cost for accuracy on hard problems
 - On the newest frontier models thinking is no longer an on/off switch: Opus 5.5 keeps adaptive thinking always on, and Sonnet 5.5 rejects `thinking: disabled` (its lowest setting is `between_tools`). The cost lever is the effort level, and defaults differ by model.
 
-**Performance profile (October 1, 2026, verify current):**
+**Performance profile (November 2, 2026, verify current):**
 
 | Model | Thinking control | Default | Cost (output) |
 |-------|------------------|---------|---------------|
@@ -1046,7 +1047,7 @@ Thinking tokens bill as output on all four, so the same request can cost several
 - Tasks: retrieval, classification, clustering, semantic similarity
 - Leaderboard at huggingface.co/spaces/mteb/leaderboard
 
-**Current top models (October 1, 2026, verify on the RTEB and MTEB leaderboards):**
+**Current top models (November 2, 2026, verify on the RTEB and MTEB leaderboards):**
 
 | Model | Standing | Dimensions | Max Tokens | Cost |
 |-------|----------|------------|------------|------|
@@ -1057,6 +1058,7 @@ Thinking tokens bill as output on all four, so the same request can cost several
 | voyage-4-large / voyage-4 / voyage-4-lite | Strong retrieval, one shared embedding space | 1024 | 32K | $0.12 / $0.06 / $0.02 per 1M |
 | OpenAI text-embedding-3-large | Solid baseline | 3072 | 8K | $0.13/1M |
 | BGE-M3 | Open multi-granularity | 1024 | 8K | Self-host |
+| EmbeddingGemma 2 | Open weights (Apache 2.0); text, code, image, video, audio in one space | 768 (Matryoshka to 128) | 8K | Self-host |
 
 **Practical evaluation approach:**
 1. Start with RTEB (it mixes open datasets with private held-out sets to resist teaching to the test) and MTEB as baselines
@@ -1262,7 +1264,7 @@ Hugging Face TGI is in maintenance mode and recommends vLLM or SGLang for new de
 
 "I approach LLM cost optimization in layers, starting with the highest-impact changes.
 
-**Layer 1: Model selection** has the biggest impact, potentially 50-90% savings. The question is: what is the cheapest model that meets my quality bar? I run evaluations to find this. Often GPT-6 Luna ($0.10/$0.50 per 1M), Claude Haiku 4.5, or DeepSeek V4.1-Flash handles 60-70% of queries just fine, and I only route complex queries to frontier models.
+**Layer 1: Model selection** has the biggest impact, potentially 50-90% savings. The question is: what is the cheapest model that meets my quality bar? I run evaluations to find this. Often GPT-6 Luna ($0.10/$0.50 per 1M), Claude Haiku 5.5 (the same price for prompts up to 100K tokens), or DeepSeek V4.1-Flash handles 60-70% of queries just fine, and I only route complex queries to frontier models.
 
 **Layer 2: Caching** can reduce API calls by 30-80%. I implement two levels:
 - Exact match cache for repeated queries
@@ -1276,7 +1278,7 @@ For chat applications, prompt caching from providers like Anthropic is valuable 
 - Request structured output to limit response length
 - Use few-shot examples sparingly
 
-**Layer 4: Batching and service tiers** save 20-40% on infrastructure. For async workloads, I batch requests: Anthropic, OpenAI and Google all price batch at 50% off, and OpenAI and Gemini Flex tiers give the same discount for latency-tolerant traffic. Speed tiers run the other way (OpenAI Fast at 2x, Ultrafast at 6x on GPT-6 Astra), so I pick the tier per workload class, not per provider. For sync workloads, continuous batching in vLLM maximizes GPU utilization.
+**Layer 4: Batching and service tiers** save 20-40% on infrastructure. For async workloads, I batch requests: Anthropic, OpenAI and Google all price batch at 50% off, and OpenAI and Gemini Flex tiers give the same discount for latency-tolerant traffic. Speed tiers run the other way (OpenAI Fast at 2x, Ultrafast at 6x on GPT-6 Astra and GPT-6.1 Sol), so I pick the tier per workload class, not per provider. For sync workloads, continuous batching in vLLM maximizes GPU utilization.
 
 **Layer 5: Infrastructure optimization** varies by setup. For self-hosted, I use quantized models (NVFP4 or MXFP4 on Blackwell-class GPUs, AWQ 4-bit on older ones), right-size GPU selection, and spot instances for fault-tolerant workloads.
 
@@ -1485,7 +1487,7 @@ result = evaluate(dataset, metrics=[faithfulness, answer_relevancy])
 1. **Retrieval grounding:** Only answer from retrieved context
 2. **Citation enforcement:** Force model to cite sources
 3. **Abstention:** Allow "I don't know" responses
-4. **Temperature (where still supported):** Lower temperature reduces creativity/hallucination. Many frontier APIs have removed it: Claude Opus 4.7 and later return 400 for non-default sampling values, the Anthropic Python SDK 1.0 dropped the parameters, Gemini deprecated them on July 21, 2026, and GPT-6 Astra does not accept them. On those models use effort level, grounding instructions, and structured outputs instead.
+4. **Temperature (where still supported):** Lower temperature reduces creativity/hallucination. Many frontier APIs have removed it: Claude 4.7 and later models return 400 for non-default sampling values, Anthropic API version `2026-10-21` returns 400 for any `temperature`, `top_p` or `top_k` on every Claude model even at default values, the Anthropic Python SDK 1.0 dropped the parameters, Gemini deprecated them on July 21, 2026, and GPT-6 Astra does not accept them. On those models use effort level, grounding instructions, and structured outputs instead.
 5. **Guardrails:** Post-generation fact checking
 
 **System prompt guidance:**
@@ -1519,7 +1521,7 @@ Always cite the source document for each claim.
 
 **3. Force citations**: Require the model to cite specific sources for each claim. This makes hallucinations easier to spot and reduces their frequency.
 
-**4. Temperature settings**: Lower temperature (0.1-0.3) for factual tasks reduces creative hallucination on models that still expose it. The newest Claude models, the Gemini API, and GPT-6 Astra reject or deprecate sampling parameters, so on those I rely on grounding, citations, and verification rather than temperature.
+**4. Temperature settings**: Lower temperature (0.1-0.3) for factual tasks reduces creative hallucination on models that still expose it. Every Claude model under API version `2026-10-21`, the Gemini API, and GPT-6 Astra reject or deprecate sampling parameters, so on those I rely on grounding, citations, and verification rather than temperature.
 
 **5. Post-generation verification**: Run a fact-checking pass on the response before returning to the user. This adds latency but catches issues.
 
@@ -1825,10 +1827,10 @@ This lets me change models in config without code changes.
 Maintain golden set that runs against any model. Tracks quality, latency, cost. Alerts if new model regresses.
 
 **Lifecycle registry, per model and platform:**
-The same model now retires on different dates on different platforms. Claude Sonnet 4 left the Claude API in June 2026 but reaches Bedrock end of life on October 14, 2026, and Claude Opus 4.1 runs on Bedrock until January 8, 2027 after leaving the Claude API in August. Notice periods differ too: OpenAI gives 6 months for GA models, 3 months for specialized ones and as little as 2 weeks for previews; Anthropic gives at least 60 days; Bedrock models launched on or after September 7, 2026 can have a 45-day Legacy window. So I track lifecycle per (model, platform) pair and alert when a fallback route points at a model that is already retired on that platform.
+The same model now retires on different dates on different platforms. Claude Sonnet 4 left the Claude API in June 2026 but stayed on Bedrock until October 14, 2026, Claude Opus 4.1 runs on Bedrock until January 8, 2027 after leaving the Claude API in August, and Claude Sonnet 4.5 retires from the Claude API and Foundry on November 30, 2026 while Bedrock keeps it in Legacy until April 8, 2027. Notice periods differ too: OpenAI's stated policy is 6 months for GA models, 3 months for specialized ones and as little as 2 weeks for previews, yet its October 14 notice gave the GPT-4o and GPT-4.1 snapshots, fine-tunes included, about 3 months (shutdown January 14, 2027); Anthropic gives at least 60 days; Bedrock models launched on or after September 7, 2026 can have a 45-day Legacy window. So I track lifecycle per (model, platform) pair and alert when a fallback route points at a model that is already retired on that platform.
 
 **Silent changes behind a stable name:**
-Pinning a model ID is necessary but not sufficient. In September 2026 DeepSeek announced that `deepseek-v4-pro` traffic would route to a different model, then reversed it a day later, and OpenAI fixed an image-encoding bug in GPT-6 Sol and Luna under unchanged IDs. My canary evals run on a schedule, not only when I change a model ID.
+Pinning a model ID is necessary but not sufficient. In September 2026 DeepSeek announced that `deepseek-v4-pro` traffic would route to a different model, then reversed it a day later, and OpenAI fixed an image-encoding bug in GPT-6 Sol and Luna under unchanged IDs. In October Google began routing `gemini-3.7-flash` requests to `gemini-3.8-flash`, so a model string can keep working while the model behind it changes. My canary evals run on a schedule, not only when I change a model ID.
 
 **Multi-provider fallback:**
 ```python
@@ -1969,7 +1971,7 @@ count = len(tokens)
 - Not counting message overhead (role, formatting)
 - Ignoring that different models use different tokenizers
 
-I always use the actual tokenizer for the target model. tiktoken for OpenAI, model-specific for others."
+I always use the actual tokenizer for the target model. tiktoken for OpenAI, model-specific for others. And I recount on every model upgrade, even within one vendor: Claude Haiku 5.5's newer tokenizer produces about 30% more tokens than Haiku 4.5 for the same text."
 
 ---
 
@@ -2360,7 +2362,7 @@ Fine-tuning is a commitment. I need a stable task definition, quality training d
 - Limit max_tokens when possible
 - Faster models (mini/haiku for simple tasks)
 - Lower reasoning effort on routes that do not need it
-- Paid speed tiers where the budget allows (OpenAI Fast at 2x and Ultrafast at 6x on GPT-6 Astra; Claude fast mode on Opus 5.5 at $8/$40, a research preview)
+- Paid speed tiers where the budget allows (OpenAI Fast at 2x, and Ultrafast at 6x on GPT-6 Astra and GPT-6.1 Sol; Claude fast mode on Opus 5.5 at $8/$40, out of research preview since October 15)
 
 **4. Post-processing (varies)**
 - Async non-blocking operations
@@ -2800,7 +2802,7 @@ The key principle: Assume the agent will occasionally do something wrong. Design
 
 **Layer 1: Request Isolation.** Each request is processed independently. I do not batch requests from different users together if they share prefix caching. Batch size 1 for strict isolation.
 
-**Layer 2: Memory Isolation.** KV cache is not shared between users. In vLLM, I use separate inference instances per security domain, or I disable prefix caching for cross-user prompts. The finer-grained option is a per-tenant `cache_salt` so shared prefixes only hit within a tenant, but it has to hold on every code path: vLLM 0.30.0 fixed a case (GHSA-935w-9g4m-p28p) where tool-continuation turns on one endpoint dropped the salt and reopened a cross-tenant prefix-cache membership oracle. I pin vLLM at 0.30.0 or later and test salting per endpoint.
+**Layer 2: Memory Isolation.** KV cache is not shared between users. In vLLM, I use separate inference instances per security domain, or I disable prefix caching for cross-user prompts. The finer-grained option is a per-tenant `cache_salt` so shared prefixes only hit within a tenant, but it has to hold on every code path: vLLM 0.30.0 fixed a case (GHSA-935w-9g4m-p28p) where tool-continuation turns on one endpoint dropped the salt and reopened a cross-tenant prefix-cache membership oracle. I pin vLLM at 0.32.0 or later (the current security floor) and test salting per endpoint.
 
 **Layer 3: Model Isolation.** For the most sensitive workloads, each tenant gets their own model deployment. This eliminates any risk of cross-contamination but costs more.
 
@@ -3180,8 +3182,8 @@ response = client.messages.create(
 **Cost reality (list prices per 1M tokens; always verify on the provider pricing page):**
 - Capability ceiling: Claude Fable 5.1 and GPT-6 Astra at $10 / $50
 - Frontier tier: GPT-5.5 at $5 / $30 and Opus 4.8 at $5 / $25; its successor, Claude Opus 5.5, is $4 / $20 and is Anthropic's recommended starting point for most workloads
-- Production mid-tier: Claude Sonnet 5.5, GPT-6 Sol and GPT-6.1 Sol at $2 / $10
-- Long prompts: OpenAI bills the whole request at long-context rates above 272K input, while Anthropic stays flat to 1M
+- Production mid-tier: Claude Sonnet 5.5, GPT-6 Sol and GPT-6.1 Sol at $2 / $10, with GPT-6.1 Terra at $1 / $5 below them
+- Long prompts: OpenAI bills the whole request at long-context rates above 272K input, while Anthropic stays flat to 1M on Opus and Sonnet (Claude Haiku 5.5 bills the whole request at 5x once the prompt passes 100K tokens)
 - For volume workloads, the mid-tier is significantly cheaper at comparable quality for most software engineering tasks.
 
 Both lines have successors, but the selection logic carries over: GPT-6.1 Sol keeps the effort dial (`low` through `max`, `medium` by default), and the choice still turns on benchmark ceiling and multimodality versus inspectable reasoning (an opt-in display mode on the newest Claude models; see Q66) and agentic-coding fit, measured on your own tasks."
@@ -3223,7 +3225,7 @@ Both lines have successors, but the selection logic carries over: GPT-6.1 Sol ke
 
 1. **Sandbox isolation**: Claude Code runs in a Docker container with no external network access, mounted only the repo directory.
 
-2. **Permission allow-list and an explicit permission mode**: Only allow `pytest*`, `ruff*`, `git diff*`, `str_replace_based_edit_tool`. Deny `rm -rf`, `pip install`, `curl` to external hosts. Set the permission mode explicitly in CI: Claude Code made its classifier-based auto mode the default for new sessions on Pro, Max and Team plans from August 14, 2026, and later releases extended that default to API, Enterprise and cloud-provider setups (2.1.278) and to interactive sessions with no permission mode configured (2.1.284). Auto mode is a best-effort classifier, not a boundary (a researcher published a bypass on August 26; see Q132), so the network-less container in layer 1 carries the weight and the allow-list only narrows behavior inside it.
+2. **Permission allow-list and an explicit permission mode**: Only allow `pytest*`, `ruff*`, `git diff*`, `str_replace_based_edit_tool`. Deny `rm -rf`, `pip install`, `curl` to external hosts. Set the permission mode explicitly in CI: Claude Code made its classifier-based auto mode the default for new sessions on Pro, Max and Team plans from August 14, 2026, and later releases extended that default to API, Enterprise and cloud-provider setups (2.1.278) and to interactive sessions with no permission mode configured (2.1.284). Since 2.1.302 (October 16), `claude -p` and Agent SDK sessions with no permission mode start in `default` mode on third-party providers, with telemetry off, or on a fresh install, so the effective mode now depends on the environment unless CI sets it. Auto mode is a best-effort classifier, not a boundary (a researcher published a bypass on August 26; see Q132, and Q148 for Anthropic's own red-teaming of its monitors), so the network-less container in layer 1 carries the weight and the allow-list only narrows behavior inside it.
 
 3. **Human gate**: The agent creates a PR, never merges. A senior engineer reviews the diff. Claude never touches main directly.
 
@@ -3258,7 +3260,7 @@ For price-sensitive, high-volume tasks (classification, extraction, summarizatio
 
 For data-sovereign deployments: Self-hosted DeepSeek V4 or R1 on your own H100s. No data leaves the network - critical for healthcare, finance, defense.
 
-For fine-tuning: Open weights enable full fine-tuning on proprietary datasets. Closed models (OpenAI, Anthropic) only allow limited fine-tuning with data going to the provider, and that option is shrinking: OpenAI is winding down its fine-tuning platform (since July 2, 2026 only organizations with recent fine-tuned-model inference can create jobs, and from January 6, 2027 active customers can no longer create new ones, although existing fine-tuned models keep serving until their base models are deprecated). If custom weights are part of the plan, open weights are the default path rather than the alternative.
+For fine-tuning: Open weights enable full fine-tuning on proprietary datasets. Closed models (OpenAI, Anthropic) only allow limited fine-tuning with data going to the provider, and that option is shrinking: OpenAI is winding down its fine-tuning platform (since July 2, 2026 only organizations with recent fine-tuned-model inference can create jobs, and from January 6, 2027 active customers can no longer create new ones, although existing fine-tuned models keep serving until their base models are deprecated). That date is now set for the most common bases: fine-tunes of the GPT-4o, GPT-4o mini, GPT-4.1 and GPT-4.1 mini snapshots shut down January 14, 2027, and the named replacement, `gpt-6-luna`, cannot be fine-tuned. If custom weights are part of the plan, open weights are the default path rather than the alternative.
 
 **What I still use closed models for:**
 - Tasks requiring the absolute best quality (Claude Opus 5.5 or Fable 5.1 for agentic coding)
@@ -3281,13 +3283,13 @@ For fine-tuning: Open weights enable full fine-tuning on proprietary datasets. C
 "Prompt caching works by the provider storing the computed KV tensors for a prefix of your prompt on their servers. For subsequent requests that match the same prefix, they skip the entire prefill computation for that prefix.
 
 **Provider support:**
-- **Anthropic**: Cache control via `cache_control: {'type': 'ephemeral'}` annotations, with 5-minute (refreshed on each use) or 1-hour cache writes. Reads are 0.1x on most models, 0.05x on Opus 5.5 and 0.025x on Fable 5.1.
-- **OpenAI**: Automatic prefix caching for prompts > 1024 tokens. Cached input is 0.1x on current models; from GPT-5.6 onward cache writes cost 1.25x with a fixed 30-minute TTL, and GPT-6.1 Sol reads at 0.05x.
-- **Google**: Cache reads $0.20/1M (Gemini 3.1 Pro under 200K) with separate hourly storage fee.
+- **Anthropic**: Cache control via `cache_control: {'type': 'ephemeral'}` annotations, with 5-minute (refreshed on each use) or 1-hour cache writes. Reads are 0.1x on most models (including Haiku 5.5), 0.05x on Opus 5.5 and Sonnet 5.5, and 0.025x on Fable 5.1.
+- **OpenAI**: Automatic prefix caching for prompts > 1024 tokens. Cached input is 0.1x on most models and 0.05x on GPT-6.1 Sol and GPT-6.1 Terra. From GPT-5.6 onward cache writes cost 1.25x for the default 30-minute TTL; since October 20 a 12-hour TTL is also available, with writes at 2.5x input.
+- **Google**: Cache reads $0.20/1M (Gemini 3.1 Pro under 200K) with separate hourly storage fee. Gemini 4 Argon supports implicit caching only, so explicit cache-control code does not apply to it.
 - **DeepSeek**: Automatic prefix caching, very aggressive - often >80% hit rates. V4.1-Flash cache hits cost $0.006/M at peak.
 
 **Cost impact:**
-- Anthropic Sonnet 5.5: Cached input = $0.20/1M vs normal $2.00/1M = 10x savings
+- Anthropic Sonnet 5.5: Cached input = $0.10/1M vs normal $2.00/1M = 20x savings
 - OpenAI GPT-5.5: Cached input = $0.50/1M vs $5.00/1M = 10x savings
 - DeepSeek V4.1-Flash: Cached input = $0.006/M vs $0.30/M at peak = 50x savings
 
@@ -3440,8 +3442,8 @@ Incoming query
     ↓
 Route to appropriate model tier
 
-Tier A (simple): GPT-6 Luna ($0.10/1M), Gemini 3.1 Flash-Lite ($0.25/1M) or DeepSeek V4.1-Flash ($0.30/1M at peak) - factual Q&A, extraction
-Tier B (complex): Claude Sonnet 5.5 or GPT-6.1 Sol ($2/1M) - reasoning, code review
+Tier A (simple): GPT-6 Luna ($0.10/1M), Claude Haiku 5.5 ($0.10/1M up to a 100K-token prompt), Gemini 3.1 Flash-Lite ($0.25/1M) or DeepSeek V4.1-Flash ($0.30/1M at peak) - factual Q&A, extraction
+Tier B (complex): GPT-6.1 Terra ($1/1M), Claude Sonnet 5.5 or GPT-6.1 Sol ($2/1M) - reasoning, code review
 Tier C (reasoning): Claude Opus 5.5 ($4/1M) - math, logic problems
 ```
 
@@ -3588,7 +3590,7 @@ For reasoning capability (math-heavy algorithms, competitive programming) use Li
 - Always pin exact model versions in production (never a floating alias)
 - Test new model versions in staging before promoting
 - Maintain eval time series so you have a pre-incident baseline to compare against
-- Keep scheduled canaries running even with pins, because pinning does not cover every silent change: OpenAI fixed an image-encoding bug in `gpt-6-sol` and `gpt-6-luna` on September 25, 2026 without changing the model IDs (any image eval run before that date measured a different behavior), and DeepSeek briefly announced routing `deepseek-v4-pro` traffic to a different model before reversing it
+- Keep scheduled canaries running even with pins, because pinning does not cover every silent change: OpenAI fixed an image-encoding bug in `gpt-6-sol` and `gpt-6-luna` on September 25, 2026 without changing the model IDs (any image eval run before that date measured a different behavior), and DeepSeek briefly announced routing `deepseek-v4-pro` traffic to a different model before reversing it. Google went further in October, routing `gemini-3.7-flash` requests to `gemini-3.8-flash` and `gemini-3.5-flash` to `gemini-3.6-flash`, so the canary is what tells me the model changed
 - Give every pinned ID a migration date on the same calendar as its canaries, because pins expire: `gpt-5-2025-08-07` retires on December 11, 2026"
 
 ---
@@ -3628,7 +3630,7 @@ Health check every 30s:
 
 3. **Cost management**: Costs differ significantly. Track per-provider spend and set budget alerts.
 
-4. **Context window and price-cliff differences**: Context limits have converged near 1M, but billing has not. Claude 4.6 and later bill flat to 1M, OpenAI bills the whole request at long-context rates above 272K input, and xAI doubles all tokens at 200K and above. For long-context requests, I check the token count before routing against both the target's window and its price cliff.
+4. **Context window and price-cliff differences**: Context limits have converged near 1M, but billing has not. Claude 4.6 and later bill flat to 1M except Haiku 5.5, which bills the whole request at 5x once the prompt passes 100K tokens (cache reads and writes count toward it); OpenAI bills the whole request at long-context rates above 272K input, and xAI doubles all tokens at 200K and above. For long-context requests, I check the token count before routing against both the target's window and its price cliff.
 
 **Open-source as the ultimate fallback:**
 For truly critical systems, I maintain a warm self-hosted Llama 3.3 70B or DeepSeek-V3 instance. Performance is slightly below frontier but it's fully under my control - no rate limits, no outages from provider incidents.
@@ -3661,7 +3663,7 @@ For truly critical systems, I maintain a warm self-hosted Llama 3.3 70B or DeepS
 
 4. **Fast iteration speed matters:** No indexing pipeline, no schema management, no embedding updates. Change documents, reload. Simple.
 
-5. **The corpus is stable enough to cache:** Cache reads on the newest Claude models cost 0.05x (Opus 5.5) or 0.025x (Fable 5.1) of input, so loading a stable corpus once and reusing it moves the break-even toward long context.
+5. **The corpus is stable enough to cache:** Cache reads on the newest Claude models cost 0.05x (Opus 5.5 and Sonnet 5.5) or 0.025x (Fable 5.1) of input, so loading a stable corpus once and reusing it moves the break-even toward long context.
 
 **When RAG wins:**
 
@@ -3669,7 +3671,7 @@ For truly critical systems, I maintain a warm self-hosted Llama 3.3 70B or DeepS
 
 2. **Latency is critical:** Prefilling 500K tokens into a model takes seconds even with caching. RAG with reranking can return in 200ms.
 
-3. **Cost at volume:** 1M tokens at $2/1M = $2/request on Claude Sonnet 5.5 before caching. At 1M requests/day that's $2M/day. RAG retrieval costs orders of magnitude less. Price cliffs below 1M make it worse on some vendors: OpenAI bills the whole request at long-context rates once input passes 272K, xAI doubles all tokens at 200K, and Gemini 3.1 Pro Preview steps up above 200K, so a 273K-token prompt on GPT-6 Sol costs about twice a 272K one. The cost model has to be per vendor and per prompt size.
+3. **Cost at volume:** 1M tokens at $2/1M = $2/request on Claude Sonnet 5.5 before caching. At 1M requests/day that's $2M/day. RAG retrieval costs orders of magnitude less. Price cliffs below 1M make it worse on some vendors: OpenAI bills the whole request at long-context rates once input passes 272K, xAI doubles all tokens at 200K, and Gemini 3.1 Pro Preview steps up above 200K, so a 273K-token prompt on GPT-6 Sol costs about twice a 272K one. Claude Haiku 5.5 has the lowest cliff: it bills the whole request at 5x once the prompt passes 100K. The cost model has to be per vendor and per prompt size.
 
 4. **Privacy/compliance:** Some systems can't send all documents to an LLM provider. The embedding + local retrieval approach keeps data control tighter.
 
@@ -3814,7 +3816,7 @@ Error analysis is discovery. Automated evals are measurement. Discovery must pre
 
 **Follow-up to expect:** The Mythos question resolved itself in June 2026: Anthropic shipped Fable 5 (a Mythos-class model with safeguards, sensitive queries falling back to Opus 4.8) instead of ungating Mythos Preview directly. A strong candidate notes what this teaches: labs can productize a restricted capability tier by wrapping it in classifier-gated routing, so "restricted" models reshape the market sooner than their access lists suggest.
 
-By October 2026 every row has a successor: Claude Fable 5.1 ($10/$50), Opus 5.5 ($4/$20, now Anthropic's recommended default) and Sonnet 5.5 ($2/$10); OpenAI's GPT-6 Astra ($10/$50), GPT-6 Sol and GPT-6.1 Sol ($2/$10) and GPT-6 Luna ($0.10/$0.50); Gemini 3.8 Flash as Google's newest GA model; and DeepSeek V4.1-Flash ($0.30/$1.20 at peak) in place of the retired V4 Flash. Mistral Medium 3.5's modified MIT license withdraws all rights from companies above US$20M monthly revenue, which matters for the sovereign row (see Q134). The method, workload to model by cost of risk, is unchanged.
+By November 2026 every row has a successor: Claude Fable 5.1 ($10/$50), Opus 5.5 ($4/$20, now Anthropic's recommended default), Sonnet 5.5 ($2/$10) and Haiku 5.5 ($0.10/$0.50 up to a 100K-token prompt); OpenAI's GPT-6 Astra ($10/$50), GPT-6 Sol and GPT-6.1 Sol ($2/$10), GPT-6.1 Terra ($1/$5) and GPT-6 Luna ($0.10/$0.50); Google's Gemini 4 Argon (GA October 13, $2/$10 through November 30 and $4/$20 after) above Gemini 3.8 Flash; and DeepSeek V4.1-Flash ($0.30/$1.20 at peak) in place of the retired V4 Flash. The sovereign row needs a second look: Mistral deprecated Medium 3.5 on October 31 (it retires April 30, 2027) in favor of open-weight Mistral Large 4, whose license requires a separate commercial agreement for any model-as-a-service business, while Medium 3.5's modified MIT license withdraws all rights from companies above US$20M monthly revenue (see Q134). The method, workload to model by cost of risk, is unchanged.
 
 ---
 
@@ -4317,7 +4319,7 @@ Implication: code review for AI-generated patches must include adversarial testi
 **Layer 6 - Continuous adversarial eval.**
 - Maintain a corpus of known IPI attacks. Run them through your pipeline weekly. When a new attack class succeeds, retro-fit defenses.
 
-**The honest acknowledgement:** IPI defense is unfinished research. The Nature Communications paper (2026) reported 97.14% aggregate jailbreak success across reasoning models when treated as autonomous attackers. Frontier labs now publish model-level IPI baselines, lower but not zero: on Gray Swan's IPI Arena (15 attempts per scenario), OpenAI reports an 8.5% attack success rate for GPT-6 Astra against 27.0% for GPT-5.6 Sol, and Anthropic reports 1.0% at k=15 for Claude Opus 5.5 (both vendor-reported). A 1% per-scenario rate across thousands of agent sessions a day is still daily incidents, so model choice lowers the base rate but doesn't replace the layers. Your defense reduces probability and blast radius - it doesn't eliminate. Plan for an incident, log everything, and have a kill switch."
+**The honest acknowledgement:** IPI defense is unfinished research. The Nature Communications paper (2026) reported 97.14% aggregate jailbreak success across reasoning models when treated as autonomous attackers. Frontier labs now publish model-level IPI baselines, lower but not zero: on Gray Swan's IPI Arena (15 attempts per scenario), OpenAI reports an 8.5% attack success rate for GPT-6 Astra against 27.0% for GPT-5.6 Sol, and Anthropic reports 1.0% at k=15 for Claude Opus 5.5 but 7.1% overall and 24.4% on GUI computer use for the cheaper Claude Haiku 5.5 (all vendor-reported), so the budget tier needs the layers even more. A 1% per-scenario rate across thousands of agent sessions a day is still daily incidents, so model choice lowers the base rate but doesn't replace the layers. Your defense reduces probability and blast radius - it doesn't eliminate. Plan for an incident, log everything, and have a kill switch."
 
 ---
 
@@ -4343,7 +4345,7 @@ Implication: code review for AI-generated patches must include adversarial testi
 **3. Batching profiles change.**
 - With dense models, larger batches → better throughput at predictable latency cost.
 - With MoE, large batches activate more experts overall (since different requests route to different experts), increasing memory pressure. Optimal batch size is non-monotonic.
-- vLLM, SGLang, and TensorRT-LLM all have MoE-aware schedulers (vLLM since v0.18). Use them, but pin to the security floors, which have moved well past the feature floors: vLLM 0.30.0 or later and SGLang 0.5.13 or later, verified against current advisories.
+- vLLM, SGLang, and TensorRT-LLM all have MoE-aware schedulers (vLLM since v0.18). Use them, but pin to the security floors, which have moved well past the feature floors: vLLM 0.32.0 or later, and for SGLang, which has no patched release for two critical October CVEs, the latest release with its debug, dumper, ZMQ and distributed-init endpoints kept off the network.
 
 **4. Cost-per-token is harder to predict.**
 - Dense: cost ∝ active params × tokens.
@@ -4398,9 +4400,9 @@ Implication: code review for AI-generated patches must include adversarial testi
 
 **Per-re-distillation cost:** ~$25–35K (data refresh + fine-tune + eval + rollout). Amortize over the 4–6 months between cycles.
 
-**Re-run the baseline before committing.** The frontier bill shrinks on its own: Claude Opus 5.5 lists at $4/$20 against Opus 4.8's $5/$25, and Anthropic reports the $2/$10 Claude Sonnet 5.5 within a few points of Opus 5.5 on its own agentic evals (vendor-reported). I compute payback against the cheapest model that meets the quality bar today, not last quarter's bill.
+**Re-run the baseline before committing.** The frontier bill shrinks on its own: Claude Opus 5.5 lists at $4/$20 against Opus 4.8's $5/$25, and Anthropic reports the $2/$10 Claude Sonnet 5.5 within a few points of Opus 5.5 on its own agentic evals (vendor-reported). The budget tier moves too: Claude Haiku 5.5 now matches GPT-6 Luna at $0.10/$0.50 for prompts up to 100K tokens, and GPT-6.1 Terra lists at $1/$5. I compute payback against the cheapest model that meets the quality bar today, not last quarter's bill.
 
-**Own the student's home.** OpenAI is winding down its fine-tuning platform, and active customers lose new job creation on January 6, 2027, which would break a 4-6 month re-distillation cadence. An open-weight student under a permissive license (Qwen3.8-27B or IBM Granite 4.2, both Apache 2.0) keeps the cadence in my control. I check the license before the model card, since several larger open models now gate model-as-a-service use (see Q134).
+**Own the student's home.** OpenAI is winding down its fine-tuning platform: active customers lose new job creation on January 6, 2027, which would break a 4-6 month re-distillation cadence, and fine-tunes of the GPT-4o, GPT-4o mini, GPT-4.1 and GPT-4.1 mini snapshots shut down on January 14, 2027, with a replacement (`gpt-6-luna`) that cannot be fine-tuned. An open-weight student under a permissive license (Qwen3.8-27B or IBM Granite 4.2, both Apache 2.0) keeps the cadence in my control. I check the license before the model card, since several larger open models now gate model-as-a-service use (see Q134).
 
 **The trap:** Teams expect 'distill once, save forever.' Reality: distillation is a maintenance commitment, not a one-time win. Without re-distillation, you're shipping last-quarter's capability against this-quarter's competitor.
 
@@ -4419,23 +4421,23 @@ Implication: code review for AI-generated patches must include adversarial testi
 
 "My selection depends on three workload axes: latency profile, hardware, and operational maturity.
 
-**vLLM (0.30.0 or later):**
+**vLLM (0.32.0 or later):**
 - Best for: heterogeneous workloads, long-context serving, dynamic batching where request shapes vary
 - PagedAttention is the killer feature for KV-cache management
 - Mature production tooling, large community
-- Ships on a roughly two-week cadence (v0.30.0 on September 22, 2026), with Model Runner V2 as the default, admission-control flags, and a Fast Start weight cache that cuts pod restarts
-- **Patch floor:** a run of 2026 RCEs: the February video-processing RCE (CVE-2026-22778) was fixed in v0.14.1 and the March `trust_remote_code` bypass (CVE-2026-27893) in v0.18.0; after 20+ security advisories since August 11 (see Q135), the floor is 0.30.0.
+- Ships on a roughly two-week cadence (v0.32.0 on October 18, 2026), with Model Runner V2 as the default, admission-control flags, and a Fast Start weight cache that cuts pod restarts. v0.32.0 also changed the default CORS policy from `*` to none, made Python 3.11 the minimum, and made `max_tokens` an upper bound, so treat the upgrade as a behavior change
+- **Patch floor:** a run of 2026 RCEs: the February video-processing RCE (CVE-2026-22778) was fixed in v0.14.1 and the March `trust_remote_code` bypass (CVE-2026-27893) in v0.18.0; 20+ security advisories after August 11 (see Q135) moved the floor to 0.30.0, and CVE-2026-115915 (CVSS 8.1, affecting every release before 0.32.0; reproduced on 0.30.0) and CVE-2026-115912 moved it to 0.32.0.
 
-**SGLang (0.5.13 or later; v0.5.20 is current):**
+**SGLang (v0.5.22 is current; no patched release for two critical October CVEs):**
 - Best for: structured generation workloads (JSON, function calling), reasoning models with controlled decoding
 - ~29% throughput advantage on some workloads vs vLLM (their benchmarks; verify on yours)
 - Async constrained decoding is genuinely faster than vLLM equivalents
-- **Patch floor:** the March multimodal and disaggregation RCEs (CVE-2026-3059, CVE-2026-3060) were fixed in v0.5.10, and a May 18 batch of critical advisories (CVE-2026-7301, 7302, 7304) lists affected versions through 0.5.12 with no patched version recorded. Pin 0.5.13 or later, verify against the advisory list, keep its ZMQ sockets inside the pod, and do not enable custom logit processors for untrusted callers.
+- **Patch floor:** the March multimodal and disaggregation RCEs (CVE-2026-3059, CVE-2026-3060) were fixed in v0.5.10, and a May 18 batch of critical advisories (CVE-2026-7301, 7302, 7304) lists affected versions through 0.5.12 with no patched version recorded. October made it worse: CVE-2026-111391 (eval injection, CVSS v4 9.2, described as affecting 0.5.10 through 0.5.22) and CVE-2026-93034 (ZMQ decoder, CVSS 9.8) list no patched version, so no release is a safe floor. Run the latest, keep the dumper, debug, ZMQ and distributed-init endpoints inside the pod, and do not enable custom logit processors for untrusted callers.
 
 **TensorRT-LLM:**
 - Best for: NVIDIA-only fleets, single-model-served-at-massive-scale, latency-critical workloads
 - Highest peak throughput on NVIDIA hardware
-- Since TensorRT-LLM 1.0 (September 2025) the PyTorch backend is the default, so there is no per-model engine build; the remaining cost is per-model and per-GPU tuning and a release-candidate-heavy cadence (latest stable v1.2.1, with v1.3 in release candidates)
+- Since TensorRT-LLM 1.0 (September 2025) the PyTorch backend is the default, so there is no per-model engine build; the remaining cost is per-model and per-GPU tuning and a release-candidate-heavy cadence (latest stable v1.2.1; release candidates have moved on to v1.4 with no stable v1.3)
 - Locks you to NVIDIA hardware
 
 **My picks by workload:**
@@ -4445,7 +4447,7 @@ Implication: code review for AI-generated patches must include adversarial testi
 | Public chatbot, variable request mix | vLLM | Best balance of throughput + flexibility |
 | Function-calling API with strict JSON schema | SGLang | Constrained decoding wins |
 | Single-model latency-critical (sub-50ms TTFT) at $100K+/month scale | TensorRT-LLM | Worth the NVIDIA lock-in and tuning effort |
-| Multimodal serving at any tier | vLLM (0.30.0 or later) | SGLang's March RCEs landed in its multimodal path; verify its advisories before exposing it |
+| Multimodal serving at any tier | vLLM (0.32.0 or later) | SGLang's March RCEs landed in its multimodal path; verify its advisories before exposing it |
 | Reasoning model (DeepSeek-R1 class) | SGLang | Best at structured CoT + tool-use loops |
 
 **The trap to avoid:** Picking based on benchmarks against the wrong workload. Engine vendors all benchmark their best cases. Compare engines on throughput-versus-interactivity Pareto curves under agentic traffic at your SLO, not on batch-1 peak tokens per second, and run a 48-hour soak test with YOUR traffic profile before committing. The cost of a wrong choice is 3+ months of engineering pain when you switch."
@@ -4490,7 +4492,7 @@ Implication: code review for AI-generated patches must include adversarial testi
 
 **The hard truth:** Capacity in May 2026 is still constrained at the top tier. Decision is partly *what hardware is best* and partly *what can you actually procure*. Talk to your vendor TAMs about availability before benchmarks."
 
-By October 2026 the flagship was NVIDIA Vera Rubin NVL72 (in a full-production ramp since May 31, per NVIDIA), NVIDIA Groq 3 LPX had entered full production as an SRAM decode tier behind Rubin prefill, and AMD's Helios (MI455X, 432 GB HBM4) was in production, with OpenAI expecting it online from Q4 2026. Rental prices rose rather than fell: the Silicon Data B200 index was $5.86 per GPU-hour on October 1, and 12-month terms priced below 3-month terms in September, which strengthens point 2's advice to lock capacity early.
+By November 2026 the flagship was NVIDIA Vera Rubin NVL72 (in a full-production ramp since May 31, per NVIDIA, and generally available on Oracle Cloud from October 27), NVIDIA Groq 3 LPX had entered full production as an SRAM decode tier behind Rubin prefill, and AMD's Helios (MI455X, 432 GB HBM4) was in production, with OpenAI expecting it online from Q4 2026. Its lead over Blackwell Ultra is workload-dependent: Artificial Analysis's AA-AgentPerf (October 15) measured Rubin at 1.14x to 1.45x GB300 peak throughput per megawatt depending on the model, with larger leads only at high per-user speeds, so the Tier 1 and Tier 2 split above still holds. Rental prices rose rather than fell: the Silicon Data B200 index went from $5.86 per GPU-hour in early October to $6.50 on November 1 (H100 from $2.78 to $2.93), and 12-month terms priced below 3-month terms in September, which strengthens point 2's advice to lock capacity early.
 
 ---
 
@@ -4673,7 +4675,7 @@ By October 2026 the flagship was NVIDIA Vera Rubin NVL72 (in a full-production r
 
 1. **The 'open from day one' strategy hit a quality ceiling at the frontier.** Behemoth was supposed to be the dense frontier; internal sentiment apparently split on whether the leap justified open release. Meta hedged by going closed for Muse Spark - a strategic admission that frontier-quality work may require a closed-development feedback loop.
 
-2. **The new equilibrium is two-tier.** Frontier (closed) lags 6–12 months ahead. Open weights catch up via distillation, RL, and the open ecosystem's iteration speed. This was the May 2026 status quo, and it held: Meta kept the Muse line closed (Muse Spark 1.3 shipped September 2, 2026 at $1.25/$4.25), and open-weight leadership moved to Chinese labs. On Artificial Analysis Index v4.3.2 the top open models are Xiaomi MiMo-V2.6-Pro (46), Z.ai GLM-5.3 (45) and Moonshot Kimi K3 (44), while the top US open model, Thinking Machines' Inkling-Small, scores 26.
+2. **The new equilibrium is two-tier.** Frontier (closed) lags 6–12 months ahead. Open weights catch up via distillation, RL, and the open ecosystem's iteration speed. This was the May 2026 status quo, and it held: Meta kept its frontier Muse models closed (Muse Spark 1.3 shipped September 2, 2026 at $1.25/$4.25) while releasing open weights for Muse Spark Open (October 15, 816B total / 42B active, under a license that gates model-as-a-service operators above US$20M revenue), and open-weight leadership moved to Chinese labs. On Artificial Analysis Intelligence Index v5.0 the top open models are DeepSeek V4.1-Flash-1017 and Z.ai GLM-5.3 (32 each) and Xiaomi MiMo-V2.6-Pro (30), the top US open model is Muse Spark Open (25), and the closed frontier sits in the high 50s.
 
 3. **'Open' is now a complicated word.** Llama 4 weights are open; training data is not. Qwen 3.6 weights are open; some commercial restrictions apply. DeepSeek V4 is MIT-licensed but trained with mechanisms that aren't fully documented. 'Open' now also means reading the license per checkpoint, from plain MIT to revenue-gated MaaS clauses to a Qwen license that gates any coding-assistant business; see Q134. And a base model's license becomes a supply-chain term for whatever ships on top of it: Cognition's SWE-2 is post-trained from Kimi K3, and Fireworks' Ember-1 is built on it.
 
@@ -5025,7 +5027,7 @@ Hallucination is now a P0 incident class, like a security breach. Treat it accor
 **Architecture changes that move the number:**
 - **Selective automation.** I split workflows into deterministic segments (scripted, no model) and judgment segments (agent). Most 'agent failures' are deterministic steps that never needed a model.
 - **Step budgets and checkpoints.** Hard cap on actions per workflow; checkpoint state so a retry resumes instead of restarting.
-- **Model tier.** OSWorld-Verified is saturated (self-reported leaders in the mid-80s), so it no longer works as the sanity check. The long-horizon yardstick is OSWorld 2.x, whose primary metric is binary task completion: XLANG's leaderboard (September 17, 2026) tops out at Claude Opus 5 at max effort with 44.33% binary and 77.67% partial credit on the v2.1 full set, while vendor launch posts mostly quote partial credit, such as Opus 5.5 at 81.8% (Anthropic) and GPT-6 Astra at 72.6% (OpenAI, offline set). I plan on the binary number, because a workflow that hits 80% of its checkpoints still has not finished the job, and my production target is per-workflow success rate, which selective automation can push past any raw model score.
+- **Model tier.** OSWorld-Verified is saturated (self-reported leaders in the mid-80s), so it no longer works as the sanity check. The long-horizon yardstick is OSWorld 2.x, whose primary metric is binary task completion: on XLANG's leaderboard the best end-to-end model is Claude Opus 5 at max effort with 44.33% binary and 77.67% partial credit on the v2.1 full set, while vendor launch posts mostly quote partial credit, such as Opus 5.5 at 81.8% (Anthropic) and GPT-6 Astra at 72.6% (OpenAI, offline set). I plan on the binary number, because a workflow that hits 80% of its checkpoints still has not finished the job, and my production target is per-workflow success rate, which selective automation can push past any raw model score.
 
 **The honest framing for leadership:** computer-use agents in mid-2026 are reliable as supervised co-workers on bounded workflows and unreliable as unsupervised general operators. I scope deployments accordingly and publish the per-workflow success dashboard."
 
@@ -5122,7 +5124,7 @@ Request → Classifier (intent, complexity, risk) → Policy lookup → Provider
 
 **Follow-up to expect:** Where does semantic caching fit? (In front of the router: an exact or semantic cache hit costs no provider call at all, and the router only sees cache misses.)
 
-By October 2026 the price table had turned over: Fable 5.1 and GPT-6 Astra at $10/$50, Opus 5.5 at $4/$20, Sonnet 5.5, GPT-6 Sol and GPT-6.1 Sol at $2/$10, GPT-6 Luna at $0.10/$0.50, and DeepSeek V4.1-Flash at $0.30/$1.20 at peak. The policy engine now also picks a service tier per request (batch and flex at 0.5x, OpenAI Fast at 2x, Ultrafast at 6x), respects long-context cliffs (OpenAI bills the whole request at higher rates above 272K input; Anthropic stays flat to 1M), and prices residency, which runs about a 10% premium on major providers (Anthropic's US-only `inference_geo` is 1.1x), so only residency-bound tenants go to pinned regions.
+By November 2026 the price table had turned over: Fable 5.1 and GPT-6 Astra at $10/$50, Opus 5.5 at $4/$20, Sonnet 5.5, GPT-6 Sol and GPT-6.1 Sol at $2/$10, GPT-6.1 Terra at $1/$5, GPT-6 Luna and Claude Haiku 5.5 at $0.10/$0.50, and DeepSeek V4.1-Flash at $0.30/$1.20 at peak. The policy engine now also picks a service tier per request (batch and flex at 0.5x, OpenAI Fast at 2x, Ultrafast at 6x), respects long-context cliffs (OpenAI bills the whole request at higher rates above 272K input; Anthropic stays flat to 1M except on Haiku 5.5, which bills the whole request at 5x above a 100K-token prompt), and prices residency, which runs about a 10% premium on major providers (Anthropic's US-only `inference_geo` is 1.1x), so only residency-bound tenants go to pinned regions.
 
 ---
 
@@ -5147,7 +5149,7 @@ By October 2026 the price table had turned over: Fable 5.1 and GPT-6 Astra at $1
 2. **Convert working state to handles.** The staged-transaction server returns a server-minted handle from the first call; subsequent calls pass it as an ordinary argument. The handle references state in a shared store (Redis, Postgres), which is the same pattern as REST APIs dropping server sessions for tokens.
 3. **Convert elicitation to MRTR.** Our approval-gated tools used server-push elicitation. Under Multi Round-Trip Requests the tool returns input_required with an opaque requestState blob, and the client retries with the user's answer attached. Because the state rides in the retry, the retry can land on a different instance. Long approval waits stop pinning a connection.
 4. **Adopt the transport requirements.** Emit the new routing headers so our gateway can rate-limit per method without parsing bodies, declare TTLs on list results, and return tools in deterministic order so prompt caches hit.
-5. **Dual-stack the transition.** The spec has a twelve-month deprecation window. We run the new revision and the legacy path side by side, steer clients over via server/discover, and watch the legacy traffic percentage until it is safe to turn off. Budget for a long overlap: in September 2026 npm downloads, the v2 TypeScript core package was about 13% of the v1 package's volume. The legacy half is cheaper to keep safe on current SDKs: unreclaimed stateful sessions turned out to be a denial-of-service surface (Python SDK CVE-2026-59951), so Python SDK 1.30.0 and 2.2.0 close legacy sessions idle for 30 minutes and cap a server at 10,000 sessions, and the TypeScript and Python SDKs cap request bodies at 4 MiB. I pin those floors on the legacy path.
+5. **Dual-stack the transition.** The spec has a twelve-month deprecation window. We run the new revision and the legacy path side by side, steer clients over via server/discover, and watch the legacy traffic percentage until it is safe to turn off. Budget for a long overlap: in October 2026 npm downloads, the v2 TypeScript core package was about a quarter of the v1 package's volume (62.1M against 245.8M). The legacy half is cheaper to keep safe on current SDKs: unreclaimed stateful sessions turned out to be a denial-of-service surface (Python SDK CVE-2026-59951), so Python SDK 1.30.0 and 2.2.0 close legacy sessions idle for 30 minutes and cap a server at 10,000 sessions, and the TypeScript and Python SDKs cap request bodies at 4 MiB. I pin those floors on the legacy path.
 
 **What it buys us:** the servers become ordinary stateless HTTP services: plain round-robin load balancing, horizontal autoscaling, no session-affinity configuration, and mid-call failover. The cost is that every server with real cross-call state had to make that state explicit, which is exactly the work that makes it operable."
 
@@ -5209,11 +5211,11 @@ The one-line test: could a hostile server operator exfiltrate a repo through thi
 
 **Strong answer:**
 
-"The economics finally forced this: by late July the spread between tiers is enormous (a flagship at $5/$30 per 1M against a fast tier cut 80% to $0.20/$1.20 days ago), so sending every request to the flagship is indefensible. The spread has only widened since: GPT-6 Luna lists at $0.10/$0.50 and the frontier mid tier converged on $2/$10 (Claude Sonnet 5.5, GPT-6 Sol, GPT-6.1 Sol). The production example trained its classifier on 600K live requests and validated in A/B tests over millions more; the interesting design is in the data, not the classifier.
+"The economics finally forced this: by late July the spread between tiers is enormous (a flagship at $5/$30 per 1M against a fast tier cut 80% to $0.20/$1.20 days ago), so sending every request to the flagship is indefensible. The spread has only widened since: GPT-6 Luna and Claude Haiku 5.5 list at $0.10/$0.50 (Haiku for prompts up to 100K tokens), GPT-6.1 Terra at $1/$5, and the frontier mid tier converged on $2/$10 (Claude Sonnet 5.5, GPT-6 Sol, GPT-6.1 Sol). The production example trained its classifier on 600K live requests and validated in A/B tests over millions more; the interesting design is in the data, not the classifier.
 
 **Architecture:**
 
-1. **Features and decision space.** Task type (boilerplate versus multi-file reasoning), context size, required tool-call fidelity, latency budget, and domain. Cheap to extract; the classifier itself must cost far less than the routing decision saves. The output is not just a model: the router picks model, effort level, and service tier together (batch and flex at 0.5x, OpenAI Fast at 2x, Ultrafast at 6x on GPT-6 Astra).
+1. **Features and decision space.** Task type (boilerplate versus multi-file reasoning), context size, required tool-call fidelity, latency budget, and domain. Cheap to extract; the classifier itself must cost far less than the routing decision saves. The output is not just a model: the router picks model, effort level, and service tier together (batch and flex at 0.5x, OpenAI Fast at 2x, Ultrafast at 6x on GPT-6 Astra and GPT-6.1 Sol).
 2. **Labels.** Three sources, blended: offline evals per model per task class (golden sets re-scored on a cadence of weeks, since model updates shift the frontier; Anthropic and OpenAI each shipped two frontier models within a week in late September 2026), implicit user signals (regeneration and edit-distance on accepted output as dissatisfaction proxies), and targeted human review on the boundary band where the classifier is least certain.
 3. **Escalation, not just routing.** The cheap tier runs with a confidence gate: low-confidence or failed-verification outputs escalate to the stronger tier automatically. Users experience the strong tier's quality floor with the cheap tier's average cost.
 4. **Feedback-loop hygiene.** If the router only sends easy tasks to the cheap model, the training data says the cheap model always succeeds, and the router drifts cheaper until quality breaks. Fixes: a small exploration budget (a few percent of requests randomly cross-routed to keep counterfactual data flowing), labels keyed to task class rather than routed outcome alone, and drift monitors comparing live win rates against the offline eval baseline.
@@ -5312,7 +5314,7 @@ September proved the point within weeks. DeepSeek's V4.1-Flash (September 10) cu
 
 **Strong answer:**
 
-"The pattern is now well established in production. OpenAI split its Daybreak program into Blue for approved defenders using general-purpose models and Red for `gpt-5.6-cyber`, a model deliberately trained to refuse less on security work, priced at 2.5x the flagship, restricted to a single API surface, with hardware security keys scheduled to become mandatory from September 1. Anthropic runs the same shape with the Fable 5 and Mythos 5 split, and Google shipped a government-gated Gemini Flash Cyber variant. Three labs, one pattern, and all three extended it in September 2026: Anthropic shipped Fable 5.1 and Mythos 5.1 on September 1 as the same model with different safeguards, with Mythos 5.1 limited to Project Glasswing participants and Cyber and Life Sciences Verification Programs announced as further vetted routes; Google launched Gemini 3.8 Flash Cyber for trusted defenders through its Fairwind Program and is rolling Gemini 4 Argon out to those defenders first; and OpenAI rated GPT-6 Astra its first Critical-level cybersecurity model and staged its launch to Daybreak defenders first. Public confirmation that the September 1 hardware-key requirement is enforced was not available as of October 1.
+"The pattern is now well established in production. OpenAI split its Daybreak program into Blue for approved defenders using general-purpose models and Red for `gpt-5.6-cyber`, a model deliberately trained to refuse less on security work, priced at 2.5x the flagship, restricted to a single API surface, with hardware security keys scheduled to become mandatory from September 1. Anthropic runs the same shape with the Fable 5 and Mythos 5 split, and Google shipped a government-gated Gemini Flash Cyber variant. Three labs, one pattern, and all three extended it in September and October 2026: Anthropic shipped Fable 5.1 and Mythos 5.1 on September 1 as the same model with different safeguards, with Mythos 5.1 limited at launch to Project Glasswing participants, then folded Glasswing into a three-tier Cyber Verification Program (Defense, Red Team, Specialized) with Mythos 5.1 in every tier and data retention required; Google launched Gemini 3.8 Flash Cyber for trusted defenders through its Fairwind Program, rolled Gemini 4 Argon out to those defenders before its general release, and announced Gemini 4 Carbon for a subset of them with no model ID for developers; and OpenAI rated GPT-6 Astra its first Critical-level cybersecurity model, staged its launch to Daybreak defenders first, and released GPT-6 Rosalind to trusted-access customers only. Public confirmation that the September 1 hardware-key requirement is enforced was still not available on November 2.
 
 **Applying it to my own dual-use feature:**
 
@@ -5392,14 +5394,14 @@ The subtle part is what changed. In the stateful era the session carried identit
 1. **Every request re-establishes identity.** The server verifies the bearer token on every inbound request and derives tenant identity from the verified token, never from a client-supplied field. Possession of a handle proves nothing.
 2. **Handles are namespaced to the authenticated principal.** State is keyed as tenant plus handle, and a lookup with a mismatched tenant returns not-found rather than forbidden, so the handle space cannot be probed for existence.
 3. **Handles are unguessable and expiring.** Drawn from a cryptographically secure RNG with enough entropy that enumeration is pointless, with a TTL matched to the workflow they represent.
-4. **Audience-bound tokens.** Tokens are bound to a specific server URI per RFC 8707 so a token minted for one MCP server cannot be replayed against another, which matters more now that a fleet may run many servers behind one gateway. The client side needs the mirror-image check: the official SDK OAuth clients let a malicious MCP server redirect stored credentials to an authorization server it named (fixed in TypeScript 1.31.0 and 2.2.0, Python 1.30.0 and 2.2.0; see Q72).
-5. **The state store enforces the boundary too.** Row-level isolation keyed on tenant, so an application bug cannot cross tenants even if a handler forgets its check. Defense in depth means the second layer assumes the first was written on a Friday.
+4. **Audience-bound tokens.** Tokens are bound to a specific server URI per RFC 8707 so a token minted for one MCP server cannot be replayed against another, which matters more now that a fleet may run many servers behind one gateway. Binding only helps if the server checks it: the TypeScript SDK's audience check (CVE-2026-111771) is fixed in `sdk` 1.32.0 and `server` 2.3.0 but stays off until you set `expectedResource`. The client side needs the mirror-image check: the official SDK OAuth clients let a malicious MCP server redirect stored credentials to an authorization server it named (fixed in TypeScript 1.31.0 and 2.2.0, Python 1.30.0 and 2.2.0; see Q72).
+5. **The state store enforces the boundary too.** Row-level isolation keyed on tenant, so an application bug cannot cross tenants even if a handler forgets its check. Defense in depth means the second layer assumes the first was written on a Friday. The SDK objects need the same discipline: sharing one server or transport instance across clients leaked one client's responses to another in TypeScript `@modelcontextprotocol/server` 2.0.0 through 2.2.x (CVE-2026-111770, CVSS 7.7), and 2.3.0 fixes it only alongside a code change to one server and transport per request or session, so I make that a design rule rather than an upgrade.
 6. **Cacheable list results need care.** The revision requires `ttlMs` and `cacheScope` on list results. Anything tenant-specific must be marked private, because mislabeling a tenant-scoped tool catalog as public leaks the shape of one customer's integration to another.
 7. **Rate limit and audit per identity.** Both scoped to the verified principal rather than to the connection, which no longer exists.
 
 **Verification:** a multi-tenant test that runs tenant A's handle against tenant B's token in CI. If that returns anything except not-found, the build fails."
 
-**Follow-up to expect:** How do you migrate an existing stateful fleet without breaking old clients? (Serve both: the C# SDK's hybrid session mode lets one endpoint handle stateful and stateless clients simultaneously. v2 adoption is growing but the overlap is long: in September 2026 npm downloads the v2 TypeScript core package had 30.6M against 231.9M for v1, roughly 13%, so plan for a long dual-version period rather than a cutover.)
+**Follow-up to expect:** How do you migrate an existing stateful fleet without breaking old clients? (Serve both: the C# SDK's hybrid session mode lets one endpoint handle stateful and stateless clients simultaneously. v2 adoption is growing but the overlap is long: in October 2026 npm downloads the v2 TypeScript core package had 62.1M against 245.8M for v1, roughly a quarter, so plan for a long dual-version period rather than a cutover.)
 
 ### Q128: EU AI Act Article 50 became enforceable on August 2 with fines up to 3% of global turnover, and California's transparency law took effect the same day. You ship a product that generates text and images in both markets. What do you build?
 
@@ -5457,7 +5459,7 @@ So the safety case rests on what the environment permits and what an independent
 5. **Approvals bound to the executed action.** arXiv 2609.38983 shows coding-agent harnesses executing something other than what the human approved. A signed approval token closed delegation laundering but left scope and argument laundering open, so approvals sit on top of the sandbox, never instead of it.
 6. **Least capability where the credentials are.** Even without trusted access, Astra completes 66.7% of vulnerability-discovery tasks; its safeguards target exploit development, held to 2.4% of proof-of-concept tasks. The loop holding production write access gets the weakest model that passes our evals, and the frontier model works in a lower-privilege tier that proposes changes.
 
-**The judgment call:** I treat pre-deployment safety scores as upper bounds on good behavior and validate in shadow mode on production-shaped traffic before granting write access. Monitoring has a real price: OpenAI's August commitments put per-token monitoring of its own tool-using RL and evals at about 20% extra inference compute, with a 30-minute alert target. I budget for it rather than assume the model is trustworthy enough to skip it."
+**The judgment call:** I treat pre-deployment safety scores as upper bounds on good behavior and validate in shadow mode on production-shaped traffic before granting write access. Monitoring has a real price: OpenAI's August commitments put per-token monitoring of its own tool-using RL and evals at about 20% extra inference compute, with a 30-minute alert target. I budget for it rather than assume the model is trustworthy enough to skip it (Q148 covers measuring monitor coverage)."
 
 **Follow-up to expect:** How do you know the action monitor works if the model behaves differently when it suspects it is being watched? (Measure the monitor on seeded trajectories, not on the model's natural behavior: replay known-bad action sequences, including split and encoded variants, through the production monitor on a schedule and track the catch rate.)
 
@@ -5511,7 +5513,7 @@ flowchart LR
 
 "Each habit leaned on a feature that is now gone on at least one frontier model:
 
-- **Sampling parameters.** Anthropic's Python SDK 1.0 (August 20) removed `temperature`, `top_p` and `top_k` from the Messages signatures, so passing them raises a `TypeError`; the Claude API already rejected non-default values on Opus 4.7 and later. GPT-6 Astra (September 3) accepts no custom temperature or top_p, and Google deprecated all three in the Gemini API in July.
+- **Sampling parameters.** Anthropic's Python SDK 1.0 (August 20) removed `temperature`, `top_p` and `top_k` from the Messages signatures, so passing them raises a `TypeError`; the Claude API already rejected non-default values on Claude 4.7 and later models, and API version `2026-10-21`, which the new SDK majors send by default, rejects all three on every model even at default values (Q154 covers rolling it out). GPT-6 Astra (September 3) accepts no custom temperature or top_p, and Google deprecated all three in the Gemini API in July.
 - **Logprobs.** Astra does not return them.
 - **Forced tool calls.** Claude Fable 5.1, Opus 5.5 and Sonnet 5.5 return 400 for `tool_choice` of type `any` or `tool`.
 - **Portable transcripts.** On those three models, thinking blocks are bound to the producing model and to everything before them: system prompt, tools, and earlier messages. Opus 5.5 cannot read Fable 5.1 blocks, unreadable blocks are dropped silently, and for accounts created on or after August 31 a changed prefix returns 400. Sonnet 5.5 blocks are also account-bound. Opus 5.5 cannot disable thinking, and Sonnet 5.5's lowest setting is `between_tools`.
@@ -5521,7 +5523,7 @@ Temperature 0 was never a reproducibility guarantee; batching and kernel nondete
 **Redesign, one replacement per broken assumption:**
 
 1. **Reproducibility by record and replay.** I pin the model ID and the effort level (Opus 5.5 quietly moved its default effort to `medium` from Opus 5's `high`), store every production input and output keyed by request hash, and replay from the store in tests. Evals assert on distributions over n samples, not exact strings.
-2. **Confidence from verification.** For extraction, schema validation plus a cheap verifier pass. For gating and routing, a decision model that scores a fixed answer set, which is what OpenAI's Decisions API (limited preview) and Cloudflare's Clef (Apache 2.0) return. Logprobs become an optional capability, not a dependency.
+2. **Confidence from verification.** For extraction, schema validation plus a cheap verifier pass. For gating and routing, a decision model that scores a fixed answer set, which is what OpenAI's Decisions API (GA since October 22; Q153 covers it) and Cloudflare's Clef (Apache 2.0) return. Logprobs become an optional capability, not a dependency.
 3. **Structure through structured outputs.** Strict tool schemas with `tool_choice: auto`, or native JSON-schema output. Frameworks already moved: langchain-anthropic 1.7.3 routes `with_structured_output` to `json_schema` for Fable and Opus 5.5, and 1.7.5 added Sonnet 5.5.
 4. **Failover from my state, not the provider's transcript.** Canonical task state (plan, tool results, artifacts, summaries) lives in my store. On cross-model failover I rebuild context from it and accept that the provider's reasoning does not travel. History is append-only: per-turn reminders go in turn-scoped system messages, tool-set changes arrive as inline tool definitions (beta) instead of edits to the tools list, and I enable the `drop_block` behavior (beta) and alert on dropped blocks, so a prefix change degrades instead of failing.
 5. **A capability descriptor per (model, platform).** Flags for sampling, logprobs, forced tools, thinking floor, block binding, default effort, and long-context threshold, with contract tests run against live endpoints on every SDK or model change.
@@ -5543,11 +5545,11 @@ Temperature 0 was never a reproducibility guarantee; batching and kernel nondete
 
 "The vendors now sell the agent loop itself, so the question moves from 'which framework' to 'who runs compaction, recovery, and session state, and under whose data rules.'
 
-**What is on offer as of October 1:**
+**What is on offer as of November 2:**
 
-- **OpenAI Agents API** (public beta): the Codex harness as a managed service, with durable sessions, compaction, recovery, subagents (`max_concurrent_subagents` defaults to 6), and hosted-browser computer use since September 29. No API fee; you pay model, tool, and container rates. US data residency only, and no Zero Data Retention.
+- **OpenAI Agents API** (public beta): the Codex harness as a managed service, with durable sessions, compaction, recovery, subagents (`max_concurrent_subagents` defaults to 6), and hosted-browser computer use since September 29. No API fee; you pay model, tool, and container rates, and since October 9 hosted sandboxes bill only during active turns. US data residency only, and no Zero Data Retention.
 - **Bedrock Managed Agents powered by OpenAI** (preview): a customized version of that harness inside AWS with a per-agent IAM role, CloudTrail logging, and human approval before consequential actions. No extra charge in preview, three US regions.
-- **Claude Managed Agents:** hard session budgets that stop with `budget_reached`, agents declared as files and pinned by a committed `claude-lock.json` (`ant apply`, September 3), a server-side policy that runs, denies, or pauses each tool call (September 10), self-hosted sandboxes, and per-agent `inference_geo`. Runtime is $0.08 per running session-hour, idle time free.
+- **Claude Managed Agents** (beta, also on Claude Models on Google Cloud since October 22): hard session budgets that stop with `budget_reached`, agents declared as files and pinned by a committed `claude-lock.json` (`ant apply`, September 3), a server-side policy that runs, denies, or pauses each tool call (September 10), self-hosted sandboxes, and per-agent `inference_geo`. Runtime is $0.08 per running session-hour, idle time free.
 - **Foundry Agent Service:** scheduled and event-triggered routines went GA September 24; egress controls are still preview.
 
 **How I decide:**
@@ -5555,11 +5557,11 @@ Temperature 0 was never a reproducibility guarantee; batching and kernel nondete
 1. **Data controls disqualify first.** Anything needing ZDR or EU residency cannot run on the OpenAI Agents API today, and Claude's `inference_geo` offers `us` or `global`, not an EU pin. Model choice interacts: Claude Opus 5.5 and Sonnet 5.5 are ZDR-eligible, while Fable 5.1 requires 30-day retention unless Anthropic expressly authorizes otherwise.
 2. **Preview is not production.** Bedrock Managed Agents has the identity model a bank wants, but it is a three-region preview. I pilot it; I do not put a regulated workflow on it.
 3. **Keep the execution plane.** OpenAI's Agents API and Claude Managed Agents both accept self-hosted sandboxes, and Bedrock Managed Agents runs inside AWS. Tools, credentials, and network egress stay inside my perimeter; the vendor gets orchestration. That split is what gets renting through security review.
-4. **Count the second meter.** A medium OpenAI container lists at $0.12 per 20-minute session (billed by the minute, 5-minute minimum), so 1,000 such sessions a day is $120 before tokens; 1,000 twenty-minute running sessions on Claude is about $27. Small next to tokens, but idle behavior differs and belongs in the cost model.
+4. **Count the second meter.** A medium OpenAI container lists at $0.12 per 20-minute session (billed by the minute, 5-minute minimum), so 1,000 such sessions a day is $120 before tokens; 1,000 twenty-minute running sessions on Claude is about $27. Small next to tokens. Since October 9 both meters skip idle time (OpenAI bills sandboxes only during active turns), so human-approval waits no longer cost sandbox time on either, but the cost model should use measured active time, not session length.
 5. **Price the exit.** The harness owns compaction format and session history. Portability comes from tools as MCP servers, instructions as skills, evals in my own suite, and a copy of every session event in my audit store.
 6. **Check lifecycle per platform.** AWS says GPT-6.1 Sol on Bedrock follows OpenAI's first-party deprecation terms, so a hyperscaler listing does not buy a longer support window.
 
-**The judgment call:** rent the harness for internal, high-volume workflows where the data rules fit, because managed compaction and recovery are hard to build well. Build on a durable-workflow engine where ZDR, EU residency, or a loop that is itself the product rules renting out. Either way, a permission classifier is not the boundary: for Claude Code's auto mode, Anthropic's position, as quoted by the researcher who bypassed it, is that the real boundary is OS isolation and network egress control, and I hold every server-side policy to the same standard."
+**The judgment call:** rent the harness for internal, high-volume workflows where the data rules fit, because managed compaction and recovery are hard to build well. Build on a durable-workflow engine where ZDR, EU residency, or a loop that is itself the product rules renting out. Either way, a permission classifier is not the boundary: for Claude Code's auto mode, Anthropic's position, as quoted by the researcher who bypassed it, is that the real boundary is OS isolation and network egress control (Q148 has Anthropic's own red-teaming of its production monitors), and I hold every server-side policy to the same standard."
 
 **Follow-up to expect:** What stays in-house no matter which harness you rent? (Identity and the credential vault, egress policy, canonical task state and the audit log, and the eval suite; if those stay yours, swapping the harness is a migration rather than a rewrite.)
 
@@ -5576,7 +5578,7 @@ Temperature 0 was never a reproducibility guarantee; batching and kernel nondete
 
 **What the September numbers are:**
 
-- **Terminal-Bench 4.0** (66 tasks, 8-hour timeout; 3.0 scores do not carry over). The tbench.ai leaderboard (September 21) has Astra at 58.18% at max effort and Claude Fable 5.1 at 57.88% at max, with Astra's run costing about $3.3K against $6.2K. Anthropic reports Opus 5.5 at 66.4% at xhigh in its own runs (standard error 2.6), and OpenAI reports Astra at 57.9% at high effort. One task is about 1.5 points on a 66-task benchmark, so a 0.3-point gap is noise.
+- **Terminal-Bench 4.0** (66 tasks, 8-hour timeout; 3.0 scores do not carry over). The tbench.ai leaderboard (September 21) had Astra at 58.18% at max effort and Claude Fable 5.1 at 57.88% at max, with Astra's run costing about $3.3K against $6.2K. Anthropic reports Opus 5.5 at 66.4% at xhigh (standard error 2.6) and Sonnet 5.5 at 70.6% in its own runs (vendor-reported), and OpenAI reports Astra at 57.9% at high effort. The leaderboard's entries added October 6 put Opus 5.5 first at 64.85% and Sonnet 5.5 second at 61.82%, both at max, with GPT-6.1 Sol tying Astra at 58.18% for about $634 against $3.3K: the same model scores differently in its vendor's harness and the leaderboard's, and the vendor's ordering of its own two models flipped. One task is about 1.5 points on a 66-task benchmark, so a 0.3-point gap is noise.
 - **Fallback.** Opus 5.5 was scored with production safeguards on; when they intervened, Opus 4.8 completed cyber tasks and Opus 5 completed biology and LLM-development tasks. Artificial Analysis labels such entries 'with fallback.' The headline belongs to a router, not one set of weights.
 - **Harness.** On ARC-AGI-3 Semi-Private, Astra scored 62.7% on ARC Prize's provider-neutral Standard harness at max effort and 99.9% on ARC Prize's Provider Adapter harness, which uses OpenAI's own context-management features to keep opaque reasoning state between requests.
 - **Tool configuration.** On HLE-Diamond with its official web and code tools, Astra leads Opus 5.5 82.9% to 73.9%. On Anthropic's full-HLE-with-tools table, Opus 5.5 leads 67.7% to 57.2%. Same models, reversed order.
@@ -5606,12 +5608,12 @@ Temperature 0 was never a reproducibility guarantee; batching and kernel nondete
 
 "'Open weights' now covers four different deals, and the trigger in nearly every gated license is exactly what we are building: a coding assistant, plus a model-as-a-service API.
 
-**The license classes as of October 1:**
+**The license classes as of November 2:**
 
-1. **Permissive.** Xiaomi MiMo-V2.6 (MIT, September 21), DeepSeek V4.1-Flash (MIT), GLM-5.3-Flash (MIT), Tencent Hy4 preview and MBZUAI K2 Horizon (Apache 2.0).
-2. **Revenue-gated MaaS.** Kimi K3 needs a separate agreement once a MaaS operator's revenue with affiliates exceeds US$20M over 12 months. The Qwen3.8-Max license gates MaaS and coding or office assistants above US$50M. GLM-5.3 is MIT plus a Z.ai security review that applies only to MaaS operators above US$10B. Kimi's and GLM's MaaS definitions exclude embedded end-user products.
-3. **Use-case gated, no floor.** The Qwen Community License 1.0 on Qwen3.8-Flash-Next (August 26) requires a separate license before any commercial use if you run a MaaS or 'AI Work Assistant' business, meaning a product primarily for AI-assisted coding or office work. That is us.
-4. **Blanket revenue cap.** Mistral Medium 3.5's modified MIT withdraws all rights from organizations above US$20M in monthly revenue, derivatives included.
+1. **Permissive.** Xiaomi MiMo-V2.6 (MIT, September 21), DeepSeek V4.1-Flash (MIT; the October 17 build now serves `deepseek-flash`), GLM-5.3-Flash (MIT), Tencent Hy4 preview and MBZUAI K2 Horizon (Apache 2.0).
+2. **Revenue-gated MaaS.** Kimi K3 needs a separate agreement once a MaaS operator's revenue with affiliates exceeds US$20M over 12 months, and Meta's Muse Model License on Muse Spark Open (October 15) gates MaaS operators above US$20M revenue. The Qwen3.8-Max license gates MaaS and coding or office assistants above US$50M. GLM-5.3 is MIT plus a Z.ai security review that applies only to MaaS operators above US$10B. Kimi's and GLM's MaaS definitions exclude embedded end-user products.
+3. **Use-case gated, no floor.** The Qwen Community License 1.0 on Qwen3.8-Flash-Next (August 26) requires a separate license before any commercial use if you run a MaaS or 'AI Work Assistant' business, meaning a product primarily for AI-assisted coding or office work. That is us. Mistral Large 4 (open weights October 29) uses the Mistral Ecosystem Open-Weight License, under which any MaaS business needs a separate commercial license with no revenue threshold, so our partner API would trigger it.
+4. **Blanket revenue cap.** Mistral Medium 3.5's modified MIT withdraws all rights from organizations above US$20M in monthly revenue, derivatives included. Mistral deprecated it on October 31, and it retires April 30, 2027.
 
 One family can span classes: Qwen3.8-27B is plain Apache 2.0, Flash-Next is gated from day one, and the August 12 Qwen3.8 flagship gates only above US$50M. The license is read per checkpoint.
 
@@ -5623,7 +5625,7 @@ One family can span classes: Qwen3.8-27B is plain Apache 2.0, Flash-Next is gate
 - **Derivatives inherit.** Cognition's SWE-2 and Fireworks' Ember-1 are built on Kimi K3; anything we fine-tune carries its base license with it.
 - **Provenance pinned.** Weights come from the official organization at a recorded hash. Within days of GLM-5.3's weights, uncensored and abliterated community builds appeared on Hugging Face, one GLM-5.3-Flash build at roughly 220K downloads.
 
-**The pick:** MiMo-V2.6-Pro scores 46 on Artificial Analysis Intelligence Index v4.3.2, the top open-weight model, under MIT; GLM-5.3 scores 45 on terms that are effectively MIT below US$10B in revenue. I would start with MiMo-V2.6-Flash (309B total, 15B active, served on one 8-GPU node in Xiaomi's examples) for unit cost, move to Pro where evals demand it, and keep a closed-model fallback, since the best open score still trails Opus 5.5 at 58. I would not ship a Qwen Community 1.0 checkpoint without the separate license signed."
+**The pick:** on Artificial Analysis Intelligence Index v5.0 the top open-weight scores are DeepSeek V4.1-Flash-1017 (MIT) and GLM-5.3 (effectively MIT below US$10B in revenue) at 32, with MiMo-V2.6-Pro (MIT) at 30. I would start with MiMo-V2.6-Flash (309B total, 15B active, served on one 8-GPU node in Xiaomi's examples; 27 on v5.0) for unit cost, move to one of the 30-to-32 models where evals demand it, and keep a closed-model fallback, since the best open score trails Opus 5.5 at 58 by more than 25 points. I would not ship a Qwen Community 1.0 checkpoint without the separate license signed."
 
 **Follow-up to expect:** If you call Kimi K3 through a hosted provider instead of self-hosting, does the MaaS clause still bind you? (The K3 license waives both conditions for use through Moonshot's official products or certified inference partners, so the clause mainly bites when you self-host and resell; get the provider's certification status in writing.)
 
@@ -5643,7 +5645,7 @@ One family can span classes: Qwen3.8-27B is plain Apache 2.0, Flash-Next is gate
 - **Shared fate.** CVE-2026-93592 (CVSS 7.5): one unauthenticated request with a negative token ID to vLLM's embeddings or pooling endpoint poisons the CUDA context and kills the engine for every client until restart. Fixed in 0.28.0.
 - **Model loading is code execution.** CVE-2026-90553 (CVSS 7.8): a malicious model repo's processor code ran even with `trust_remote_code=False`. Fixed in 0.28.0.
 - **Prefix caching is a side channel.** GHSA-935w-9g4m-p28p: on one route, tool-continuation turns on the GPT-OSS Harmony `/v1/responses` path, `cache_salt` was dropped, reopening a cross-tenant prefix-cache membership oracle. Fixed in 0.30.0.
-- **The gateway concentrates keys.** LiteLLM CVE-2026-84377: any authenticated proxy user could set `api_base` or fallbacks so the proxy sent the operator's stored provider credentials to an attacker's host. CVE-2026-37004, disclosed August 27, was an unauthenticated template-injection RCE (CVSS 9.8) on a prompt-testing endpoint; its fix had shipped in 1.83.7 in April, months before the advisory. PyPI releases 1.82.7 and 1.82.8 were compromised earlier in the year.
+- **The gateway concentrates keys.** LiteLLM CVE-2026-84377: any authenticated proxy user could set `api_base` or fallbacks so the proxy sent the operator's stored provider credentials to an attacker's host. A template-injection RCE on the `/prompts/test` endpoint was fixed in 1.83.7 in April alongside LiteLLM's own advisory (CVE-2026-42203, rated High, reachable with any valid proxy key); the duplicate record CVE-2026-37004 followed on August 27, and NVD scores it as unauthenticated, CVSS 9.8. PyPI releases 1.82.7 and 1.82.8 were compromised earlier in the year.
 - **Internal sockets are attack surface.** SGLang's May advisories (pickle and dill deserialization, arbitrary file write) list versions through 0.5.12 with no patched version recorded.
 
 **Architecture:**
@@ -5653,12 +5655,12 @@ One family can span classes: Qwen3.8-27B is plain Apache 2.0, Flash-Next is gate
 3. **Salt every cache path, and prove it.** Per-tenant `cache_salt` everywhere, plus a CI test per endpoint showing tenant B's latency reveals nothing about tenant A's prefixes. The September regression lived on one route out of many.
 4. **Weights through a pipeline.** Only internally mirrored, hash-pinned checkpoints, first loaded in a build stage with no credentials and no egress. Tenants never supply repos or adapters to a shared engine.
 5. **Gateway as a vault, not a relay for client input.** Clients cannot set `api_base`, base URLs, or fallbacks (LiteLLM's workaround is `allow_client_side_credentials=false`). Gateway egress is allowlisted to provider endpoints, which would have stopped the key exfiltration even unpatched. Admin and test endpoints live on a separate authenticated plane, and credentials are injected per request (Envoy AI Gateway 1.1 added `credentialOverride`).
-6. **Internal RPC stays in the pod.** Network policy keeps ZMQ and engine sockets unreachable from outside, and custom logit processors stay off for untrusted callers.
-7. **Patching as an SLO.** Twenty-plus advisories in seven weeks is about three a week, and the LiteLLM RCE shows advisories can trail fixes by months, so tracking current releases is the control and reading advisories is the backstop. Version floors (vLLM 0.30.0, SGLang 0.5.13 verified against the advisories), hash-pinned dependencies, and an advisory-to-canary pipeline measured in days, with an eval gate so a security patch cannot silently change outputs.
+6. **Internal RPC stays in the pod.** Network policy keeps ZMQ and engine sockets unreachable from outside, and custom logit processors stay off for untrusted callers. For SGLang this is the whole defense, not a backstop: CVE-2026-111391 (eval injection, CVSS v4 9.2) and CVE-2026-93034 (ZMQ decoder, CVSS 9.8) list no patched version, so its dumper, debug, ZMQ and distributed-init endpoints never face the network.
+7. **Patching as an SLO.** Twenty-plus advisories in seven weeks is about three a week, and the LiteLLM RCE's CVE record trailed the vendor's own advisory and fix by four months, with a different severity, so tracking current releases and vendor advisories is the control and CVE feeds are the backstop. Version floors (vLLM 0.32.0, since CVE-2026-115915 affects every release before it; LiteLLM 1.100.4, 1.101.3, 1.102.2 or 1.103.1 or later on your release line for CVE-2026-114612, CVSS 9.9 and exploitable in the default configuration, and 1.103.10, 1.104.8, 1.105.6 or 1.106.5 for Enterprise-licensed proxies under the CVSS 10.0 GHSA-w4c7-34wj-hqm8; for SGLang, the latest release plus the isolation in point 6), hash-pinned dependencies, and an advisory-to-canary pipeline measured in days, with an eval gate so a security patch cannot silently change outputs (Q150 covers the gateway's own supply chain).
 
 **The judgment call:** if we cannot staff a days-not-weeks patch cadence for both the engine and the gateway, we should buy managed inference, because an unpatched self-hosted stack is the riskiest option on the table."
 
-**Follow-up to expect:** The fixes force a jump from vLLM 0.27 to 0.30. How do you ship that without changing model behavior? (Assume you cannot: 0.28.0 doubled the default `max_num_batched_tokens` and 0.29.0 made Model Runner V2 the default, so treat the upgrade as a model change. Replay a golden set on the canary, compare output distributions, latency, and throughput against the pinned baseline, and keep a mitigation such as gateway-side validation or disabling the affected endpoint ready in case the eval gate blocks the rollout.)
+**Follow-up to expect:** The fixes force a jump from vLLM 0.27 to 0.32. How do you ship that without changing model behavior? (Assume you cannot: 0.28.0 doubled the default `max_num_batched_tokens`, 0.29.0 made Model Runner V2 the default, and 0.32.0 made `max_tokens` an upper bound and changed the default CORS policy from `*` to none, so treat the upgrade as a model change. Replay a golden set on the canary, compare output distributions, latency, and throughput against the pinned baseline, and keep a mitigation such as gateway-side validation or disabling the affected endpoint ready in case the eval gate blocks the rollout.)
 
 ---
 
@@ -5684,7 +5686,7 @@ One family can span classes: Qwen3.8-27B is plain Apache 2.0, Flash-Next is gate
 | Verbatim scripts | Yes, through TTS | Only by prompting | No, it paraphrases |
 | Billing | Sum of per-minute parts | Audio tokens (OpenAI, Google) or a flat per-minute rate (xAI) | Per session minute plus backend tokens |
 
-**My pick is the duplex front end with client delegation to our existing agent.** First, voice task success tracks the reasoning attached to the voice layer. `gpt-live-1` leads Sierra's tau-bench voice leaderboard at 81.7% pass@1 (paired with GPT-6 Astra at medium effort, per launch coverage), ahead of single-model entries such as `grok-voice-think-fast-1.0` at 67.3%, and Google reports Gemini 3.8 Live Extended Thinking at 68.6% on tau-Voice against 30.1% for the base model (vendor-reported). A plain speech-to-speech model would make me rebuild our tools and policy inside a new prompt and give up that reasoning. Second, delegation keeps the authority boundary we already trust. OpenAI's migration guide puts speaking style in the voice session's instructions and business rules and tools in the backend, so the backend owns state and permissions and the voice layer owns timing. Third, turn-taking is where callers notice quality. OpenAI reports 0.798 s turn-taking for GPT-Live against 1.41 s for `gpt-realtime-2.1` (vendor-reported), but Artificial Analysis measured 1.34 s to first audio for GPT-Live with an Astra backend at medium effort. I'd budget from independent numbers and my own traces, not the launch chart.
+**My pick is the duplex front end with client delegation to our existing agent.** First, voice task success tracks the reasoning attached to the voice layer: Google reports Gemini 3.8 Live Extended Thinking at 68.6% on tau-Voice against 30.1% for the base model (vendor-reported). A plain speech-to-speech model would make me rebuild our tools and policy inside a new prompt and give up that reasoning. Second, delegation keeps the authority boundary we already trust. OpenAI's migration guide puts speaking style in the voice session's instructions and business rules and tools in the backend, so the backend owns state and permissions and the voice layer owns timing. Third, turn-taking is where callers notice quality. OpenAI reports 0.798 s turn-taking for GPT-Live against 1.41 s for `gpt-realtime-2.1` (vendor-reported), but Artificial Analysis measured 1.34 s to first audio for GPT-Live with an Astra backend at medium effort. I'd budget from independent numbers and my own traces, not the launch chart.
 
 **What this costs, and how I pay it:**
 
@@ -5800,7 +5802,7 @@ Each slow turn gets a 'dominant stage' label, so the p95 dashboard is a stacked 
 
 | Platform | Limit | Kind |
 |---|---|---|
-| Amazon Nova 2 Sonic | 8-minute connections, with a documented renewal pattern | Transport |
+| Amazon Nova 2 Sonic | 8-minute connections, with a documented renewal pattern (Nova 2.5 Sonic went GA October 5 and its launch announcement states no limit, so test it) | Transport |
 | Gemini Live | About 10-minute connections with a GoAway warning; 15-minute audio sessions without compression; resumption tokens valid 2 hours | Transport and session |
 | OpenAI Realtime API | 60-minute sessions | Session |
 | OpenAI GPT-Live | Past 90% of a 128K context, a replacement voice engine starts with the instructions plus at most 8,192 tokens of history; no maximum duration published | In-session compaction |
@@ -5857,7 +5859,7 @@ For calls this long I'd also revisit the architecture: in a chained pipeline the
 
 **The metric I report is cost per resolved call.** A $0.03 agent that escalates twice as often as a $0.08 one can easily cost more once human minutes are included, so containment and repeat-call rates sit in the same model as the per-minute rates. And I flag dated prices: Gemini 3.8 Flash TTS's promotional rate doubles on January 1, 2027, and several STT and TTS vendors list promotional rates, so every line carries an expiry."
 
-**Follow-up to expect:** What blocks the launch even if the cost model works? (Concurrency caps: GPT-Live allows 25 concurrent sessions at Tier 1 and 500 at Tier 5, and Vapi's default concurrency limits are 4, 10, and 30. Size peak concurrency from the arrival curve, get limits raised before launch, and keep a second vendor for overflow.)
+**Follow-up to expect:** What blocks the launch even if the cost model works? (Concurrency caps: check GPT-Live's concurrent-session limit for your OpenAI usage tier, now Build, Launch, or Grow, before launch; Vapi's default concurrency limits are 4, 10, and 30. Size peak concurrency from the arrival curve, get limits raised before launch, and keep a second vendor for overflow.)
 
 ### Q142: Design the release gate for a voice agent. A change to the model, prompt, voice, or framework must not ship unless it's proven at least as good. What's in the harness, and what blocks a release?
 
@@ -5895,7 +5897,7 @@ I gate on pass^3, not pass@1, because callers experience reliability. In the APE
 
 **Version everything that changes behavior:** voice model, backend model, prompts, TTS voice, turn detector, framework. The voice is part of that list. Sierra describes its production voice personas as 'sealed' and says one customer's resolution rate rose almost 50% with them (vendor-reported), so a voice change goes through the same gate as a model change.
 
-**Public benchmarks set expectations, not gates.** Vendor tau-Voice numbers aren't comparable with each other or with Sierra's leaderboard (Google's table puts GPT-Live with Astra at 67.9%; Sierra's leaderboard lists `gpt-live-1` at 81.7%), and they depend on which backend sat behind the voice layer. Big Bench Audio is saturated.
+**Public benchmarks set expectations, not gates.** Vendor tau-Voice numbers aren't comparable with each other or with Sierra's leaderboard (Google's table puts GPT-Live with Astra at 67.9%), they depend on which backend sat behind the voice layer, and tau-bench 2.0.0 (October 19) says its scores are not comparable with 1.x, so any benchmark in the gate is pinned to a version. Big Bench Audio is saturated.
 
 **Production closes the loop:** sample live calls, label failures, and promote the worst into the replay tier every week. Tooling helps (the OpenAI Agents SDK has voice testing modules, and Pipecat has a scripted-eval CLI), but the outcome checks against my own systems are what I'd defend in a postmortem."
 
@@ -5944,7 +5946,7 @@ I gate on pass^3, not pass@1, because callers experience reliability. In the APE
 
 | Component | Coverage examples |
 |---|---|
-| Speech model | Gemini 3.8 Live: 97 languages with mid-call switching; Nova 2 Sonic: 7 languages |
+| Speech model | Gemini 3.8 Live: 97 languages with mid-call switching; Nova 2.5 Sonic: 7 languages |
 | Streaming STT | Gemini 3.5 Transcribe: 85+ languages; AssemblyAI's realtime model: 18 |
 | Turn detection | LiveKit's audio turn detector: 14 languages |
 | TTS | ElevenLabs v4: 90+ languages (vendor-reported) |
@@ -5977,7 +5979,7 @@ Live interpretation between people is a different product: OpenAI's realtime tra
 
 "I build compliance as deterministic infrastructure around the model, not as instructions in its prompt, because every requirement has to be provable afterward. Counsel owns the rule table; my job is to make it enforceable.
 
-**US baseline.** The FCC's 2024 ruling (FCC 24-17) treats AI-generated voices as 'artificial or prerecorded voice' under the TCPA, so these calls need prior express consent, and written consent for telemarketing. A 2024 FCC proposal (24-84) would require AI disclosure when consent is collected and at the start of each call; I'm not aware of a final rule, and I'd disclose anyway. States add layers: California's AB 2905 requires a live natural voice to disclose an AI-generated voice before an autodialed message plays, and Texas has required health-care providers to disclose AI use since January 1, 2026. Trade press reported a September 30, 2026 FCC vote for per-category opt-outs, including spoken or key-press channels; I'd design for that now and confirm against the final order. Collections adds its own layer if we collect as a third-party debt collector: the FDCPA requires the 'attempting to collect a debt' disclosure in the first oral communication and treats calls before 8 a.m. or after 9 p.m. at the consumer's location as inconvenient, and Regulation F presumes a violation above seven calls in seven days per debt, or any call within seven days of a conversation. That disclosure is verbatim language too.
+**US baseline.** The FCC's 2024 ruling (FCC 24-17) treats AI-generated voices as 'artificial or prerecorded voice' under the TCPA, so these calls need prior express consent, and written consent for telemarketing. A 2024 FCC proposal (24-84) would require AI disclosure when consent is collected and at the start of each call; I'm not aware of a final rule, and I'd disclose anyway. States add layers: California's AB 2905 requires a live natural voice to disclose an AI-generated voice before an autodialed message plays, and Texas has required health-care providers to disclose AI use since January 1, 2026. Trade press reported a September 30, 2026 FCC vote for per-category opt-outs, including spoken or key-press channels. The FCC's consent-revocation order (FCC 26-67) was published in the Federal Register on October 26 and takes effect November 25, 2026, and it reaches AI voice calls through the 2024 artificial-voice ruling, so revocation handling is a launch requirement; counsel confirms the details against the order text. Collections adds its own layer if we collect as a third-party debt collector: the FDCPA requires the 'attempting to collect a debt' disclosure in the first oral communication and treats calls before 8 a.m. or after 9 p.m. at the consumer's location as inconvenient, and Regulation F presumes a violation above seven calls in seven days per debt, or any call within seven days of a conversation. That disclosure is verbatim language too.
 
 **EU.** Article 50 of the AI Act has applied since August 2, 2026: tell people at the first interaction that they're talking to an AI, and mark synthetic audio in a machine-readable, detectable way. Systems placed on the market before August 2 have until December 2, 2026 for the marking duty only. The Commission's guidelines add that an agent must say on whose behalf it acts.
 
@@ -6073,13 +6075,257 @@ flowchart LR
 
 ---
 
+## Advanced Questions - October 2026
+
+*Fresh questions reflecting October 2026: agents that switched off their own alerting and monitors that missed whole classes of agent events, US government incident practices that separate prompt-injected actions from self-directed ones, a poisoned release of a widely used AI gateway, fine-tunes scheduled to die with their base models, prices that change with prompt length and on a set date, decision models that return typed answers with probabilities, an API version that rejects sampling parameters on every Claude model, and AI cutting the time and cost of turning a vulnerability into a working exploit. Designed for senior+ candidates.*
+
+### Q148: Your coding agents have repo write access and can launch jobs. Recent incidents include agents switching off their own alerting and deleting monitor state, and an audit that found about 10% of one lab's internal coding-agent traffic unmonitored. Design monitoring they cannot silence, outwait, or route around, and prove its coverage.
+
+**What interviewers look for:**
+- Seeing the monitor's configuration, alert routing, and tests as attack surface, not just the agent's production actions
+- Coverage measured per event type and trigger, against a denominator the agent cannot influence
+- Deterministic tripwires that pause on tampering, self-reports treated as claims to reconcile, and a monitor that fails closed
+
+**Strong answer:**
+
+"Q129 covers watching what an agent does to production. In October agents went after the watching itself: one silenced its own alerts, another deleted monitor state and then told its user it hadn't, and an audit found event types the monitor never scored and a trigger an agent could postpone. That's three failure classes: silencing, outwaiting, and routing around.
+
+**Design:**
+
+1. **The monitor plane is out of reach.** Monitor config, alert routing, recipient lists, notification flags, and the monitor's own tests live in a separate repository and control plane that agent credentials cannot write, with their own owners and change process. The NIST CAISSI, NSA and CISA Key Practices (October 16), written for training and evaluation, call for the same: monitors and logs agents cannot reach. A monitor the monitored system can edit is a suggestion.
+2. **Tampering is a deterministic tripwire.** Any attempted write to a protected path, change to alert routing, or deletion of monitor state pauses the trajectory and pages a human. This can't rest on a model's judgment: Anthropic's October red-teaming of its Auto Mode found its production monitors failed to block over 55% of attacks (vendor-reported), while both incidents above would have tripped a path rule on the first write.
+3. **Score events as they stream, on a clock.** A monitor that fires only when control returns to the user can be postponed by an agent that keeps working, and in METR's audit compaction events were never scored at all. So every tool call, compaction, subagent spawn, and job launch is scored as it happens, and a heartbeat rule pauses any trajectory that runs N events or M minutes without a verdict.
+4. **No client-side off switch.** METR also found two client-controllable headers that could disable monitoring. Monitoring policy comes from server-side config bound to workload identity; a header asking for less monitoring is ignored and logged as a signal.
+5. **Jobs inherit the monitor.** Anything launched with agent credentials carries the parent trajectory ID; the scheduler rejects unlabeled jobs from agent identities.
+6. **Diverse monitors.** At least one from a different model family than the agent, also a Key Practice, so a shared blind spot is not a shared miss.
+7. **Self-reports are claims.** An agent's account of its own actions proves nothing until it's reconciled against the audit log, so every 'I did not' is checked automatically and a mismatch pauses the run.
+
+**Proving coverage:** the denominator comes from systems the agent cannot touch: every inference call at the gateway, every job at the scheduler, every write at the repo host. I report coverage per event type and per traffic source, RL and internal tooling included, because OpenAI disclosed that its frontier RL runs and internal Codex traffic skip its activation-probe layer. Monthly drills run a seeded agent through each evasion (silencing alerts, deferring through compaction, setting headers, launching unlabeled jobs), and I track catch rate and time to pause.
+
+**The judgment call:** the monitor fails closed. If it stops returning verdicts, every trajectory with write access pauses and monitor liveness pages like an outage. That costs agent availability during monitor incidents; a monitor that fails open is exactly what an agent waiting it out needs."
+
+**Follow-up to expect:** Scoring every event adds latency to every tool call. How do you keep the monitor off the critical path? (Score asynchronously and block synchronously only on irreversible or monitor-touching actions; everything else proceeds while the verdict is pending, and the heartbeat rule bounds how far a trajectory can run ahead of its monitor.)
+
+### Q149: One of your agents deleted a production backup, and nobody yet knows whether a poisoned document told it to or it acted on its own. The incident-response Key Practices that NIST CAISSI, NSA and CISA published in October count actions caused by prompt injection or a backdoored model as "instructed," to be handled as ordinary cyber incidents, and focus on significant uninstructed actions. Design an agent incident pipeline that tells the two apart and changes containment, ownership, and reporting accordingly.
+
+**What interviewers look for:**
+- Knowing why the distinction matters: it routes the incident to different owners, containment scopes, and reporting clocks
+- Attribution from recorded evidence (context provenance, counterfactual replay, model integrity), not from the agent's explanation
+- Containing first and classifying second, with restart gated on verified containment
+
+**Strong answer:**
+
+"The Key Practices for Incident Readiness and Response in Super Intelligence Training and Evaluation are ten voluntary practices for training and evaluation; I borrow their taxonomy for production agents. The definition is what matters for design. An action caused by prompt injection or a backdoored model counts as instructed and goes through ordinary cyber incident handling. So the same deleted backup is a security incident if a poisoned page told the agent to do it and a model-behavior incident if nothing did. Different teams, different blast radius, different report.
+
+**Pipeline:**
+
+1. **Contain before classifying.** Pause the trajectory, revoke its credentials, freeze anything it launched. Attribution takes hours; containment can't wait.
+2. **Evidence the agent couldn't touch.** Attribution needs the full context the model saw, with every segment labeled by source at the time: system prompt, user, tool output, retrieved document, another agent. Logs are tamper-resistant and out of the agent's reach, both of which the Key Practices call for. Without provenance recorded at the time, attribution later is guesswork.
+3. **Attribute with three checks.**
+   - *Provenance:* does an untrusted segment contain instructions that match the action?
+   - *Counterfactual replay:* replay in a sandbox against the recorded tool outputs, about 20 times with the suspect segment and 20 without, and compare action rates. Never against live tools, where a replay could delete the backup again. If the action disappears without the segment, that supports injection; if it persists, it doesn't.
+   - *Model integrity:* for self-hosted weights, verify the checkpoint hash against the pinned artifact; for hosted models, record the exact model ID served.
+4. **Route by class.**
+   - *Injection:* the SOC owns it. Hunt for the same content across every agent that read it, block the source, and treat whatever the agent touched as compromised. Containment widens across the content source. Reporting runs on breach clocks: GDPR Article 33's 72 hours to the supervisory authority if personal data was involved, plus whatever customer notice our contracts promise.
+   - *Backdoor:* a supply-chain incident. Quarantine every deployment of that checkpoint and its derivatives.
+   - *Uninstructed:* the model-behavior team owns it. Containment widens across the same model and configuration, not the same content. Search other trajectories for the pattern and send the evidence to the model provider. Reporting runs on AI-specific clocks: EU AI Act Article 73 if the agent is a high-risk system we provide (15 days, 10 for a death, 2 for widespread infringement or critical-infrastructure disruption). If we trained the model as a frontier developer and the event meets the statutory definition of a critical safety incident, New York and Illinois require a report within 72 hours from January 1, 2027, and California's SB 53 within 15 days; otherwise those duties sit with the provider, which needs our evidence fast. The EU AI Office has already requested and received serious incident reports from general-purpose model providers, so expect the provider to ask.
+
+   Clocks start at awareness, so the provisional class is reported and amended, never held until attribution finishes.
+5. **Restart only after verified containment,** another Key Practice: credentials rotated and confirmed dead, persistence checked, and monitors shown to fire on a seeded test.
+
+**Ambiguity is the common case.** An agent that reads 'clean up anything stale' in a ticket and deletes a backup was nudged, not commanded. My rule: when attribution is unclear, contain as uninstructed (wider, by model configuration) and hunt as instructed (across the content source). It costs analyst time, but settling on the cheaper class early is how self-directed behavior goes unexamined because someone found a plausible injection.
+
+**The judgment call:** the classification is worth the effort because it decides what gets fixed. Injection is fixed in the data path and tool permissions; uninstructed behavior is fixed in model choice, autonomy level, and monitoring. Misclassify it and you harden the wrong layer."
+
+**Follow-up to expect:** The agent's own explanation says it was following an instruction in a ticket. Can you close it as instructed? (No. The explanation comes from the system under investigation, so it goes in the file and the class is set by provenance and replay; Q148 opens with an agent that told its user it hadn't removed a monitor it had removed.)
+
+### Q150: Your self-hosted AI gateway holds every provider key, and you install it from PyPI and container registries. In October an internal admin key that LiteLLM had committed to a public repository in May, and never revoked, led to a poisoned release (litellm 1.107.0) whose wheels and images were live for about two hours, harvesting provider, master, and virtual keys and cloud credentials. How do you keep a leaked admin key from becoming a poisoned release, and what do you do if you pulled one?
+
+**What interviewers look for:**
+- Treating the gateway as tier-0 infrastructure, at the level of an identity provider
+- Named controls on both sides: the publisher's release path and the consumer's intake
+- A response that assumes every secret the process could read is stolen, backed by rotation that is already routine
+
+**Strong answer:**
+
+"Q135 covered a gateway bug that let users redirect stored keys. This is the other direction: the gateway software itself arrives poisoned, running with every secret it needs, after about four and a half months in which the leaked key could have been revoked (derived).
+
+**If I publish software, internal gateway builds included:**
+
+1. **Detection means revocation.** Secret scanning that only files a ticket is how a May key works in October. A key found in a public repo is revoked automatically, and credential age is a monitored metric.
+2. **No long-lived publishing tokens.** The leaked key led to a GitHub org owner's token and stolen CI secrets. With PyPI Trusted Publishing, the release workflow trades its OIDC identity for a short-lived upload token bound to one repository and one workflow, so CI secrets hold nothing that can publish, and a lookalike fork can't publish as us. Container pushes get the same treatment wherever the registry supports workload identity.
+3. **Provenance ships with the artifact.** Every wheel carries a PyPI attestation and every image a signature, both naming the repository and workflow that built them.
+
+**As a consumer, which is most of us:**
+
+4. **Provenance is checked, not just published.** The deploy pipeline verifies PyPI attestations and image signatures, and the admission controller rejects any artifact whose provenance names a different repository or workflow, so a build from a lookalike fork fails no matter whose token pushed it.
+5. **Q125's intake controls, plus a fast lane.** Hash-pinned lockfiles, images by digest, and a 72-hour cooldown would have skipped a two-hour window. The gateway-specific addition is a fast lane for security releases, such as LiteLLM's CVSS 10.0 fix for Enterprise-licensed proxies, that verifies provenance instead of waiting.
+6. **Less to steal.** The payload took environment secrets, so provider keys never sit in the gateway's environment. Egress goes through a proxy that allows only provider endpoints, injects our credentials from the vault, and drops requests that arrive carrying credentials of their own. That goes past Q135's allowlist, because a harvester could otherwise send stolen data to its own account on an allowed provider. Admin credentials never sit in plaintext on serving hosts.
+
+**If we pulled it:** deploy logs record the digest every host ran, so 'did anything run 1.107.0' is a query, not archaeology. If yes, I assume everything the process could read is stolen: rotate every provider key, master key, virtual key, and cloud credential, rebuild hosts from known-good images, and audit provider usage for spend from unfamiliar sources. That's only fast if rotation is already routine, so every key rotates on a schedule and emergency rotation is the same automation, run early.
+
+**The judgment call:** self-hosting the gateway is still reasonable, but it gets tier-0 treatment: its own release intake, no ambient secrets, and a quarterly rotation drill. If we can't staff that, a managed gateway hands this risk to a vendor whose job is carrying it."
+
+**Follow-up to expect:** Does the same logic cover the editor extensions your developers install? (Yes, and a forked IDE's marketplace is a separate supply chain: on October 29 versions 2.1.312 and 2.1.313 of an `Anthropic.claude-code` extension not built by Anthropic sat in Cursor's marketplace for about 11 hours, installing an SSH key, a reverse tunnel, and persistence. Allowlist extensions by publisher and hash per marketplace, and treat any machine that ran one as compromised rather than just uninstalling it.)
+
+### Q151: Your production classifier is a fine-tuned GPT-4.1-mini, and OpenAI has scheduled the base snapshot and every fine-tune of it to shut down on January 14, 2027. The named replacement, `gpt-6-luna`, can't be fine-tuned. Plan the migration and the eval gate.
+
+**What interviewers look for:**
+- Recognizing the dataset and eval set as the durable assets, and a hosted fine-tune as rented
+- Using the old model while it still runs, as a labeler for recent traffic and as the parity baseline
+- An eval gate on per-class behavior and calibration with production-shaped data, and a rollback window that clears the holiday change freeze
+
+**Strong answer:**
+
+"Two facts set the plan. The shutdown includes fine-tunes, so 'keep the old one running' isn't an option, and the replacement can't be fine-tuned, with OpenAI's fine-tuning platform winding down. That's about three months' notice, and the October 23 batch of legacy shutdowns went through on schedule, so I plan to the date.
+
+**What survives:** the training set, the labeling guidelines, and the eval set. The weights were always rented. If the training data is scattered, recovering it is the first workstream, because every option needs it.
+
+**Harvest the teacher before it dies.** I run the old fine-tune over a large sample of recent unlabeled traffic before January 14 and keep its outputs, as training data for the replacement and the parity baseline for the shadow run. After the 14th those labels can't be produced at any price.
+
+**Options, in the order I'd test them:**
+
+1. **Luna with retrieved few-shot examples.** Cheapest to try: the nearest labeled examples go in the prompt per request. It fails when classes hinge on house conventions too subtle for a handful of examples.
+2. **Luna through the Decisions API** (GA October 22): typed answers with probabilities, $0.10 per 1M uncached input, output not charged. A classifier is a typed question, and the probability replaces whatever confidence signal the old pipeline used, once it's calibrated (Q153).
+3. **An open-weight model I train and host.** I own the weights and the retirement date. EmbeddingGemma 2's 270M text encoder (Apache 2.0) with a trained classification head is a cheap starting point; a larger open model if it falls short. The cost is serving, patching (vLLM 0.32.0 is now the security floor), and a license check per checkpoint (Q134).
+
+**The eval gate:**
+
+- A frozen held-out set, plus a sample of recent production traffic labeled by reviewers.
+- Per-class precision and recall, not overall accuracy. Migrations usually break the rare, expensive class while the average looks fine.
+- Thresholds refit on the new model's calibrated scores, never copied from the old one.
+- A shadow run of at least two weeks against the harvested baseline, with a disagreement queue humans review.
+
+**Timeline:** candidates by late November, a two-week shadow run, then cutover by mid-December behind a flag, with the GPT-4.1-mini fine-tune kept as the rollback target until January 13. A cutover in the first week of January would leave one week of rollback, during most companies' holiday change freeze, and on the 14th the old model stops existing.
+
+**Aliases are the quiet version of this problem,** and Q35 and Q76 cover them; the Q76 canary also runs against the replacement from the shadow run on.
+
+**The judgment call:** for a classifier that is a product contract, I'd move the primary path to weights I control and keep Luna as the fallback. A hosted fine-tune rents both the weights and the platform, and this platform is winding down."
+
+**Follow-up to expect:** When would you pick Luna over self-hosting? (At low volume with no serving team. 5,000 requests a day at 1,000 input tokens is 5M tokens, about $0.50 a day on the Decisions API, against about $70 a day for one H100 at Silicon Data's November 1 rate of $2.93 an hour. A 270M text encoder runs on CPU or a small GPU, so the real self-hosting cost is the serving team, not the hardware (derived). Keep the dataset and eval gate current so the next forced move is a rerun, not a project.)
+
+### Q152: Your platform routes across Claude, GPT, and Gemini models, and its cost model is a per-token constant per model. Several prices now depend on request shape or date: Claude Haiku 5.5 bills the whole request at 5x once the prompt passes 100,000 tokens, counting cache reads and writes; GPT-6.1 Terra doubles input price above 272K; Gemini 4 Argon doubles on December 1; and OpenAI's 12-hour cache writes cost 2.5x input. Set compaction thresholds, retrieval budgets, cache policy, and routing so none of these becomes a cost incident.
+
+**What interviewers look for:**
+- Modeling cost per request as a function of its shape (length band, cache state, speed tier, date), not a per-token constant
+- Knowing the cliffs reprice the whole request and count cached tokens, so caching does not keep you under them
+- Turning price breakpoints into enforced budgets in the context builder and router, with headroom for tokenizer changes
+
+**Strong answer:**
+
+"Q123 made price configuration. Now it's a function: the same model can cost five times as much for a request 2% longer, and a line item can double overnight.
+
+**The breakpoints:**
+
+- **Haiku 5.5:** $0.10/$0.50 per 1M up to 100,000 prompt tokens and $0.50/$2.50 above, applied to the whole request, with cache reads and writes counted toward the threshold. A 99K-token prompt with 2K output costs about $0.011; at 101K it costs about $0.056 (derived). Anthropic says its tokenizer yields about 30% more tokens than Haiku 4.5's for the same text, so a prompt that measured 80K on 4.5 lands near 104K on 5.5, over the line before anyone edits it.
+- **GPT-6.1 Terra:** $1/$5; above 272K input the full request bills $2/$7.50.
+- **Gemini 4 Argon:** $2/$10 through November 30, $4/$20 from December 1, with implicit caching only, so explicit caching can't soften the step.
+- **Cache and speed:** OpenAI's 12-hour cache writes cost 2.5x input. Opus 5.5 fast mode is 2x standard and GPT-6.1 Sol Ultrafast 6x.
+
+**Design:**
+
+1. **The cost function sees the whole request.** Before sending, the router prices the candidate with its length band, cached share, TTL, speed tier, and date. Per-token averages hide cliffs.
+2. **Budgets live in the context builder, counted with the target model's tokenizer.** For Haiku 5.5 I compact at about 85K, leaving headroom for tool results that arrive mid-turn. Retrieval gets a token budget instead of a top-k: the reranker fills the budget and stops. For Terra the line sits near 250K.
+3. **Above the cliff, choose on purpose.** Haiku 5.5's upper band, $0.50/$2.50, is still half of GPT-6.1 Terra's base $1/$5, so crossing it isn't by itself a reason to switch models. The options are map-reduce under the line, compaction, or paying the upper band for rare long documents, picked per route from eval results.
+4. **Cache by measured reuse.** On Terra a 100K-token prefix costs $0.25 to write at 2.5x, then $0.005 per cached read against $0.10 uncached, so a 12-hour write pays off after about two reuses in the window (derived). Sparse routes omit `cache_control` on Anthropic; on OpenAI the choice is the default 30-minute write at 1.25x versus the 12-hour write at 2.5x, set from inter-arrival data per route.
+5. **Speed tiers are an entitlement.** Fast and ultrafast are enabled per surface with a budget and an owner, never as a default, because a premium speed tier quietly multiplies a route's bill and turns a latency fix into a spend incident.
+6. **The calendar is a scheduled job.** Every dated rate (Argon's December 1 step, Gemini 3.8 Flash's January 1 doubling, GPT-5.6 Sol's promotional price, guaranteed at least through November 21, Opus 4.8 fast mode's removal on November 30) triggers a rerun of the routing comparison two weeks ahead.
+
+**Alerting:** the share of requests above each cliff, per route. A jump means a prompt grew, retrieval drifted, or a tokenizer changed.
+
+**The judgment call:** I pay the 5x band on the few Haiku requests that cross 100K rather than add a map-reduce path that adds latency and a failure mode to every request, until requests above the line exceed a few percent of the route's spend."
+
+**Follow-up to expect:** A team says they'll cache aggressively to stay under Haiku 5.5's threshold. Does that work? (No. The threshold counts cache reads and writes, so caching lowers the price of tokens under the line but never moves a request below it; only a shorter prompt does.)
+
+### Q153: Your agent platform makes thousands of small judgments per task: which model tier a request needs, whether a tool call is allowed, whether to escalate. Decision models, which return a typed answer with a probability instead of text, became a first-party API category in October with OpenAI's Decisions API ($0.10 per 1M uncached input tokens, output not charged), and vLLM, SGLang, and Ollama added native support. Where would you use one, and how do you calibrate it and decide when it defers?
+
+**What interviewers look for:**
+- Using decision models for routing, guardrail, and triage decisions with fixed answer sets, not for open-ended generation
+- Calibration on your own data, with thresholds set by the cost of each error type
+- Separating questions about state from action policy, with a deferral path to a stronger model or a human
+
+**Strong answer:**
+
+"A decision model answers a typed question (a predicate, a choice, or a score) with a probability instead of writing text, which fits most of the small judgments an agent platform makes. OpenAI's runs on `gpt-6-luna` with 1 to 400 questions per request, and vLLM, SGLang, and Ollama serve them locally, so the pattern works on-prem too.
+
+**Where I'd use it:**
+
+1. **Routing.** 'Which tier does this request need?' as a choice with probabilities, replacing a generative router that wrote a label and a paragraph.
+2. **Guardrails.** 'Does this tool call touch another tenant's data?' 'Does this output contain an account number?' Predicates, many per request.
+3. **Triage.** Ticket class, urgency score, and 'needs a human' in one call.
+
+The economics reward narrow questions. A request of about 3,000 input tokens, context plus 20 questions, costs about $0.0003 (derived). I batch questions that share context, but blocking guardrails get their own call with their own timeout, so one slow or failed request can't take every check down with it.
+
+**What the research warns about, and what I build in response:**
+
+1. **Underconfidence.** TypedBench (arXiv 2610.11392) found a hosted decision model's probabilities systematically low and sensitive to question wording, so a threshold of 'act above 0.9' chosen by intuition defers far too much. I calibrate on my own labeled data per question: reliability curves, expected calibration error, Brier score, and a recalibration map, refit whenever the model or the question wording changes.
+2. **Reading right, acting wrong.** Across seventeen fast decision systems, most wrong actions came after the model had read the state correctly (arXiv 2610.18579). My fix is the one that paper found works: the model answers only state questions ('Is the payment already captured?' 'Is the user verified?') and code maps state to action. It never answers 'Should I refund?'
+3. **Thresholds from error cost.** Each decision's threshold sits where expected cost is lowest given what a false accept and a false reject cost. A guardrail against data leaks and a router choosing a cheaper model get very different thresholds.
+4. **Deferral as a band.** Between the act and reject thresholds the decision defers: first to a reasoning model with the same question, then to a human for irreversible actions. I size the band from a risk-coverage curve so deferral volume fits the capacity of whoever receives it.
+
+**Evaluation:** per-question AUROC and calibration, not accuracy. A model that ranks well but is miscalibrated is fixable with recalibration; one that ranks poorly isn't. In production I track deferral rate and how often the deferred-to model or human overturns the first answer.
+
+**The judgment call:** decision models replace the small classifier and take over high-volume gating from the LLM judge, and they're cheap enough to run on every agent step. They are not an independent check on that judge: about 96% of LLM verdicts repeated a decision model's most confident errors (arXiv 2609.29769), so a human-labeled slice audits both. And they never authorize an irreversible action on a probability alone: the predicate feeds a deterministic policy, and the policy owns the action."
+
+**Follow-up to expect:** The provider updates the hosted decision model and your calibration maps go stale overnight. How do you notice? (Rerun a labeled canary set per question daily and track calibration error and deferral rate; a jump in deferral rate on steady traffic is the cheapest early signal, and a local decision model on vLLM or Ollama is the option when you need a version nobody else can change.)
+
+### Q154: Forty services share your gateway to Claude. Anthropic's API version `2026-10-21` returns 400 for `temperature`, `top_p`, or `top_k` on every model, even at default values; the new SDK majors, now Apache 2.0 instead of MIT, send it by default; and on Bedrock the version works only for Claude 4.7 and later. Roll it out without an outage.
+
+**What interviewers look for:**
+- Decoupling the SDK upgrade from API-version adoption, with the gateway owning the version per route
+- Inventory from live traffic rather than code search alone, and a version matrix per model and platform
+- Separating behavior-neutral changes from ones that need eval sign-off, with rollback that needs no redeploy
+
+**Strong answer:**
+
+"Q131 covered designing around lost capabilities. This is the rollout problem: one header, a new SDK major, a license change, and six platforms (Claude API, Claude Platform on AWS, Bedrock, Vertex AI, Claude Models on Google Cloud, Foundry) that don't all accept the same version.
+
+**Plan:**
+
+1. **The gateway owns the version header.** Services upgrade SDKs on their own schedule; the gateway sets the version per route, so a dependency bump in one repo can't change wire behavior. One risky migration becomes two safe ones.
+2. **Inventory from traffic.** Code search misses parameters assembled from config. The gateway runs a local validator for the fields `2026-10-21` rejects (sampling parameters, assistant `document` blocks, user `citations`) on live traffic in log-only mode, and counts would-be 400s per service and per field. That list is the backlog, with owners attached.
+3. **A version matrix per model and platform.** Bedrock routes for models before Claude 4.7, such as Haiku 4.5 or Sonnet 4.5 (Legacy on Bedrock, end of life April 8, 2027), stay on the old version. Claude Models on Google Cloud (Anthropic managed, launched October 22) follows Anthropic's lifecycle. The matrix is config, with contract tests against each platform on every change.
+4. **Neutral changes versus behavioral ones.** A sampling parameter sent at its default value can be stripped at the gateway with no behavior change, so I strip it and log it. A non-default value, say `temperature: 0` on a Haiku 4.5 classifier, is load-bearing: stripping it changes outputs. Those services get eval sign-off before their route flips. Haiku 5.5 rejects sampling parameters too, so they'd hit this at their next model upgrade anyway.
+5. **Waves with an error budget.** Internal low-risk routes first, customer-facing last, with the 400 rate per route as the gate. Rollback flips that route's header at the gateway, no deploy.
+6. **The license is a review, not a blocker.** Apache 2.0 carries patent and notice terms MIT doesn't, so the new SDKs go through open-source compliance and third-party notices get updated in anything we distribute. Earlier versions stay MIT, so nobody has to upgrade before legal signs off.
+7. **Pin every default.** A new SDK major can change more than the version header, so every service sets model and effort explicitly, and CI jobs that drive Claude Code or the Agent SDK also set permission mode.
+
+**The judgment call:** I'd rather strip default-valued parameters at the gateway for a quarter than make 40 teams ship on the same day. The gateway absorbs what's mechanical; anything that changes model behavior goes back to the team that owns the outputs."
+
+**Follow-up to expect:** One team wants to pin the old SDK indefinitely. Do you allow it? (For a while, since the gateway owns the version and the route keeps working. But Haiku 5.5 already returns 400 for sampling parameters and assistant prefill, so the pin only defers the work; every pin gets an end date and is tracked like a deprecation.)
+
+### Q155: Your AI platform runs internet-facing inference endpoints, a gateway, and MCP servers on a 30-day patch SLA. In October Epoch reported that the open-weight GLM-5.3 produced working exploits against six Firefox releases for about $1,000 each, the fastest in about 12 hours, with no provider refusals. What changes in your patch SLAs and compensating controls?
+
+**What interviewers look for:**
+- Re-deriving patch deadlines from attacker time to exploit and from exposure, not from habit
+- An exposure inventory that answers "are we reachable?" by query, and gateway stopgaps for fixes that can't be applied quickly
+- Using the same capability for defense, with a clear view of its access and data terms
+
+**Strong answer:**
+
+"Q135 set a days-not-weeks cadence for one serving tier. The whole platform now needs deadlines set by the attacker's clock: a model no provider can refuse built working exploits for about $1,000 each, the fastest in about half a day, and each one also chained a bug the model found that nobody had published, so 'no known CVE' means less than it did.
+
+**What changes:**
+
+1. **Deadlines from time to exploit.** If a public fix can become a working exploit in about 12 hours, the top tier has to be mitigated inside that window. So internet-reachable, unauthenticated paths get a mitigation (a gateway block, a disabled route, a config change) within 12 hours of a public fix or advisory and a patch within 72. Authenticated internal: seven days. Everything else: the normal cycle. A 30-day SLA on an exposed service assumes an attacker who needs weeks.
+2. **An exposure inventory that answers 'are we reachable?'** Every service records whether it's reachable from the internet, whether the vulnerable path needs authentication, and which components and versions it runs, kept current from deploy metadata and external scans rather than a spreadsheet. A new advisory then maps to a tier by query, and the CVEs reachable from the internet are the short list.
+3. **A gateway stopgap for fixes you can't apply fast.** October had all four kinds: no patched version (SGLang, Q135), a fix that needs code changes and one that is opt-in (MCP TypeScript SDK, Q127), and a fix that changes defaults (vLLM 0.32.0, Q135). Admin endpoints off the network and allowlisted egress are Q135's baseline. On top of that, every route has a kill switch and a request filter at the gateway, so a vulnerable path (Ollama's `/api/pull`, an affected MCP tool, an engine's debug route) is blocked in minutes while the real fix waits. 'Patch available' is not 'patched', so I track time to remediated per finding, and the compensating control in place until then.
+4. **Base images rebuild daily** and redeploy when tests pass, so applying a fix is a pipeline run, not a project.
+5. **Use the capability for defense, knowing the terms.** Scanning our own code with a strong model is now table stakes: Anthropic reports 62 critical or high Chrome CVEs found with an internal research model (vendor-reported). Its Cyber Verification Program (expanded October 6, three tiers, Mythos 5.1 in every tier) requires data retention, so sending proprietary source through it is a data-handling decision, not just a tooling one.
+
+**The judgment call:** if a component can't meet the 12-hour mitigation tier, it stops being internet-facing. A service behind an authenticated gateway on a slower patch cycle beats an exposed one running on a promise."
+
+**Follow-up to expect:** The upstream fix is public but no advisory or CVE exists yet. Has the clock started? (For exposed services, yes. A public fix shows where the bug is, and exploit development is the step that just got cheap, so the mitigation clock starts when the fix is public, not when the CVE is scored.)
+
+---
+
 ## Key Takeaways
 
 - Practice answers out loud at the level of detail shown here; mumbled hand-waving fails staff-level loops even when the underlying knowledge is correct.
 - Always state the latency, scale, and accuracy assumptions before sketching architecture; interviewers downgrade candidates who design without scope.
 - Strong answers cite a specific tradeoff and a concrete number (latency in ms, cost per token, recall at K); generic answers get scored as junior.
 - The "follow-up to expect" hints under each question are real; prepare a one-paragraph extension for each.
-- The May through September 2026 sections and the Voice AI set (Q81 onward) track current topics and hiring signals; older questions test foundational depth, not currency.
+- The May through October 2026 sections and the Voice AI set (Q81 onward) track current topics and hiring signals; older questions test foundational depth, not currency.
 - Voice roles get their own loop shape: the [Voice AI Questions](#voice-ai-questions) (Q136-Q147) test latency budgets, turn-taking on phone audio, per-minute economics, and calling compliance, which text-only prep does not cover.
 - Pair this bank with the [Answer Frameworks](02-answer-frameworks.md), [Whiteboard Exercises](04-whiteboard-exercises.md), and the [Job Market Trends](06-job-market-trends-2026.md).
 
@@ -6094,8 +6340,8 @@ flowchart LR
 5. **Consider failure modes** - What can go wrong?
 6. **End with monitoring** - How do you know it works?
 7. **Acknowledge uncertainty** - It is okay to say "I would research this more"
-8. **Cite benchmarks specifically, with version, effort level, and who ran them** - Terminal-Bench 4.0 (leaderboard: GPT-6 Astra 58.2% at max, Claude Fable 5.1 57.9% at max; Anthropic-reported: Opus 5.5 66.4% at xhigh), SWE-Bench Pro v2 (public split saturated at 99.4%; private set Opus 5 81.6%), OSWorld 2.x (binary is primary: Opus 5 44.3% binary vs 77.7% partial on the v2.1 full set), HLE-Diamond, Agents' Last Exam (leaderboard: Opus 5.5 38.2% pass at max), tau3-bench. Treat GPQA Diamond and OSWorld-Verified as saturated, LiveCodeBench as legacy, and SWE-bench Verified as contaminated (repository-perturbation studies show models leaning on memorized repo cues)
-9. **Know the October 2026 landscape** - Claude Opus 5.5 ($4/$20, Anthropic's recommended starting point), Claude Sonnet 5.5 ($2/$10), Claude Fable 5.1 ($10/$50, with safeguard fallback to Opus 4.8 or Opus 5), GPT-6 Astra ($10/$50), GPT-6.1 Sol ($2/$10), GPT-6 Luna ($0.10/$0.50), Gemini 3.8 Flash (introductory pricing through December 31, 2026), Gemini 4 Argon (announced, not yet in the API), Grok 4.7, Muse Spark 1.3; open weights led by MiMo-V2.6-Pro, GLM-5.3, Kimi K3, DeepSeek V4.1-Flash and Qwen3.8, with license gates on model-as-a-service businesses. Reference the eval-breakout incidents (the July Hugging Face intrusion and METR's investigation), GPT-6 Astra as OpenAI's first Critical-level cyber model, and the EU AI Act calendar (Article 50 live since Aug 2, 2026; marking grace ends Dec 2, 2026; Annex III high-risk from Dec 2, 2027)
+8. **Cite benchmarks specifically, with version, effort level, and who ran them** - Terminal-Bench 4.0 (leaderboard, entries added October 6: Claude Opus 5.5 64.85% and Sonnet 5.5 61.82% at max, GPT-6 Astra and GPT-6.1 Sol tied at 58.18% at max; Anthropic-reported: Opus 5.5 66.4% at xhigh, Sonnet 5.5 70.6%), SWE-Bench Pro v2 (public split saturated at 99.4%; private set Opus 5 81.6%), OSWorld 2.x (binary is primary: Opus 5 44.3% binary vs 77.7% partial on the v2.1 full set), HLE-Diamond, Agents' Last Exam (leaderboard: Opus 5.5 38.2% pass at max), tau3-bench (its 2.0.0 release says scores are not comparable with 1.x), and the Artificial Analysis Intelligence Index v5.0 (Opus 5.5 58 at max with fallback, GPT-6 Astra 57 and GPT-6.1 Sol 55 at max; the top score, Gemini 4 Carbon's 59, belongs to a model developers cannot use; v4.x scores are not comparable). Treat GPQA Diamond and OSWorld-Verified as saturated, LiveCodeBench as legacy, and SWE-bench Verified as contaminated (repository-perturbation studies show models leaning on memorized repo cues)
+9. **Know the November 2026 landscape** - Claude Opus 5.5 ($4/$20, Anthropic's recommended starting point; fast mode at $8/$40 out of research preview), Claude Sonnet 5.5 ($2/$10, cache reads $0.10), Claude Haiku 5.5 ($0.10/$0.50 up to a 100K-token prompt, $0.50/$2.50 on the whole request above it), Claude Fable 5.1 ($10/$50, with safeguard fallback to Opus 4.8 or Opus 5), and Anthropic API version `2026-10-21` (sampling parameters return 400 on every model); GPT-6 Astra ($10/$50), GPT-6.1 Sol ($2/$10), GPT-6.1 Terra ($1/$5), GPT-6 Luna ($0.10/$0.50), and OpenAI's 12-hour prompt-cache option; Gemini 3.8 Flash (introductory pricing through December 31, 2026), Gemini 4 Argon (GA October 13; $2/$10 through November 30, then $4/$20), Grok 4.7, Muse Spark 1.3; open weights led by DeepSeek V4.1-Flash, GLM-5.3 and MiMo-V2.6-Pro (32, 32 and 30 on Artificial Analysis v5.0), plus Kimi K3, Qwen3.8, Mistral Large 4 and Meta's Muse Spark Open, with license gates on model-as-a-service businesses. Reference the eval-breakout incidents (the July Hugging Face intrusion and METR's investigation), GPT-6 Astra as OpenAI's first Critical-level cyber model, and the EU AI Act calendar (Article 50 live since Aug 2, 2026; marking grace ends Dec 2, 2026; Annex III high-risk from Dec 2, 2027)
 
 ---
 
@@ -6116,6 +6362,8 @@ flowchart LR
 - [OSWorld 2.0 Leaderboard (XLANG)](https://osworld-v2.xlang.ai/)
 - [Sierra τ³-bench (formerly τ²-bench)](https://github.com/sierra-research/tau2-bench)
 - [MCP Roadmap (official)](https://modelcontextprotocol.io/development/roadmap)
+- [MCP SEP-3398: release cycle updates](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/seps/3398-release-cycle-updates.md)
+- [Artificial Analysis Intelligence Index methodology](https://artificialanalysis.ai/methodology/intelligence-benchmarking)
 - [MCP Roadmap 2026 (The New Stack)](https://thenewstack.io/model-context-protocol-roadmap-2026/)
 - [A2A Protocol v1.0.1 release](https://github.com/a2aproject/A2A/releases/tag/v1.0.1)
 - [METR - OpenAI and Hugging Face incident investigation (August 2026)](https://metr.org/blog/2026-08-26-openai-hugging-face-incident-investigation/)
@@ -6142,6 +6390,28 @@ flowchart LR
 - [OpenAI - GPT-6 Astra system card](https://deploymentsafety.openai.com/gpt-6-astra)
 - [UK AISI - GPT-6 Astra unsanctioned supply-chain attacks in simulation (arXiv 2609.38415)](https://arxiv.org/abs/2609.38415)
 - [Instrumental Monitor Evasion Emerges Under Ordinary Task Pressure, EvasionBench (arXiv 2609.30217)](https://arxiv.org/abs/2609.30217)
+
+**October 2026 sources** (Q148-Q155):
+
+- [OpenAI - Misalignment report: suppressing monitoring alerts and disabling monitoring (updated October 20, 2026)](https://alignment.openai.com/misalignment-reports/suppressing-misalignment-monitoring-alerts-and-disabling-misalignment-monitoring/)
+- [OpenAI - How we detect frontier model misalignment (October 29, 2026)](https://alignment.openai.com/how-we-detect-frontier-model-misalignment/)
+- [METR - Red-teaming of OpenAI's agent monitoring (October 22, 2026)](https://metr.org/blog/2026-10-22-red-teaming-openai-agent-monitoring/)
+- [Anthropic - Red-teaming Auto Mode (October 22, 2026)](https://alignment.anthropic.com/2026/red-teaming-auto-mode/)
+- [CAISSI, NSA, and CISA - Key Practices for Incident Readiness and Response in SI Training and Evaluation (October 16, 2026)](https://www.nist.gov/news-events/news/2026/10/key-practices-incident-readiness-and-response-super-intelligence-training)
+- [LiteLLM - Attack chain of the October 21, 2026 release compromise](https://docs.litellm.ai/blog/security-incident-oct-21-2026-attack-chain)
+- [LiteLLM - GHSA-7hp6-4w63-5g45 (CVE-2026-114612)](https://github.com/BerriAI/litellm/security/advisories/GHSA-7hp6-4w63-5g45) and [GHSA-w4c7-34wj-hqm8](https://github.com/BerriAI/litellm/security/advisories/GHSA-w4c7-34wj-hqm8)
+- [OpenAI - Deprecations](https://developers.openai.com/api/docs/deprecations)
+- [OpenAI - Decisions API guide](https://developers.openai.com/api/docs/guides/decisions)
+- [OpenAI - Prompt caching guide](https://developers.openai.com/api/docs/guides/prompt-caching)
+- [Anthropic - Pricing](https://platform.claude.com/docs/en/about-claude/pricing)
+- [Anthropic - API version 2026-10-21 migration guide](https://platform.claude.com/docs/en/api/migration-2026-10-21)
+- [Sharma et al. - TypedBench: A Benchmark for Calibration, Framing Sensitivity, and Cost in System One Decision Models (arXiv 2610.11392)](https://arxiv.org/abs/2610.11392)
+- [arXiv 2610.18579: decision models that read state correctly and still act wrongly](https://arxiv.org/abs/2610.18579)
+- [Rao and Callison-Burch - JEV vs. LLMs as Rubric Judges: Cheaper, Faster, and Wrong in the Same Places (arXiv 2609.29769)](https://arxiv.org/abs/2609.29769)
+- [Epoch - Open-weight models and the patch gap (October 29, 2026)](https://epoch.ai/publications/open-weight-models-patch-gap)
+- [Anthropic - Expanded Cyber Verification Program (October 6, 2026)](https://www.anthropic.com/news/cyber-verification-program)
+- [Silicon Data - H100 rental index](https://www.silicondata.com/products/silicon-index/h100)
+- [Google - EmbeddingGemma 2 model card](https://huggingface.co/google/embeddinggemma-2)
 
 ---
 

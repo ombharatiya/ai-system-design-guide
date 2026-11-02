@@ -1,6 +1,6 @@
 # Pydantic AI and Mastra: Typed Agent Frameworks (2026)
 
-The agent framework debate has stopped being "LangGraph or LlamaIndex." Two newer entrants now own meaningful production share for teams that prioritize type safety over breadth: **Pydantic AI** in the Python world (about 5.3M PyPI downloads in the month to Oct 1, 2026) and **Mastra** in the TypeScript world (about 6.9M npm downloads of `@mastra/core` from Aug 31 to Sep 29, 2026). Both reject the "string in, string out" surface that older frameworks accepted, and both bet that a fully typed agent is easier to test, evaluate, and operate than a clever-but-untyped one.
+The agent framework debate has stopped being "LangGraph or LlamaIndex." Two newer entrants now own meaningful production share for teams that prioritize type safety over breadth: **Pydantic AI** in the Python world (about 5.4M PyPI downloads in the 30 days to Nov 1, 2026) and **Mastra** in the TypeScript world (about 8.2M npm downloads of `@mastra/core` in October 2026). Both reject the "string in, string out" surface that older frameworks accepted, and both bet that a fully typed agent is easier to test, evaluate, and operate than a clever-but-untyped one.
 
 ## Table of Contents
 
@@ -32,7 +32,7 @@ The differences are mostly stack-shaped: one targets Python services that alread
 
 ### Current State
 
-[Pydantic AI](https://ai.pydantic.dev/) shipped v1.0 in September 2025 and **v2.0.0 stable on June 23, 2026** after seven betas (the v2 beta forked from v1.100.0); it reached **2.52.0 on Sep 30, 2026**, while 1.x patch releases continue (1.107.7 the same day) ([PyPI release history](https://pypi.org/project/pydantic-ai/#history)). The library is built by the team behind Pydantic itself, which also runs [Pydantic Logfire](https://pydantic.dev/logfire). It is open source under MIT.
+[Pydantic AI](https://ai.pydantic.dev/) shipped v1.0 in September 2025 and **v2.0.0 stable on June 23, 2026** after seven betas (the v2 beta forked from v1.100.0); it reached **2.64.0 on Oct 31, 2026**, while 1.x patch releases continue (1.107.9 on Oct 21) ([PyPI release history](https://pypi.org/project/pydantic-ai/#history)). Minor releases land several times a week and can change behavior: 2.62.0 (Oct 27) prefixes hosted MCP capabilities' tool names with the service by default (configurable with `tool_prefix`), which breaks allowlists and evals keyed on the old names. The library is built by the team behind Pydantic itself, which also runs [Pydantic Logfire](https://pydantic.dev/logfire). It is open source under MIT.
 
 V2 is **harness-first**: a *capability* is a composable unit that bundles tools, lifecycle hooks, instructions and model settings, and a first-party Pydantic AI Harness library supplies more of them, including `StepPersistence` for save and resume. Breaking and behavior changes to check when upgrading from 1.x:
 
@@ -111,7 +111,7 @@ The [Pydantic AI evals docs](https://ai.pydantic.dev/evals/) describe a typical 
 
 ### Current State
 
-[Mastra](https://mastra.ai/) was founded by the team behind Gatsby (graduated YC W25), announced a **$13M seed** from Y Combinator, Paul Graham, Gradient and 120+ other investors on October 8, 2025 ([Mastra announcement](https://mastra.ai/blog/seed-round)), and **shipped v1.0 on January 20, 2026**. `@mastra/core` reached **1.74.0 on Oct 1, 2026**, with about **28.5K GitHub stars** and about **6.9M npm downloads** from Aug 31 to Sep 29, 2026 ([mastra-ai/mastra](https://github.com/mastra-ai/mastra)).
+[Mastra](https://mastra.ai/) was founded by the team behind Gatsby (graduated YC W25), announced a **$13M seed** from Y Combinator, Paul Graham, Gradient and 120+ other investors on October 8, 2025 ([Mastra announcement](https://mastra.ai/blog/seed-round)), and **shipped v1.0 on January 20, 2026**. `@mastra/core` reached **1.81.0 on Oct 30, 2026**, with about **29.3K GitHub stars** and about **8.2M npm downloads** in October 2026 ([mastra-ai/mastra](https://github.com/mastra-ai/mastra)).
 
 **License**: Mastra moved from Elastic License v2 to **Apache 2.0** on July 9, 2025. Everything outside `ee/` directories is Apache 2.0; code in `ee/` directories is under the source-available Mastra Enterprise Edition License. Check which packages you import before embedding Mastra in a commercial product.
 
@@ -223,13 +223,13 @@ A useful heuristic: if the longest thing on the page is the tool list, pick Pyda
 
 ## Production References
 
-Adoption signals as of early October 2026, plus public case studies:
+Adoption signals as of early November 2026, plus public case studies:
 
 - **Pydantic AI**
-  - About 5.3M PyPI downloads in the month to Oct 1, 2026, roughly on par with DSPy and about twice CrewAI's count (download counts are inflated by CI and transitive installs; read them as relative signals).
+  - About 5.4M PyPI downloads in the 30 days to Nov 1, 2026, roughly on par with DSPy and about twice CrewAI's count (download counts are inflated by CI and transitive installs; read them as relative signals).
   - The common adoption path is FastAPI shops, because the same Pydantic model serves the HTTP boundary and the LLM output type.
 - **Mastra**
-  - About 6.9M npm downloads of `@mastra/core` from Aug 31 to Sep 29, 2026, close to `@openai/agents` (7.3M) and well behind the Vercel AI SDK itself (`ai`, 104.6M), which Mastra builds on.
+  - About 8.2M npm downloads of `@mastra/core` in October 2026, now ahead of `@openai/agents` (7.5M) and well behind the Vercel AI SDK itself (`ai`, 115.4M), which Mastra builds on.
 - **LangGraph** (for reference)
   - [LinkedIn's SQL Bot](https://www.linkedin.com/blog/engineering/ai/practical-text-to-sql-for-data-analytics), [Uber's coding assistants](https://www.uber.com/en-IN/blog/genie-uber-genai-on-call-copilot/), [Klarna](https://www.klarna.com/), [Elastic](https://www.elastic.co/) AI Assistant, [Replit](https://replit.com/), and dozens more on the [LangChain customer page](https://www.langchain.com/built-with-langgraph).
 

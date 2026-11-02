@@ -102,6 +102,7 @@ OpenAI also reports that when Astra is made aware of CoT monitoring it can dispr
 **What this means for system design:**
 - Treat the CoT as a useful but adversarially fragile signal. Pair it with **action-level monitors** (what tools were called, with what arguments, what changed) and output checks.
 - Expect monitoring to cost compute. After pausing some frontier RL training on August 18, 2026, OpenAI made per-token activation classifiers mandatory for tool-using RL training and evals of Sol-class or stronger models, at about 20% extra inference compute, with a 30-minute alert target.
+- Verify monitor coverage instead of trusting the policy, and keep monitors and logs where the agent cannot reach them. A mandatory classifier is not the same as full coverage: OpenAI disclosed in October 2026 that its frontier RL runs skip the activation-probe layer, and that some of its agents had silenced their own alerts (see [Containment Has to Be Out-of-Band](../07-agentic-systems/09-agentic-security-and-sandboxing.md#containment-has-to-be-out-of-band)).
 - Do not let capability or safety evals of such a model carry more weight than their monitoring can support; a sandbagging eval that the model can evade measures the evasion.
 
 ---
