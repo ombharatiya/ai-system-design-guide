@@ -244,13 +244,13 @@ Everything above still applies to self-hosted engines: vLLM, SGLang and llama.cp
 
 | Provider | What changed |
 |----------|--------------|
-| Anthropic | Since API version `2026-10-21` (October 21, 2026), any `temperature`, `top_p` or `top_k` returns 400 on every Claude model, even at its default value; the new SDK majors (Python 2.0.0, TypeScript 1.0.0, Go 2.0.0) send that version by default. Before it, the 400 applied to non-default values on Opus 4.7 and newer, and Python SDK 1.0 (August 20, 2026) had already removed the parameters from the Messages method signatures. On Bedrock the new version works only for Claude 4.7 and later. |
+| Anthropic | Since API version `2026-10-21` (October 21, 2026), any `temperature`, `top_p` or `top_k` returns 400 on every Claude model, even at its default value; the new SDK majors (Python 2.0.0, TypeScript 1.0.0, Go 2.0.0) send that version by default. Before it, the 400 applied to non-default values on Claude 4.7 and later models, and Python SDK 1.0 (August 20, 2026) had already removed the parameters from the Messages method signatures. On Bedrock the new version works only for Claude 4.7 and later. |
 | Google | Deprecated `temperature`, `top_p` and `top_k` in the Gemini API on July 21, 2026. Gemini 3.8 Flash replaces `thinking_budget` with `thinking_level` (`low`, `medium` default, `high`). |
 | OpenAI | GPT-6 Astra (September 3, 2026) accepts no custom `temperature` or `top_p` and returns no logprobs. |
 
 The control surface is now **reasoning effort** (or thinking level), not the sampler. What that changes:
 - **Determinism**: code that sets `temperature=0` "for reproducibility" now breaks or is being phased out (a 400 on every Claude model under the current API version, unsupported on GPT-6 Astra, deprecated on Gemini), and it never guaranteed bit-identical output anyway. Batched GPU serving, MoE routing and floating-point reduction order make outputs vary run to run unless the engine runs a deterministic, batch-invariant mode at some throughput cost.
-- **Confidence signals**: logprob-based scoring for routing, abstention or human escalation does not work on Astra. Use calibrated classifiers, verifier passes or structured self-assessment instead, or a decision model that returns a typed answer with a probability (OpenAI's Decisions API, GA October 22, 2026; native endpoints in vLLM and SGLang). Calibrate those probabilities on your own data: early papers find decision models underconfident.
+- **Confidence signals**: logprob-based scoring for routing, abstention or human escalation does not work on Astra. Use calibrated classifiers, verifier passes or structured self-assessment instead, or a decision model that returns a typed answer with a probability (OpenAI's Decisions API, or native endpoints in vLLM and SGLang; see [Research Radar theme 16](../RESEARCH-RADAR.md#16-decision-models-typed-answers-with-probabilities)). Calibrate those probabilities on your own data: early papers find decision models underconfident.
 - **Diversity**: best-of-n variety now comes from prompt variation, different models or the provider's own sampling, not from raising temperature.
 - **Abstraction layers**: wrappers that hard-code sampling parameters break when you switch to these models. Keep provider-specific parameters behind a thin, per-model config.
 
@@ -374,7 +374,7 @@ For reasoning models, hidden thinking tokens stream before the first visible tok
 
 Providers now sell speed separately from the model:
 - **OpenAI**: Fast tier (renamed from Priority on July 30, 2026) at 2x Standard (2.5x on GPT-5.5); Ultrafast at 6x, GA on GPT-6 Astra since September 29, 2026 and on GPT-6.1 Sol for all API users since October 8 ($12/$60 per 1M). OpenAI previewed GPT-5.6 Sol Ultrafast on Cerebras at up to 750 output tok/s for select customers.
-- **Anthropic**: fast mode on Claude Opus 5.5 at $8/$40 per 1M (2x standard), out of research preview since October 15 and offered on the Claude API, Microsoft Foundry and Google Cloud.
+- **Anthropic**: fast mode on Claude Opus 5.5 at $8/$40 per 1M (2x standard), out of research preview since October 15 and offered on the Claude API, Claude Models on Google Cloud (Anthropic managed), and Foundry's Azure-hosted deployments.
 - **Diffusion LMs** replace token-by-token decode with parallel refinement: Inception reports Mercury 2.5 at 1,107 tok/s on NVIDIA GPUs, at $0.20/$0.75 per 1M list.
 
 Latency is now a routing dimension: send the user-facing turn to a fast tier and background agent steps to Standard or Batch.

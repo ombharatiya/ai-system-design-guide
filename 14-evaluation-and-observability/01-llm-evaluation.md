@@ -275,7 +275,7 @@ def calibrated_pairwise_judge(question: str, response_a: str, response_b: str) -
         return {"winner": "tie", "confidence": "low"}
 ```
 
-**Do not count on temperature 0 for judge stability.** The sampling knobs judges used to lean on are disappearing from the newest APIs: GPT-6 Astra does not support custom `temperature`, `top_p`, or `logprobs`; and since Anthropic API version `2026-10-21` (the default in its Python 2.0.0 and TypeScript 1.0.0 SDKs), any `temperature`, `top_p`, or `top_k` returns a 400 on every Claude model, even at the default value, where earlier versions rejected only non-default values on Opus 4.7 and later. A judge harness that hard-codes `temperature=0` breaks on a routine SDK upgrade. Logprob-weighted scoring (G-Eval style) does not work on a judge that exposes no logprobs. Measure judge self-consistency directly (score the same item several times and track the spread), pin the judge's model ID and effort level, and re-run the judge calibration set whenever either changes.
+**Do not count on temperature 0 for judge stability.** The sampling knobs judges used to lean on are disappearing from the newest APIs: GPT-6 Astra does not support custom `temperature`, `top_p`, or `logprobs`; and since Anthropic API version `2026-10-21` (the default in its Python 2.0.0 and TypeScript 1.0.0 SDKs), any `temperature`, `top_p`, or `top_k` returns a 400 on every Claude model, even at the default value, where earlier versions rejected only non-default values on Claude 4.7 and later models. A judge harness that hard-codes `temperature=0` breaks on a routine SDK upgrade. Logprob-weighted scoring (G-Eval style) does not work on a judge that exposes no logprobs. Measure judge self-consistency directly (score the same item several times and track the spread), pin the judge's model ID and effort level, and re-run the judge calibration set whenever either changes.
 
 ---
 
@@ -702,7 +702,7 @@ Other options to compare against:
 
 ### Decision-Model Judges and the Limits of Cascades
 
-A third judge tier arrived in September 2026: **decision models** that return a typed verdict (yes/no, a choice, or a score) with a probability instead of generated text. TypeSafe's Jev (early access, $0.042 per 1M input tokens, output unmetered) was wired into LangSmith, Langfuse, Braintrust, DeepEval, and Opik within about two weeks of launch. LangChain measured about $0.00035 per call and 0.44 s average latency, against 2.16 to 2.83 s for LLM judges (vendor-run). A first-party option followed: OpenAI's Decisions API went GA on October 22, 2026 on `gpt-6-luna`, taking 1 to 400 typed questions per request at $0.10 per 1M uncached input tokens, with output not charged.
+A third judge tier arrived in September 2026: **decision models** that return a typed verdict (yes/no, a choice, or a score) with a probability instead of generated text. TypeSafe's Jev (early access, $0.042 per 1M input tokens, output unmetered) was wired into LangSmith, Langfuse, Braintrust, DeepEval, and Opik within about two weeks of launch. LangChain measured about $0.00035 per call and 0.44 s average latency, against 2.16 to 2.83 s for LLM judges (vendor-run). A first-party option followed in OpenAI's Decisions API, billed on input only ([Research Radar theme 16](../RESEARCH-RADAR.md#16-decision-models-typed-answers-with-probabilities)).
 
 | Tier | Example | Returns | Best for | Blind spot |
 |------|---------|---------|----------|------------|

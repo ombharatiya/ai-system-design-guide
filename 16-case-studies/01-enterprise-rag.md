@@ -160,7 +160,7 @@ flowchart TD
 | **Summarization and bulk tier** | Gemini 3.8 Flash ($0.75 / $3.75 introductory; $1.50 / $7.50 from January 1, 2027) | Cheap 1M-token context for document summaries and ingestion-time enrichment. Budget on the 2027 price |
 | **Embeddings** | text-embedding-3-large ($0.13 per 1M) | Proven and unchanged. If you expect to change models, Cohere Embed 5 (Pro and Fast) and the Voyage 4 family each share one embedding space across sizes, so you can index with the large model and query with the cheap one without re-indexing |
 | **Vector DB** | Qdrant 1.19 or later (self-hosted) | Performance, payload filtering and on-prem compliance. The `memory` setting (pinned, cached, cold) replaces `on_disk` and `always_ram` for tiering |
-| **Reranker** | Qwen3-Reranker-8B (self-hosted, Apache 2.0) or an API reranker (Cohere Rerank 4, Voyage rerank-3; Cohere Rerank 5 went GA on October 21, 2026 at $0.05 per 1M tokens for Pro and $0.02 for Fast) | Rerank 4 and rerank-3 accept 32K tokens per document, which removes the old 512-token truncation of long chunks; check the limit before swapping in a newer model |
+| **Reranker** | Qwen3-Reranker-8B (self-hosted, Apache 2.0) or an API reranker: Cohere Rerank 5 (Pro $0.05, Fast $0.02 per 1M tokens) or Voyage rerank-3 | Both accept 32K tokens per document, which removes the old 512-token truncation of long chunks; check the limit before swapping in a newer model |
 
 > [!NOTE]
 > **Shift: bigger retrieval units, priced deliberately.** With 1M-token windows on the main frontier models, teams retrieve whole document sections (10K to 50K tokens) for multi-document questions instead of hunting for the perfect 512-token chunk. The bill scales with it: at 1.5M queries a month, every extra 10K input tokens per query costs about $30,000 a month on Sonnet 5.5. Route by query type: small chunks for lookups, large sections only for synthesis questions. Pricing rules differ by model, not just by vendor: Sonnet 5.5 and Opus 5.5 bill flat to 1M, Claude Haiku 5.5 bills the whole request at 5x once the prompt passes 100K tokens, and OpenAI reprices the whole request above 272K input tokens.
@@ -426,8 +426,8 @@ class LongContextGenerator:
     """
     Claude Sonnet 5.5 over whole document sections. Documents sit in the
     system prompt, ahead of the conversation, so follow-up questions over the
-    same documents hit the prompt cache (reads bill at $0.20 per 1M on
-    Sonnet 5.5, 0.1x the input price).
+    same documents hit the prompt cache (reads bill at $0.10 per 1M on
+    Sonnet 5.5, 0.05x the input price).
     """
     def __init__(self):
         # Use AsyncAnthropicBedrockMantle, AsyncAnthropicVertex or AsyncAnthropicFoundry

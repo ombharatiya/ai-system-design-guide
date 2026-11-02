@@ -382,7 +382,7 @@ Effort is the other cost knob: Opus 5.5 defaults to `medium` effort and Sonnet 5
 - **Prompt caching**: Keep the system prompt and tool list stable so history reads hit the cache.
 - **Selective screenshots**: Only capture after uncertain actions; skip after typing text.
 - **Resolution reduction**: Use 1024x768 instead of 1920x1080 to reduce token cost, and keep each side at 2000 px or less, because a request carrying more than 20 images is held to a stricter per-side limit.
-- **Server-side pruning**: Drop old screenshots with the API's server-side tool-result clearing (context editing) rather than rewriting history in the client. On Fable 5.1, Opus 5.5, and Sonnet 5.5, removing an earlier screenshot client-side changes the prefix that every later thinking block is bound to. For accounts created on or after August 31, 2026 (and older accounts that opt in), the request returns 400. With the `thinking-binding-controls-2026-08-01` beta header and `thinking.block_binding.prefix_mismatch_behavior: "drop_block"`, those blocks are dropped instead.
+- **Server-side pruning**: Drop old screenshots with the API's server-side tool-result clearing (context editing) rather than rewriting history in the client. On Fable 5.1, Opus 5.5, Sonnet 5.5, and Haiku 5.5, removing an earlier screenshot client-side changes the prefix that every later thinking block is bound to. For accounts created on or after August 31, 2026 (and older accounts that opt in), the request returns 400. With the `thinking-binding-controls-2026-08-01` beta header and `thinking.block_binding.prefix_mismatch_behavior: "drop_block"`, those blocks are dropped instead.
 - **Early termination**: Teach the model to signal completion as soon as the goal is verified.
 
 ---

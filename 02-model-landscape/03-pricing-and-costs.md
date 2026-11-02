@@ -76,7 +76,7 @@ Standard: $2.50 / 1M input tokens
 Committed (1-year): $2.00 / 1M input tokens (20% savings)
 ```
 
-**Capacity is now bought separately from price.** Anthropic no longer sells Priority Tier commitments (existing contracts run to term), so guaranteed capacity comes from custom agreements or cloud reservations such as Bedrock Reserved (1- or 3-month terms). Anthropic's self-serve tiers (Start, Build, Scale) carry hard monthly spend caps of $500, $1,000 and $200,000; hitting one returns HTTP 429 with `enforced_spend_limit_reached` and no `retry-after` until 00:00 UTC on the 1st of the next month. A budget cap is now an availability risk, so alert well before it.
+**Capacity is now bought separately from price.** Anthropic no longer sells Priority Tier commitments (existing contracts run to term, and Claude Haiku 5.5 is not supported on Priority Tier, so a Haiku 4.5 commitment does not carry over to it), so guaranteed capacity comes from custom agreements or cloud reservations such as Bedrock Reserved (1- or 3-month terms). Anthropic's self-serve tiers (Start, Build, Scale) carry hard monthly spend caps of $500, $1,000 and $200,000; hitting one returns HTTP 429 with `enforced_spend_limit_reached` and no `retry-after` until 00:00 UTC on the 1st of the next month. A budget cap is now an availability risk, so alert well before it.
 
 ---
 
@@ -89,6 +89,7 @@ Committed (1-year): $2.00 / 1M input tokens (20% savings)
 > **What changed between October 1 and November 2, 2026:**
 > - **Anthropic's fast tier fell 90%, with a cliff.** Claude Haiku 5.5 (October 7) lists at $0.10 / $0.50 for prompts up to 100,000 tokens and $0.50 / $2.50 above, on the whole request, with cache reads and writes counted toward the threshold. It is the first Claude 4.6-or-later model that is not flat to 1M.
 > - **OpenAI filled the middle and the top.** GPT-6.1 Terra (October 26) is $1 / $5, half of GPT-5.6 Terra; GPT-6 Rosalind (October 30, trusted access) is $15 / $75; GPT-6.1 Sol Ultrafast opened to all API users on October 8 at $12 / $60.
+> - **Meta priced a closed flagship at the frontier.** Muse Wonder (October 12) is $4 / $20 ($0.20 cached) on the Meta Model API, Opus 5.5's list price; the stronger Muse Wonder Full is sold only inside Muse Code subscriptions.
 > - **Cache terms moved again.** Sonnet 5.5 cache reads fell from $0.20 to $0.10 (0.05x) on October 7, and OpenAI added a 12-hour TTL on October 20 with writes at 2.5x input.
 > - **Gemini 4 Argon went GA with a dated price rise:** $2 / $10 through November 30, then $4 / $20 from December 1, with implicit caching only.
 > - **Speed tiers matured.** Opus 5.5 fast mode ($8 / $40) left research preview on October 15; Opus 4.8 fast mode is removed November 30.
@@ -111,7 +112,7 @@ Committed (1-year): $2.00 / 1M input tokens (20% savings)
 | **GPT-Rosalind** (`gpt-rosalind-research`) | $5.00 | $25.00 | Life-sciences reasoning model, GA September 8, 2026 through a trusted-access program. Cached $0.50. Still listed at this rate beside `gpt-6-rosalind`. |
 | **GPT-5.5** | $5.00 | $30.00 | April 23, 2026. Cached $0.50; above 272K $10 / $45. Fast is 2.5x on this model. |
 | **GPT-5.5 Pro / GPT-5.4 Pro** | $30.00 | $180.00 | No cached-input discount; above 272K about $60 / $270. Pro is also `reasoning.mode: "pro"` on the GPT-5.6 and GPT-6 families at the selected model's standard rates. |
-| **GPT-5.4** | $2.50 | $15.00 | Cached $0.25 (0.1x; earlier editions of this table showed $1.25). Above 272K $5 / $22.50. |
+| **GPT-5.4** | $2.50 | $15.00 | Cached $0.25 (0.1x). Above 272K $5 / $22.50. |
 | **GPT-5.4-mini** | $0.75 | $4.50 | Cached $0.075. |
 | **GPT-5.4-nano** | $0.20 | $1.25 | Cached $0.02. Shuts down April 1, 2027 (to GPT-6 Luna). |
 | **GPT-4.1** | $2.00 | $8.00 | Cached $0.50. `gpt-4.1-2025-04-14`, `gpt-4.1-mini-2025-04-14` and fine-tunes of them shut down January 14, 2027 (to `gpt-6-luna`, which cannot be fine-tuned). |
@@ -125,7 +126,7 @@ Committed (1-year): $2.00 / 1M input tokens (20% savings)
 | **Claude Sonnet 5.5** | $2.00 | $10.00 | 1M | September 28, 2026 (`claude-sonnet-5-5`), same five platforms, price unchanged from Sonnet 5. Cache write $2.50 / $4.00; cache read $0.10 (0.05x, cut from $0.20 on October 7); Batch $1 / $5. 128K output. API default effort `high` (medium in Claude Code and the Claude apps). `thinking: {type: "disabled"}` returns 400; the lowest setting is `between_tools`. ZDR available. Retirement not before September 28, 2027. |
 | **Claude Fable 5.1** | $10.00 | $50.00 | 1M | September 1, 2026 (`claude-fable-5-1`), GA on all five platforms. Cache read $0.25 (0.025x, down from $1.00 on Fable 5); cache write $12.50 / $20.00; Batch $5 / $25. 128K output, default effort `high`. 30-day data retention; ZDR only where Anthropic expressly authorizes it (customers eligible for Enterprise Frontier Safeguards, until EFS is ready). Safeguard refusals can fall back server-side (`fallbacks: "default"`, beta) to Opus 4.8 or Opus 5. Retirement not before September 1, 2027. |
 | **Claude Mythos 5.1** | $10.00 | $50.00 | 1M | Same model as Fable 5.1 with looser safeguards. Limited availability: every tier of the Cyber Verification Program (expanded October 6, with Project Glasswing folded in); data retention required. |
-| **Claude Haiku 5.5** | $0.10 (prompt up to 100K) / $0.50 (over 100K) | $0.50 / $2.50 | 1M | October 7, 2026 (`claude-haiku-5-5`). Up to a 100K-token prompt: cache write $0.125 (5 min) / $0.20 (1 h), cache read $0.01, Batch $0.05 / $0.25. Over 100K: cache write $0.625 / $1.00, cache read $0.05, Batch $0.25 / $1.25. The higher prices apply to the **whole request**, and prompt length counts cache reads and writes, so a cache hit does not keep a long prompt in the cheap tier. 128K output. About 30% more tokens than Haiku 4.5 for the same text. Retirement not before October 7, 2027. |
+| **Claude Haiku 5.5** | $0.10 (prompt up to 100K) / $0.50 (over 100K) | $0.50 / $2.50 | 1M | October 7, 2026 (`claude-haiku-5-5`). Up to a 100K-token prompt: cache write $0.125 (5 min) / $0.20 (1 h), cache read $0.01, Batch $0.05 / $0.25. Over 100K: cache write $0.625 / $1.00, cache read $0.05, Batch $0.25 / $1.25. The higher prices apply to the **whole request**, and prompt length counts cache reads and writes, so a cache hit does not keep a long prompt in the cheap tier. 128K output. About 30% more tokens than Haiku 4.5 for the same text, and the high-resolution image tier bills a 2000x1500 image at about 2.5x Haiku 4.5's visual tokens. Not supported on Priority Tier. Retirement not before October 7, 2027. |
 | **Claude Haiku 4.5** | $1.00 | $5.00 | 200K | Superseded by Haiku 5.5, which costs a tenth as much below 100K tokens. Still Active on the Claude API with no deprecation notice as of November 2; its "not sooner than October 15, 2026" floor has passed, and under Anthropic's 60-day notice policy it cannot retire there before about January 2027. Foundry still lists November 15. |
 | **Claude Opus 5** | $5.00 | $25.00 | 1M | July 24, 2026. Legacy, still available. Fast mode $10 / $50. |
 | **Claude Sonnet 5** | $2.00 | $10.00 | 1M | June 30, 2026. Legacy, still available. Its introductory price was made permanent on August 10, 2026. |
@@ -140,10 +141,10 @@ Committed (1-year): $2.00 / 1M input tokens (20% savings)
 > **Anthropic billing rules worth memorizing (November 2026):**
 > - **Flat long context, with one exception.** Claude 4.6 and later bill the full 1M window at standard rates, with fast-mode premiums flat across it too. The exception is Claude Haiku 5.5: a prompt over 100,000 tokens (cache reads and writes included) moves the whole request to 5x.
 > - **Cache reads differ by model:** 0.1x on most models (including Haiku 5.5), 0.05x on Opus 5.5 and Sonnet 5.5, 0.025x on Fable 5.1. Batch is 50% and stacks with caching.
-> - **Fast mode** runs on Opus 5.5 ($8 / $40, generally available since October 15, on the Claude API, Claude Models on Google Cloud (Anthropic managed) and Foundry's Azure-hosted deployments) and, in research preview, on Opus 5 ($10 / $50). Opus 4.8 fast mode is removed November 30, 2026. It stacks with caching and residency multipliers but is not available on the Batch API.
+> - **Fast mode** runs on Opus 5.5 ($8 / $40, out of research preview since October 15, on the Claude API, Claude Models on Google Cloud (Anthropic managed) and Foundry's Azure-hosted deployments) and, in research preview, on Opus 5 ($10 / $50). Opus 4.8 fast mode is removed November 30, 2026. It stacks with caching and residency multipliers but is not available on the Batch API.
 > - **Residency:** `inference_geo: "us"` costs 1.1x on input, output, cache writes and cache reads for Claude 4.6 and later, including Haiku 5.5's over-100K prices; older models return 400 if the parameter is set.
 > - **Refusals:** from September 24, 2026, pre-output refusals with `stop_details.category` of `bio`, `frontier_llm` or `reasoning_extraction` are billed; other categories are not. Break refusal spend out by category on cost dashboards.
-> - **Breaking changes that touch cost code:** API version `2026-10-21`, which the new SDK majors send by default, returns 400 on `temperature`, `top_p` and `top_k` at any value on every model. Fable 5.1, Opus 5.5 and Sonnet 5.5 return 400 on `tool_choice` of `any` or `tool`, and thinking blocks are bound to the producing model and conversation. Bedrock and Google Cloud (Google managed) set their own retirement schedules for Claude. Anthropic says its dates apply to the Claude API, Claude Platform on AWS, Claude Models on Google Cloud (Anthropic managed) and Foundry, but Microsoft's Foundry retirement schedule still lists earlier Foundry dates for claude-haiku-4-5 (November 15) and claude-opus-4-5 (November 24) than Anthropic's notice policy allows; plan for the earlier date on Foundry and confirm with both vendors.
+> - **Breaking changes that touch cost code:** API version `2026-10-21`, which the new SDK majors send by default, returns 400 on `temperature`, `top_p` and `top_k` at any value on every model. Fable 5.1, Opus 5.5 and Sonnet 5.5 return 400 on `tool_choice` of `any` or `tool`; Haiku 5.5 accepts a forced `tool_choice` but answers that turn without thinking. Thinking blocks are bound to the producing model and conversation, and on Sonnet 5.5 and Haiku 5.5 to the producing account too. Bedrock and Google Cloud (Google managed) set their own retirement schedules for Claude. Anthropic says its dates apply to the Claude API, Claude Platform on AWS, Claude Models on Google Cloud (Anthropic managed) and Foundry, but Microsoft's Foundry retirement schedule still lists earlier Foundry dates for claude-haiku-4-5 (November 15) and claude-opus-4-5 (November 24) than Anthropic's notice policy allows; plan for the earlier date on Foundry and confirm with both vendors.
 
 #### Google (Gemini 3.x and 4)
 | Model | Input / 1M | Output / 1M | Context | Notes |
@@ -155,14 +156,14 @@ Committed (1-year): $2.00 / 1M input tokens (20% savings)
 | **Gemini 3.5 Flash** | $1.50 | $9.00 | 1M | Requests route to `gemini-3.6-flash` since October 8; Google has not said how rerouted requests bill. Move off the ID rather than guess. |
 | **Gemini 3.5 Flash-Lite** | $0.30 | $2.50 | 1M | Google's recommended target for new projects that would have used 2.5 Flash-Lite. |
 | **Gemini 3.1 Flash-Lite** | $0.25 | $1.50 | 1M | Shutdown May 7, 2027 (to 3.5 Flash-Lite). |
-| **Gemini 3 Flash Preview** | $0.50 | $3.00 | 1M | Earlier editions listed a "Gemini 3.1 Flash" at $0.10 / $3.00; no model with that name and price exists on Google's pricing page. |
+| **Gemini 3 Flash Preview** | $0.50 | $3.00 | 1M | Preview. |
 | **Gemini 2.5 Pro** | $1.25 | $10.00 | 1M | Above 200K: $2.50 / $15.00. Restricted to existing users (see below). |
 | **Gemini 2.5 Flash-Lite** | $0.10 | $0.40 | 1M | Restricted to existing users. |
 
 Google Search grounding: 5,000 free requests per month shared across Gemini 3 and newer models, then $14 per 1,000. A governance change rides alongside the prices: from October 26, new paid Gemini API projects store requests by default (`store=true`); existing projects keep their setting.
 
 > [!WARNING]
-> **Gemini 2.5 lifecycle:** the June 17, 2026 shutdown date that earlier editions cited was real at the time but was later moved and then withdrawn. On September 18, 2026 Google limited Gemini 2.5 models in the Gemini API to projects that have used them before, stating they "are not deprecated" and will be served until further notice; new projects are pointed to Gemini 3.5 Flash-Lite or 3.8 Flash. On Google Cloud (Vertex AI, which Google's docs now present as Gemini Enterprise Agent Platform), `gemini-2.5-pro`, `gemini-2.5-flash` and `gemini-2.5-flash-lite` were scheduled to retire on **October 20, 2026**; as of November 2 that retirement is not confirmed as executed, so test the Vertex IDs before relying on either outcome. Same model, two lifecycles.
+> **Gemini 2.5 lifecycle:** Google once scheduled a June 17, 2026 shutdown, then moved and withdrew it. On September 18, 2026 Google limited Gemini 2.5 models in the Gemini API to projects that have used them before, stating they "are not deprecated" and will be served until further notice; new projects are pointed to Gemini 3.5 Flash-Lite or 3.8 Flash. On Google Cloud (Vertex AI, which Google's docs now present as Gemini Enterprise Agent Platform), `gemini-2.5-pro`, `gemini-2.5-flash` and `gemini-2.5-flash-lite` were scheduled to retire on **October 20, 2026**; as of November 2 that retirement is not confirmed as executed, so test the Vertex IDs before relying on either outcome. Same model, two lifecycles.
 
 #### xAI (Grok)
 | Model | Input / 1M | Output / 1M | Context | Notes |
@@ -184,6 +185,7 @@ Google Search grounding: 5,000 free requests per month shared across Gemini 3 an
 | **Qwen3.8-Max / -0902** | $2.00 | $6.00 | 1M | Alibaba Model Studio international price for both `qwen3.8-max` and the September 2 `-0902` snapshot, which is API-only. The open 2.4T / 95B-active checkpoint is still the August 12 build and has a MaaS and assistant-product gate above US$50M revenue over 12 months: self-hosters fall behind the API model within weeks. |
 | **Qwen3.8-Flash** (hosted Flash-Next) | $0.15 | $0.47 | 1M | Qwen Cloud. Open weights (Qwen3.8-Flash-Next, a Qwen4 architecture preview) use Qwen Community License 1.0, which requires a separate license for any MaaS or coding/office-assistant business regardless of revenue. |
 | **Tencent Hy4 preview** | $0.834 | $2.501 | 1M | August 28, 2026, Apache 2.0, 770B / 49B active. Tencent TokenHub list (cache hit $0.042); third-party OpenRouter hosts match. |
+| **Meta Muse Wonder** (closed, `muse-wonder-1.0`) | $4.00 | $20.00 | 1M | October 12, 2026, Meta Model API and Muse Code. Cached $0.20. Opus 5.5's list price at a lower AA Index v5.0 score (43 vs 58, both max effort). Muse Wonder Full has no API price: it is available only through Muse Code subscriptions ($50 and $200 monthly plans). |
 | **Meta Muse Spark 1.3** (closed) | $1.25 | $4.25 | 1M | September 2, 2026, Meta Model API and Muse Code. Cached $0.15. `muse-spark-1.3-contributor` costs $0.10 / $0.20 because Meta may use the traffic: check policy before enabling. More verbose than 1.2, so cost per task rose at flat per-token prices. |
 | **StepFun Step 5 Preview** | $1.00 | $2.70 | 1M | Cache hit $0.05. 600B / 27B active; weights released around October 15 under StepFun Model License 1.0 (separate agreement for MaaS above US$20M revenue and for any branded device). AA Index v5.0: 29. Verbose: about 160M output tokens on Artificial Analysis's earlier suite against an 81M median. |
 | **Mistral Large 4** | $0.70 | $2.10 | 1M | Cached $0.07. Public preview October 6, 2026; open weights October 29 (about 1T total, 49B active) under the Mistral Ecosystem Open-Weight License, which requires a separate commercial license for any MaaS business, with no revenue threshold. Named replacement for Medium 3.5 and Large 3. |
@@ -638,7 +640,7 @@ Batch discounts (50%) stack with caching at both OpenAI and Anthropic. For how t
 **Principal-level Nuance:**
 "GPU Cloud Arbitrage" involves moving production workloads between providers based on **spot instance availability**. Tools like **Skypilot** automate this, saving up to 60% on self-hosting costs by following "low-demand" regions globally. MoE models cut the active compute per token, but not the memory needed to hold the weights: Llama 4 Scout (109B total) fits one H100 at INT4, Maverick (about 400B total) needs an 8x H100 node, and Xiaomi says MiMo-V2.6-Flash (309B / 15B active) fits one 8-GPU node.
 
-**GPU prices moved the other way from API prices in 2026, and kept rising in October.** The Silicon Data rental index on November 1 put B200 at $6.50, B300 at $7.56, H200 at $3.46 and H100 at $2.93 per GPU-hour, up from $5.86 (B200) and $2.78 (H100) in early October. On-demand list prices on October 1 (not rechecked for this edition): Lambda H100 SXM $3.99 and B200 $6.69; RunPod H100 $2.69 (community) / $3.49 (secure), B200 $5.98 / $6.79, B300 $6.94 / $7.89. Longer terms are cheaper: on September 7, a 12-month B200 averaged $5.39 against $5.73 for 3 months.
+**GPU prices moved the other way from API prices in 2026, and kept rising in October.** The Silicon Data rental index on November 1 put B200 at $6.50, B300 at $7.56, H200 at $3.46 and H100 at $2.93 per GPU-hour, up from $5.86 (B200) and $2.78 (H100) in early October. On-demand list prices on November 2: Lambda H100 SXM $3.99 and B200 $6.69 per GPU-hour on 8-GPU instances (single-GPU instances cost more); RunPod (updated October 28) H100 SXM $2.69 (community) / $3.99 (secure), B200 $5.98 / $7.99, B300 $6.94 / $8.99. Longer terms are cheaper: on September 7, a 12-month B200 averaged $5.39 against $5.73 for 3 months.
 
 ### When Self-Hosting Makes Sense
 
@@ -846,7 +848,7 @@ Decision depends on multiple factors:
 **Strong answer:**
 Per-token list prices are the least stable input in the model. I would check eight things:
 
-1. **Promotions expire.** Gemini 4 Argon doubles to $4 / $20 on December 1, Gemini 3.8 Flash to $1.50 / $7.50 on January 1, 2027, and GPT-5.6 Sol's $4 / $20 is guaranteed only through November 21, 2026. I budget on list prices and treat promos as upside.
+1. **Promotions expire.** Gemini 4 Argon doubles to $4 / $20 on December 1, Gemini 3.8 Flash to $1.50 / $7.50 on January 1, 2027, and OpenAI promises GPT-5.6 Sol's $4 / $20 only "at least through November 21, 2026". I budget on list prices and treat promos as upside.
 2. **Long-context cliffs.** On OpenAI, a prompt one token over 272K bills the entire request at roughly 2x input and 1.5x output. On xAI the line is 200K. On Claude Haiku 5.5 it is 100K and the jump is 5x on every token, cache reads included. I model the prompt-size distribution, not the mean.
 3. **Cache multipliers differ by model.** Reads are 0.1x, 0.05x or 0.025x depending on the model, OpenAI's writes cost 1.25x for 30 minutes or 2.5x for 12 hours, and Gemini 4 Argon caches only implicitly. A model swap changes cached cost even at the same list price.
 4. **Speed tiers.** If product wants lower latency, Fast is 2x and Ultrafast 6x. Each workload class gets an explicit tier.
@@ -872,7 +874,7 @@ The deliverable is a model with a price schedule per (model, platform) and a sce
 - Mistral Pricing: https://mistral.ai/pricing/api
 - Amazon Bedrock Model Lifecycle: https://docs.aws.amazon.com/bedrock/latest/userguide/model-lifecycle.html
 - Microsoft Foundry Model Retirement Schedule: https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule
-- Lambda Labs GPU Pricing: https://lambdalabs.com/service/gpu-cloud
+- Lambda GPU Pricing: https://lambda.ai/pricing
 - RunPod Pricing: https://www.runpod.io/pricing
 - LLM Pricing Comparison: https://pricepertoken.com/
 

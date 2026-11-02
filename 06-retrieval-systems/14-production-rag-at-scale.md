@@ -815,7 +815,7 @@ Total (optimized) ~$0.0002-0.002    (5-10x reduction)
              +----------+----------+----------+
 ```
 
-Costs are per request at 2.6K input and 300 output tokens, list prices on October 1, 2026, before reasoning tokens. Note where the spread is: Claude Opus 5.5 ($4 / $20) is only 2x Sonnet 5.5 ($2 / $10), while Sonnet 5.5 or GPT-6 Sol is 20x GPT-6 Luna. Most of the routing value is now at the small/mid boundary, so spend classifier effort there; the mid/large boundary barely pays for its misroutes.
+Costs are per request at 2.6K input and 300 output tokens, at November 2, 2026 list prices (unchanged since October 1), before reasoning tokens. Note where the spread is: Claude Opus 5.5 ($4 / $20) is only 2x Sonnet 5.5 ($2 / $10), while Sonnet 5.5 or GPT-6 Sol is 20x GPT-6 Luna. Most of the routing value is now at the small/mid boundary, so spend classifier effort there; the mid/large boundary barely pays for its misroutes.
 
 ### Progressive Detail Pattern
 

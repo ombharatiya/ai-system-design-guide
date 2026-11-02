@@ -96,7 +96,7 @@ flowchart TD
 
 | This Guide | Printed Books |
 |------------|---------------|
-| November 2026 models (Claude Opus 5.5, Sonnet 5.5, Haiku 5.5, Fable 5.1, GPT-6 Astra/Sol/Luna, GPT-6.1 Sol/Terra, Gemini 4 Argon, Gemini 3.8 Flash, Grok 4.7, Muse Spark 1.3, DeepSeek V4.1-Flash, Mistral Large 4, MiMo-V2.6, GLM-5.3, Kimi K3, Qwen3.8) | Stuck on GPT-4 |
+| November 2026 models (Claude Opus 5.5, Sonnet 5.5, Haiku 5.5, Fable 5.1, GPT-6 Astra/Sol/Luna, GPT-6.1 Sol/Terra, Gemini 4 Argon, Gemini 3.8 Flash, Grok 4.7, Muse Wonder, Muse Spark 1.3, DeepSeek V4.1-Flash, Mistral Large 4, MiMo-V2.6, GLM-5.3, Kimi K3, Qwen3.8) | Stuck on GPT-4 |
 | MCP spec 2026-07-28, A2A v1.0.1, OpenClaw, Computer Use, full-duplex voice agents, Agentic RAG, ColBERT, latent reasoning, MoE serving | Does not exist |
 | Real pricing with November 2026 verification dates | Already wrong |
 | Staff-level interview Q&A (155 questions through October 2026, including Voice AI) + Job Market Trends | Generic questions |
@@ -109,7 +109,7 @@ flowchart TD
 - **Capability ceiling:** Claude Fable 5.1 or GPT-6 Astra ($10/$50), only when your evals show Opus 5.5 at high effort falling short.
 - **Volume:** Claude Haiku 5.5 and GPT-6 Luna, both $0.10/$0.50, but Haiku 5.5 bills the whole request at $0.50/$2.50 once a prompt passes 100K tokens (cache reads and writes count), so keep its prompts short. Gemini 3.8 Flash runs at a half-price $0.75/$3.75 through December 31, then $1.50/$7.50, so budget at list; DeepSeek V4.1-Flash suits batch work you can schedule off-peak, when it costs half its $0.30/$1.20 peak price.
 - **Open weights:** the best score about 32 on the index, about 26 points behind Opus 5.5. The established choices are MiMo-V2.6-Pro and DeepSeek V4.1-Flash (both MIT), GLM-5.3, and Kimi K3, and October added Meta's Muse Spark Open and Mistral Large 4. Read the license first: GLM-5.3 adds a security review only for MaaS operators above US$10B in annual revenue, Kimi K3 and Muse Spark Open require a separate agreement above US$20M in revenue, and Mistral Large 4 requires a commercial license for any MaaS business.
-- **Before you switch:** OpenAI bills the whole request at long-context rates above 272K input tokens and Haiku 5.5 above 100K; Anthropic's API version `2026-10-21`, which the new SDK majors send by default, returns a 400 for any `temperature`, `top_p`, or `top_k` on every model, even at default values; the newest Claude models return a 400 on forced `tool_choice`; and Opus 5.5 defaults to `medium` effort where Opus 5 used `high`.
+- **Before you switch:** OpenAI bills the whole request at long-context rates above 272K input tokens and Haiku 5.5 above 100K; Anthropic's API version `2026-10-21`, which the new SDK majors send by default, returns a 400 for any `temperature`, `top_p`, or `top_k` on every model, even at default values; Opus 5.5, Sonnet 5.5, and Fable/Mythos 5.1 return a 400 on forced `tool_choice`, while Haiku 5.5 accepts it but skips thinking; and Opus 5.5 defaults to `medium` effort where Opus 5 used `high`.
 
 Full breakdown in [Model Taxonomy](02-model-landscape/01-model-taxonomy.md) and the [Model Selection Guide](02-model-landscape/04-model-selection-guide.md).
 
@@ -298,7 +298,7 @@ Agentic RAG combines retrieval with an agent loop that can decide what to search
 Yes, MIT-licensed and free. PRs are welcome; see [Contributing Guide](CONTRIBUTING.md). If you have production failure modes, new model benchmarks, or interview questions to add, open a PR.
 
 ### How often is this guide updated?
-Continuously. New model releases, protocol changes (MCP, A2A), and emerging patterns are added as they ship. The November 2026 refresh brought models, prices, protocols, and framework versions up to their state on November 2, 2026. Recent additions include a twelve-question [Voice AI section](00-interview-prep/01-question-bank.md#voice-ai-questions), seven September 2026 questions, a tenth whiteboard exercise, a reworked [Real-Time Voice Agents](18-voice-and-audio-agents/01-realtime-voice-agents.md) chapter, and the [November 2026 Job Market Trends](00-interview-prep/06-job-market-trends-2026.md).
+Continuously. New model releases, protocol changes (MCP, A2A), and emerging patterns are added as they ship. The November 2026 refresh brought models, prices, protocols, and framework versions up to their state on November 2, 2026. Recent additions include eight [October 2026 questions](00-interview-prep/01-question-bank.md#advanced-questions---october-2026) (Q148-Q155: agent monitoring, incident classification, gateway supply chain, fine-tune migration, price cliffs, decision models, API-version rollout, patch SLAs), a twelve-question [Voice AI section](00-interview-prep/01-question-bank.md#voice-ai-questions), seven September 2026 questions, a tenth whiteboard exercise, a reworked [Real-Time Voice Agents](18-voice-and-audio-agents/01-realtime-voice-agents.md) chapter, and the [November 2026 Job Market Trends](00-interview-prep/06-job-market-trends-2026.md).
 
 ### Can I use this guide if I am transitioning from backend, QA, PM, or EM into AI?
 Yes. The [Role Transition Guide](TRANSITION_GUIDE.md) maps existing skills to AI engineering, MLE, and AI architect tracks, with reading paths per role. Pair it with [COURSES.md](COURSES.md) for curated learning resources.

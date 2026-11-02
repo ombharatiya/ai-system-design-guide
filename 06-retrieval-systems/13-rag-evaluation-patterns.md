@@ -317,7 +317,7 @@ Using an LLM to evaluate another LLM's output is the dominant evaluation paradig
 
 ### A Third Judge Tier: Typed Decision Models
 
-Many RAG checks are binary ("Is this claim supported? YES/NO"), and a 2026 class of models returns exactly that without generating text. TypeSafe's **Jev** (early access since September 2026) returns typed decisions (yes/no, choice, or score) with probabilities at $0.042 per 1M input tokens, output unmetered, and was integrated into LangSmith, Langfuse, Braintrust, Opik and DeepEval within two weeks of launch. OpenAI's Decisions API (GA October 22, 2026, on `gpt-6-luna`) is the first-party equivalent: up to 400 typed questions per request at $0.10 per 1M uncached input tokens, output not charged.
+Many RAG checks are binary ("Is this claim supported? YES/NO"), and a 2026 class of models returns exactly that without generating text. TypeSafe's **Jev** (early access since September 2026) returns typed decisions (yes/no, choice, or score) with probabilities at $0.042 per 1M input tokens, output unmetered, and was integrated into LangSmith, Langfuse, Braintrust, Opik and DeepEval within two weeks of launch. OpenAI's Decisions API is the first-party equivalent, billed on input only ([Research Radar theme 16](../RESEARCH-RADAR.md#16-decision-models-typed-answers-with-probabilities)).
 
 | | Frontier LLM judge | Small LLM judge | Decision-model judge |
 |---|---|---|---|

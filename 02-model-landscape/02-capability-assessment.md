@@ -54,7 +54,7 @@ Every score needs six labels before it means anything: **benchmark version, harn
 
 | Claim you will see | What was actually measured |
 |--------------------|----------------------------|
-| "Opus 5.5 scores 66.4% on Terminal-Bench 4.0" | Anthropic's own run at xhigh effort (vendor-reported, SE ±2.6). The tbench.ai leaderboard's September 21 update predates Opus 5.5; its top entry is GPT-6 Astra at 58.18% (max) |
+| "Opus 5.5 scores 66.4% on Terminal-Bench 4.0" | Anthropic's own run at xhigh effort (vendor-reported, SE ±2.6). On the tbench.ai leaderboard (entries added October 6), Opus 5.5 is first at 64.85% (max) and Sonnet 5.5 second at 61.82% (max), ahead of GPT-6 Astra and GPT-6.1 Sol (tied at 58.18%). Anthropic's own runs reverse the Claude order (Sonnet 5.5 70.6%, Opus 5.5 66.4%) |
 | "Astra 57.9%" vs "Astra 58.2%" on Terminal-Bench 4.0 | OpenAI's figure is high effort; 58.18% is the leaderboard's max-effort run |
 | "Fable 5.1 55.8%" vs "Fable 5.1 57.9%" | Anthropic's own run vs the leaderboard max-effort entry (57.88%), which xAI quoted in its Grok 4.7 table |
 | "GPT-6 Astra 99.9% on ARC-AGI-3" | ARC Prize's Provider Adapter harness, high effort, $18,817. Its Standard harness at max effort scored 62.7% for $26,098 |
@@ -484,7 +484,7 @@ class ModelABTest:
         }
 ```
 
-Route on a stable unit (user or conversation ID), not a request ID, when the models carry state across turns. On Claude Fable 5.1, Opus 5.5 and Sonnet 5.5, thinking blocks are bound to the model that produced them, so flipping a conversation between arms mid-stream silently drops reasoning.
+Route on a stable unit (user or conversation ID), not a request ID, when the models carry state across turns. On Claude Fable 5.1, Opus 5.5, Sonnet 5.5 and Haiku 5.5, thinking blocks are bound to the model that produced them (and on Sonnet 5.5 and Haiku 5.5 to the producing account), so flipping a conversation between arms mid-stream silently drops reasoning.
 
 ### Metrics to Track
 
@@ -573,6 +573,7 @@ Both are real; they measure different systems. ARC Prize verified both for GPT-6
 - Artificial Analysis Intelligence Index methodology: https://artificialanalysis.ai/methodology/intelligence-benchmarking
 - ARC Prize, GPT-6 Astra on ARC-AGI-3: https://arcprize.org/blog/astra
 - OSWorld 2.0 leaderboard (XLANG): https://osworld-v2.xlang.ai/
+- Terminal-Bench 4.0 leaderboard: https://www.tbench.ai/leaderboard/terminal-bench/4.0
 - "Maintaining Benchmarks Against Increasingly Capable Agents" (arXiv 2609.34262)
 - "JEV vs. LLMs as Rubric Judges" (arXiv 2609.29769)
 - HELM: https://crfm.stanford.edu/helm/

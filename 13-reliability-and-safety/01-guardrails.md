@@ -1031,7 +1031,7 @@ Multi-layer approach:
 **2. Prompt engineering:**
 - Explicit instruction: "Answer only from context"
 - Encourage abstention: "If not in context, say you don't know"
-- Low temperature (0.1-0.3) where the API still accepts it; the Claude API rejects sampling parameters at any value on every model from API version `2026-10-21` (and non-default values on Opus 4.7 and later before it), Gemini deprecated them in July 2026, and GPT-6 Astra does not support them, so grounding has to come from retrieval, instructions, and verification
+- Low temperature (0.1-0.3) where the API still accepts it; the Claude API rejects sampling parameters at any value on every model from API version `2026-10-21` (and non-default values on Claude 4.7 and later models before it), Gemini deprecated them in July 2026, and GPT-6 Astra does not support them, so grounding has to come from retrieval, instructions, and verification
 
 **3. Output validation:**
 - Factuality checking: NLI model or LLM judge

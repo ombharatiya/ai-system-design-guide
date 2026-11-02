@@ -138,7 +138,7 @@ Cursor is the leading AI-native IDE, and since August 14 to 15, 2026 it is **par
 
 **Best for**: Frontend/full-stack developers who want agentic editing within a familiar GUI, and teams that want cloud agents without running the orchestration themselves.
 
-**Limitations**: Closed-source; code goes to Cursor's servers unless you use Privacy Mode and self-hosted machines; ownership by a frontier-model company raises model-neutrality and data-governance questions for some buyers. A forked IDE also means a separate extension marketplace, which is a separate supply chain: on Oct 29, 2026, Cursor's marketplace served versions 2.1.312 and 2.1.313 of `Anthropic.claude-code` that Anthropic did not build, installing an SSH key, a reverse tunnel and persistence on Windows and macOS until Cursor took the marketplace down and rebuilt it. Allowlist publishers and pin extension versions.
+**Limitations**: Closed-source; code goes to Cursor's servers unless you use Privacy Mode and self-hosted machines; ownership by a frontier-model company raises model-neutrality and data-governance questions for some buyers. A forked IDE also means a separate extension marketplace, which is a separate supply chain: on Oct 29, 2026, Cursor's marketplace served a trojanized Claude Code extension that Anthropic did not build ([details](../07-agentic-systems/09-agentic-security-and-sandboxing.md#the-developer-workstation-became-the-target)). Allowlist publishers and pin extension versions.
 
 ### Devin Desktop (Cognition, formerly Windsurf)
 
@@ -298,7 +298,7 @@ SWE-bench Verified stopped separating frontier agents: scores cluster near the c
 | Benchmark | Results | Runner | Why it matters |
 |-----------|---------|--------|----------------|
 | SWE-Bench Pro v2, private set (272 tasks) | Claude Opus 5 222 (81.6%), Kimi K3 214 (78.7%), GLM-5.3 211, Gemini 3.8 Flash 211, Inkling 184 | Scale, Sep 22, 2026; network-locked sandbox, pristine re-grade | Clean measurement; open-weight Kimi K3 and GLM-5.3 are within about 3 to 4 points of Opus 5. The public 642-task split is saturated (Opus 5 99.4%) |
-| Terminal-Bench 4.0 | GPT-6 Astra 58.18% (max), Claude Fable 5.1 57.88% (max/xhigh), Claude Opus 5 53.94% (xhigh) | tbench.ai leaderboard, Sep 21 | Released after that snapshot, vendor-reported only: Opus 5.5 66.4% (xhigh), Sonnet 5.5 70.6% (Anthropic) |
+| Terminal-Bench 4.0 | Claude Opus 5.5 64.85%, Claude Sonnet 5.5 61.82%, GPT-6 Astra and GPT-6.1 Sol tied at 58.18%, Claude Fable 5.1 57.88% (all at max effort) | tbench.ai leaderboard; the Opus 5.5, Sonnet 5.5 and GPT-6.1 Sol entries were added Oct 6 | GPT-6.1 Sol matches Astra for about $634 of run cost against $3.3K. Anthropic's own runs are higher (vendor-reported): Opus 5.5 66.4% (xhigh), Sonnet 5.5 70.6% |
 | DeepSWE v1.1 (113 commissioned tasks) | 74% three-way tie: GPT-6 Astra (xhigh, $4.43/task), Gemini 3.8 Flash (high, $2.36/task), Opus 5 (max, $11.84/task) | DeepSWE leaderboard, Sep 22 | Same pass rate, 5x spread in cost per task |
 
 > [!NOTE]
@@ -339,7 +339,7 @@ Both are retired as frontier signals: HumanEval is saturated, and Artificial Ana
 | GPT-6.1 Sol (API) | ~$0.28 | ~$8,400 | 55 | Cache read $0.10 per 1M (0.05x); now level with Sonnet 5.5 on this workload |
 | GPT-6 Astra (API) | ~$1.74 | ~$52,000 | 57 | Cache read $1 per 1M; reserve for the hardest tasks |
 | DeepSeek V4.1-Flash (API, peak list, no cache discount assumed) | ~$0.23 | ~$6,900 | About 32 or lower (the top open-weight score) | Off-peak hours are half price; check the provider's cache-hit rate |
-| Self-hosted GLM-5.3-Flash (one 8×H100 node, 24/7) | Depends on utilization | ~$16,900 infra | About 32 or lower | $2.93/GPU-hr (Silicon Data H100 index, Nov 1, 2026), before engineering and on-call time |
+| Self-hosted GLM-5.3-Flash (one 8×H100 node, 24/7) | Depends on utilization | ~$16,900 infra | 28 | $2.93/GPU-hr (Silicon Data H100 index, Nov 1, 2026), before engineering and on-call time |
 
 **Key insights**:
 - For agentic coding, **input dominates** (Anthropic's telemetry puts Claude Code at 324:1 input to output), so the cache-read price and your hit rate move the bill more than the headline input price.

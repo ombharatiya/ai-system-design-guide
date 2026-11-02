@@ -401,7 +401,7 @@ response = await llm.generate(
 )
 ```
 
-Do not reach for the older trick of forcing a tool call to get JSON. A `tool_choice` of `any` or a named tool now returns a 400 on Claude Fable 5.1, Opus 5.5, and Sonnet 5.5; use structured outputs, or `auto` with strict tool schemas.
+Do not reach for the older trick of forcing a tool call to get JSON. A `tool_choice` of `any` or a named tool now returns a 400 on Claude Fable/Mythos 5.1, Opus 5.5, and Sonnet 5.5, and Haiku 5.5 accepts it but skips thinking; use structured outputs, or `auto` with strict tool schemas.
 
 ---
 

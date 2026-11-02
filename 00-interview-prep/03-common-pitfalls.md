@@ -171,9 +171,10 @@ LLM providers have outages. Anthropic's status page logged at least 12 major or 
    (a second model from the same vendor usually shares the outage)
    - OpenAI → Anthropic → local model
    - Abstract the interface, but keep per-model request shapes:
-     the newest Claude models reject forced tool_choice, Claude API
-     version 2026-10-21 rejects any temperature on every model, and
-     GPT-6 Astra rejects temperature,
+     Opus 5.5, Sonnet 5.5, and Fable/Mythos 5.1 reject forced
+     tool_choice (Haiku 5.5 accepts it but skips thinking), Claude
+     API version 2026-10-21 rejects any temperature on every model,
+     and GPT-6 Astra rejects temperature,
      so replaying one request body across providers returns 400s
    - Keep a tested prompt per fallback model
 

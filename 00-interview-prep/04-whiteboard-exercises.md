@@ -240,9 +240,10 @@ def retrieve(query: str, user_id: str, top_k: int = 20) -> List[Chunk]:
 **3. Reranking:**
 ```
 Rerank top-20 to get top-5 with a cross-encoder.
-Model: a hosted 32K-context reranker (Cohere Rerank 4 Fast, Voyage
-rerank-3) or self-hosted bge-reranker-v2-m3 (multilingual, open
-weights); verify on Spanish and Mandarin queries before choosing
+Model: a hosted 32K-context reranker, Cohere Rerank 5 (Pro $0.05,
+Fast $0.02 per 1M tokens) or Voyage rerank-3, or self-hosted
+bge-reranker-v2-m3 (multilingual, open weights); verify on Spanish
+and Mandarin queries before choosing
 Latency budget: ~150ms (matches the p95 budget below)
 ```
 
@@ -1005,7 +1006,7 @@ Refresh: quarterly, sampled from recent traffic; archive old sets
 **2. Scoring design:**
 
 - Binary pass/fail per dimension (faithfulness, completeness, tone, safety), not 1-5 scales. Binary decisions are reproducible; Likert drifts.
-- LLM-as-judge for scale: a cheap model (GPT-6 Luna, Gemini 3.8 Flash, Claude Haiku 5.5) with a rubric and few-shot anchors per dimension. Because the dimensions are binary, a decision model is a cheaper option for the clear-cut ones: OpenAI's Decisions API (GA October 22, 2026) returns a typed verdict with a probability, charges $0.10 per 1M uncached input tokens, and does not charge for output. It gives no rationale, and the probabilities need calibrating against the human-graded slice like any judge.
+- LLM-as-judge for scale: a cheap model (GPT-6 Luna, Gemini 3.8 Flash, Claude Haiku 5.5) with a rubric and few-shot anchors per dimension. Because the dimensions are binary, a decision model (such as OpenAI's Decisions API; see [Decision Models](../RESEARCH-RADAR.md#16-decision-models-typed-answers-with-probabilities)) is a cheaper option for the clear-cut ones. It gives no rationale, and its probabilities need calibrating against the human-graded slice like any judge.
 - Judge calibration: monthly agreement check against the human-graded slice. Judge-human agreement is itself a dashboard metric; below 85% agreement, the judge prompt gets fixed before any product conclusions are drawn.
 
 **3. CI gating:**

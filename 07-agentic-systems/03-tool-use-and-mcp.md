@@ -34,7 +34,7 @@ Tool use occurs in a 3-step cycle:
 
 Four provider-side changes in 2026 matter for harness code:
 
-- **Forced tool use is gone on the newest Claude models.** Fable 5.1, Mythos 5.1, Opus 5.5, and Sonnet 5.5 return HTTP 400 for `tool_choice` of `any` or `tool`; only `auto` and `none` remain. The old "force a tool call to get JSON" extraction pattern must move to `auto` plus strict tool use, or to structured outputs.
+- **Forced tool use is gone on the largest Claude models.** Fable 5.1, Mythos 5.1, Opus 5.5, and Sonnet 5.5 return HTTP 400 for `tool_choice` of `any` or `tool`; only `auto` and `none` remain. Haiku 5.5 still accepts a forced `tool_choice`, but the response then starts with the tool call and carries no thinking block. The old "force a tool call to get JSON" extraction pattern must move to `auto` plus strict tool use, or to structured outputs.
 - **Tools can change mid-conversation without losing the cache.** Anthropic's `inline-tools-2026-09-15` beta (September 22) defines, replaces, or removes tools inside a mid-conversation system message without invalidating the prompt cache, and can pin a fetched MCP tool list in an `mcp_tool_listing` block so a server cannot swap definitions mid-session.
 - **Tool calling on GPT-6 Astra requires the Responses API**, and Astra drops `temperature`, `top_p`, and logprobs, so harnesses that tuned sampling or read logprobs for tool routing need another mechanism.
 - **Sampling knobs are gone on Claude too.** Under Anthropic API version `2026-10-21` (October 21), `temperature`, `top_p`, and `top_k` return HTTP 400 on every model, even at their default values. The new SDK majors (Python 2.0.0, TypeScript 1.0.0, Go 2.0.0, among others) send that version by default and are relicensed Apache 2.0, so a routine SDK upgrade breaks any tool-routing code that still passes `temperature=0`.
@@ -143,7 +143,7 @@ flowchart LR
     C --> D[Jun 18, 2026<br>Enterprise-Managed<br>Authorization stable]
     D --> E[Jul 28, 2026<br>Stateless core<br>MRTR, extensions framework]
     E --> F[Aug to Sep 2026<br>New roadmap,<br>Skills SEP Final]
-    F --> G[Oct 2026<br>Extension maturity stages;<br>next release moved to Mar 30, 2027]
+    F --> G["Oct 2026<br>Extension maturity stages;<br>next release moved to Mar 30, 2027"]
 ```
 
 ### Three Generations of MCP, Compared
@@ -206,14 +206,15 @@ Two smaller but design-relevant transport changes: `Mcp-Method` and `Mcp-Name` H
 
 The core is now deliberately small; everything else is an **extension**, identified by reverse-DNS ID, versioned independently of the core spec, and governed through an Extensions Track in the SEP process.
 
-**Maturity stages (SEP-3392, Final October 29, 2026).** Every extension now sits in one of four stages, and the spec directory it lives in shows which:
+**Maturity stages (SEP-3392, Final October 29, 2026).** Every extension now sits in one of three stages, and the spec directory it lives in (`specification/experimental/`, `beta/`, or `stable/`) shows which:
 
 | Stage | What can change | What you can rely on |
 |-------|-----------------|----------------------|
 | **Experimental** | Anything, at any time, without notice | Nothing; the design may disappear |
 | **Beta** | Any change; breaking changes should be rare, batched, and documented | Real usage is welcome, but budget for breaks |
 | **Stable** | Only alongside a new core protocol revision | Behavior is fixed within a protocol revision |
-| **Core** | Follows the core specification | Same guarantees as the core spec |
+
+Promotion into the core specification is an exit, not a fourth stage. From Beta an extension either becomes Stable or a Standards Track SEP promotes it into core, and a Stable extension can be promoted later. Once promoted in protocol revision R, the feature is core behavior for requests that declare R or later, the extension's final revision still governs earlier revisions, and its spec moves to `specification/archived/`. Each Beta extension states its intended destination: Tasks is headed for core, while Skills and Server Cards have not named one.
 
 The initial classification put MCP Apps and enterprise auth at **Stable**; Tasks, Skills, and Server Cards at **Beta**; and interceptors, variants, triggers and events, and tool annotations at **Experimental**. The lesson for interviews: a Final SEP is not a stable interface. Skills and Server Cards both have Final SEPs and can still break.
 
@@ -681,6 +682,7 @@ Run many instances, yes; share one object across clients, no. Stateless means no
 - Model Context Protocol. "Skills extension overview" (September 2026). https://modelcontextprotocol.io/extensions/skills/overview
 - Model Context Protocol. "SEP-3398: Release Cycle Updates" (accepted October 2026). https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/seps/3398-release-cycle-updates.md
 - Model Context Protocol. "SEP-3392: Extension Lifecycle" (final October 2026). https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/seps/3392-extension-lifecycle.md
+- Model Context Protocol. "Extensions overview" (stages, promotion to core, and each extension's current stage). https://modelcontextprotocol.io/extensions/overview
 - Model Context Protocol. "SEP-2127: MCP Server Cards" (final October 2026). https://github.com/modelcontextprotocol/modelcontextprotocol/pull/2127
 - Linux Foundation. "Agentic AI Foundation announces four new projects" (October 22, 2026). https://www.linuxfoundation.org/press/agentic-ai-foundation-announces-four-new-projects-agent-skills-open-responses-openenv-and-opensandbox
 - Model Context Protocol blog. "Enterprise-Managed Authorization" (June 2026). https://blog.modelcontextprotocol.io/posts/enterprise-managed-auth/

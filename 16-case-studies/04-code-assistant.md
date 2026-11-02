@@ -262,7 +262,7 @@ class AgenticGeneration:
 ```
 
 > [!TIP]
-> **Production choice (November 2026).** Claude Sonnet 5.5 ($2 / $10) is the default for in-IDE agentic work. On Terminal-Bench 4.0, Anthropic reports 70.6% for Sonnet 5.5 and 66.4% for Opus 5.5 (xhigh effort); both are vendor-reported, and neither model appears on the tbench.ai leaderboard, whose September 21, 2026 update tops out at 58.18% (GPT-6 Astra, max effort). The 2025 "toggle thinking" pattern does not carry over: `thinking: {type: "disabled"}` returns 400 on Sonnet 5.5, so effort is the dial, with `between_tools` as the lowest thinking setting. Price capability per task, not per token: on DeepSWE v1.1, GPT-6 Astra (xhigh), Gemini 3.8 Flash (high) and Claude Opus 5 (max) tie at 74% pass@1, at $4.43, $2.36 and $11.84 per task.
+> **Production choice (November 2026).** Claude Sonnet 5.5 ($2 / $10) is the default for in-IDE agentic work. On the tbench.ai Terminal-Bench 4.0 leaderboard (entries added October 6, 2026), Opus 5.5 leads at 64.85% and Sonnet 5.5 follows at 61.82%, both at max effort, ahead of GPT-6 Astra and GPT-6.1 Sol tied at 58.18%. Anthropic's own runs report 70.6% for Sonnet 5.5 and 66.4% for Opus 5.5 at xhigh (vendor-reported), the reverse order, so bake both off on your repository. The 2025 "toggle thinking" pattern does not carry over: `thinking: {type: "disabled"}` returns 400 on Sonnet 5.5, so effort is the dial, with `between_tools` as the lowest thinking setting. Price capability per task, not per token: on DeepSWE v1.1, GPT-6 Astra (xhigh), Gemini 3.8 Flash (high) and Claude Opus 5 (max) tie at 74% pass@1, at $4.43, $2.36 and $11.84 per task.
 
 ### Model Provider Strategy
 

@@ -494,7 +494,7 @@ Tool calls fail. Networks time out. APIs return errors. Code throws exceptions. 
 | **Permission** | Auth failure, access denied | Report to user, do NOT retry |
 | **Logic** | Wrong tool, impossible op | Feed error to LLM, let it re-plan |
 | **Catastrophic** | OOM, sandbox crash, infinite loop | Abort, report, clean up resources |
-| **Contract** | HTTP 400 after a model or agent-version change (forced `tool_choice` on the newest Claude models, renamed tool parameters in a new managed-agent version) | Do not retry; pin versions and contract-test tool schemas in CI |
+| **Contract** | HTTP 400 after a model or agent-version change (forced `tool_choice` on Opus 5.5, Sonnet 5.5 or Fable 5.1, renamed tool parameters in a new managed-agent version) | Do not retry; pin versions and contract-test tool schemas in CI |
 
 ### Retry Pattern Implementation
 
@@ -585,7 +585,7 @@ In May 2026 the MCP specification was missing three production primitives: ident
 | **Adaptive tool budgeting** | Not among the August 22 roadmap's priority areas. The closest work is server-side progressive discovery for large tool catalogs, which saves schema tokens, not spend | Enforce budgets in the harness or gateway: session spend caps (Claude Managed Agents pauses with `budget_reached`), per-tool rate limits |
 | **Structured error semantics** | Partly addressed: the roadmap plans a redesign of the `tools/call` result shape, because returning both `content` and `structuredContent` produced diverging implementations | Normalize errors at the gateway into your own taxonomy (see the table above) |
 
-The next spec revision is targeted for March 30, 2027 (SEP-3398, accepted October 27, subject to confirmation), and releases after it fall generally on the last Tuesday of March and September, so plan SDK upgrades on that cadence. The [tool use and MCP chapter](../07-agentic-systems/03-tool-use-and-mcp.md) covers the stateless rewrite and the full roadmap.
+The next spec revision is targeted for March 30, 2027 (SEP-3398, accepted October 14 and merged October 27, subject to confirmation), and releases after it fall generally on the last Tuesday of March and September, so plan SDK upgrades on that cadence. The [tool use and MCP chapter](../07-agentic-systems/03-tool-use-and-mcp.md) covers the stateless rewrite and the full roadmap.
 
 ---
 

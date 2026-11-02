@@ -91,7 +91,7 @@ The classic advice "set temperature to 0 for consistency" no longer works on the
 
 | Vendor | Status of `temperature` / `top_p` |
 |--------|-----------------------------------|
-| **Anthropic** | From API version `2026-10-21` (October 21, 2026), `temperature`, `top_p`, and `top_k` return a 400 at any value, even the default, on every model, and the new SDK majors (Python 2.0.0, TypeScript 1.0.0) send that version by default. Earlier API versions reject non-default values on Claude Opus 4.7 and later (including Sonnet 5.5 and Fable 5.1). The Python SDK 1.0 (August 20, 2026) had already removed the three parameters from the Messages method signatures, so passing them raises a `TypeError`. |
+| **Anthropic** | From API version `2026-10-21` (October 21, 2026), `temperature`, `top_p`, and `top_k` return a 400 at any value, even the default, on every model, and the new SDK majors (Python 2.0.0, TypeScript 1.0.0) send that version by default. Earlier API versions reject non-default values on Claude 4.7 and later models (including Sonnet 5, Sonnet 5.5, Haiku 5.5 and Fable 5.1). The Python SDK 1.0 (August 20, 2026) had already removed the three parameters from the Messages method signatures, so passing them raises a `TypeError`. |
 | **OpenAI** | GPT-6 Astra (September 3, 2026) does not support custom `temperature`, `top_p`, or `logprobs`. |
 | **Google** | `temperature`, `top_p`, and `top_k` deprecated in the Gemini API on July 21, 2026; Gemini 3.8 Flash uses `thinking_level` instead of `thinking_budget`. |
 

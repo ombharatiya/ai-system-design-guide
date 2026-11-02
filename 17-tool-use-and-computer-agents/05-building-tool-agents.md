@@ -499,7 +499,7 @@ I would run evals on every model version change and every tool schema change. A 
 ### Q: Your extraction service forces a tool call to get JSON back. After moving to the newest Claude model, every request returns HTTP 400. What happened, and how do you fix it without losing the schema guarantee?
 
 **Strong answer:**
-Claude Fable 5.1, Mythos 5.1, Opus 5.5, and Sonnet 5.5 reject `tool_choice` of type `any` or `tool`; only `auto` and `none` remain. Forcing a tool call was always a workaround for getting structured output, and the provider has now removed it on its newest models.
+Claude Fable 5.1, Mythos 5.1, Opus 5.5, and Sonnet 5.5 reject `tool_choice` of type `any` or `tool`; only `auto` and `none` remain. Forcing a tool call was always a workaround for getting structured output, and the provider has now removed it on its largest models. Haiku 5.5 still accepts a forced `tool_choice`, but the response then starts with the tool call and has no thinking block.
 
 The fix depends on why the call was forced. If the tool only existed to shape the output, I would delete it and use native structured outputs (`output_config.format` with a JSON schema), which constrains the response itself. If the tool does real work, I would switch to `auto`, name the tool in the prompt, set `strict: true` so any call that happens has schema-valid arguments, and add a check in the loop for the case where the model answered without calling it, with one retry and then an error.
 

@@ -58,7 +58,7 @@ flowchart TB
 |-------|------|---------|
 | Identity | Okta plus role-mapping service | Per-user identity for every call |
 | Gateway | Internal Envoy with OPA policy | Enforce auth, per-tool policy, and rate limits |
-| Agent runtime | Claude Sonnet 5.5 with strict tool schemas | Multi-step reasoning; no forced `tool_choice`, which the newest Claude models reject, and no sampling parameters, which Anthropic API version `2026-10-21` rejects on every model |
+| Agent runtime | Claude Sonnet 5.5 with strict tool schemas | Multi-step reasoning; no forced `tool_choice`, which Sonnet 5.5 rejects, and no sampling parameters, which Anthropic API version `2026-10-21` rejects on every model |
 | MCP transport | HTTP for Snowflake, Confluence, Jira, and Slack (Slack's official remote server); sandboxed STDIO only for legacy internal tools | Per-server choice |
 | OAuth Resource Server | Each first-party MCP server is an RS with audience binding | RFC 8707 |
 | Credential broker | Vault holding per-user third-party tokens (Slack), each bound to its issuer | OAuth mix-up defense |

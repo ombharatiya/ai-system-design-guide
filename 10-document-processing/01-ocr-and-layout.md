@@ -106,7 +106,7 @@ Robust is not the same as reliable. On degraded pages the dangerous failure is a
 
 ## Cost and Latency Tradeoffs
 
-Frontier rows assume about 1.7K input tokens (page image plus prompt) and 800 output tokens per page at October 1, 2026 list prices, before reasoning tokens; Batch APIs halve them.
+Frontier rows assume about 1.7K input tokens (page image plus prompt) and 800 output tokens per page at November 2, 2026 list prices (unchanged since October 1), before reasoning tokens; Batch APIs halve them.
 
 | Option | Use Case | Throughput | Cost (1K pages) |
 |--------|----------|------------|-----------------|

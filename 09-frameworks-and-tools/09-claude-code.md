@@ -334,7 +334,7 @@ Put team rules in `.claude/settings.json` and organization policy in managed set
 4. **Secret and destination scanning**: Run `truffleHog` or `git-secrets` on every Claude Code output, and block new public repositories, gists and pushes to personal accounts from agent sessions (the PixelLeak channel).
 5. **Budgets**: Set `--max-turns` (recommended: 20-30) and `max_budget_usd` in the SDK to stop runaway loops.
 6. **Version floor**: Plugin4Shell (swapped SHA-pinned plugins) was fixed in 2.1.179 and the GitSpawn `fsmonitor` path in 2.1.196; Manifold reported a second path through `claude ultrareview` still open on 2.1.252; and 2.1.292 fixed hook approvals and auto mode bypassing the permission prompt for file reads from network (UNC) paths. Enforce a floor with the managed `requiredMinimumVersion` setting.
-7. **Extensions are code**: Plugins, hooks and mods (2.1.287, Oct 1, 2026) are not sandboxed and run with Claude Code's own access to the machine. Review them like dependencies, and treat each IDE marketplace as its own supply chain: on Oct 29, 2026, Cursor's marketplace served versions 2.1.312 and 2.1.313 of the `Anthropic.claude-code` extension that Anthropic did not build, which installed an SSH key, a reverse tunnel and persistence on Windows and macOS for about 11 hours until Cursor took the marketplace down and rebuilt it. Allowlist publishers and pin extension versions on developer machines.
+7. **Extensions are code**: Plugins, hooks and mods (2.1.287, Oct 1, 2026) are not sandboxed and run with Claude Code's own access to the machine. Review them like dependencies, and treat each IDE marketplace as its own supply chain: on Oct 29, 2026, Cursor's marketplace served trojanized `Anthropic.claude-code` versions that Anthropic did not build ([details](../07-agentic-systems/09-agentic-security-and-sandboxing.md#the-developer-workstation-became-the-target)). Allowlist publishers and pin extension versions on developer machines.
 
 ### Enterprise Controls
 
@@ -440,10 +440,10 @@ SWE-bench Verified no longer separates frontier agents: scores cluster near the 
 
 | Benchmark | Result | Runner and effort | Note |
 |-------|-------|-------|-------|
-| Terminal-Bench 4.0 | GPT-6 Astra 58.18% | tbench.ai leaderboard (Sep 21), max | 66 tasks, 8-hour timeout; not comparable to 3.0 |
+| Terminal-Bench 4.0 | Claude Opus 5.5 64.85% (first); Sonnet 5.5 61.82% | tbench.ai leaderboard, max, both in Claude Code (entries added Oct 6) | 66 tasks, 8-hour timeout; not comparable to 3.0. Sonnet's run cost about $7.3K against $4.7K for Opus |
+| Terminal-Bench 4.0 | GPT-6 Astra and GPT-6.1 Sol tied at 58.18% | Leaderboard, max, in Codex | GPT-6.1 Sol's run cost about $634 against $3.3K for Astra |
 | Terminal-Bench 4.0 | Claude Fable 5.1 57.88% | Leaderboard, max/xhigh | |
-| Terminal-Bench 4.0 | Claude Opus 5 53.94% | Leaderboard, xhigh | |
-| Terminal-Bench 4.0 | Claude Opus 5.5 66.4%; Sonnet 5.5 70.6% | Anthropic, vendor-reported (Opus at xhigh) | Released after the Sep 21 leaderboard snapshot |
+| Terminal-Bench 4.0 | Claude Opus 5.5 66.4%; Sonnet 5.5 70.6% | Anthropic, vendor-reported (Opus at xhigh) | Higher than the leaderboard's own runs, and the order of the two models flips |
 | Terminal-Bench 4.0 | Claude Haiku 5.5 39.2% | Anthropic, vendor-reported (Oct 7) | The small-model reference point when routing trivial edits |
 | SWE-Bench Pro v2, private set (272 tasks) | Claude Opus 5 81.6% | Scale (Sep 22), network-locked, pristine re-grade | The public 642-task split is saturated (Opus 5 99.4%) |
 | DeepSWE v1.1 | Three-way tie at 74%: GPT-6 Astra (xhigh, $4.43/task), Gemini 3.8 Flash (high, $2.36/task), Opus 5 (max, $11.84/task) | DeepSWE leaderboard (Sep 22) | Same pass rate, 5x spread in cost per task |

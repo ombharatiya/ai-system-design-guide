@@ -102,7 +102,7 @@ Alternative that processes query and document together:
 - Cannot pre-compute: O(n) inference for n documents
 - Used for reranking, not retrieval
 
-Current rerankers take 32K-token inputs, so a candidate can be a long section or a short document instead of a 512-token passage: Cohere Rerank 4 (Fast and Pro), Voyage rerank-3 and rerank-3-lite (September 30, 2026, $0.05 and $0.02 per 1M tokens), and open-weight options such as Qwen3-Reranker-8B and Qwen3-VL-Reranker (Apache 2.0, multimodal). See [Reranking Strategies](../06-retrieval-systems/06-reranking-strategies.md).
+Current rerankers take 32K-token inputs, so a candidate can be a long section or a short document instead of a 512-token passage: Cohere Rerank 5 (Pro $0.05, Fast $0.02 per 1M tokens), Voyage rerank-3 and rerank-3-lite (same $0.05 and $0.02), and open-weight options such as Qwen3-Reranker-8B and Qwen3-VL-Reranker (Apache 2.0, multimodal). See [Reranking Strategies](../06-retrieval-systems/06-reranking-strategies.md).
 
 ---
 

@@ -193,7 +193,7 @@ The classic recipe tunes temperature for diversity. On frontier APIs that knob i
 
 | Platform | Status (November 2026) |
 |----------|-----------------------|
-| Claude API | From API version `2026-10-21` (October 21, 2026), `temperature`, `top_p`, and `top_k` return 400 at any value, even the default, on every model; the new SDK majors (Python 2.0.0, TypeScript 1.0.0) send that version by default. Earlier versions already rejected non-default values on Opus 4.7 and later, and the Python SDK 1.0 (August 20, 2026) removed the parameters from Messages methods, so passing them raises `TypeError` |
+| Claude API | From API version `2026-10-21` (October 21, 2026), `temperature`, `top_p`, and `top_k` return 400 at any value, even the default, on every model; the new SDK majors (Python 2.0.0, TypeScript 1.0.0) send that version by default. Earlier versions already rejected non-default values on Claude 4.7 and later models, and the Python SDK 1.0 (August 20, 2026) removed the parameters from Messages methods, so passing them raises `TypeError` |
 | Gemini API | `temperature`, `top_p`, and `top_k` deprecated on July 21, 2026; Gemini 3.8 Flash controls reasoning with `thinking_level` instead of `thinking_budget` |
 | OpenAI GPT-6 Astra | No custom `temperature` or `top_p`, and no `logprobs` |
 
