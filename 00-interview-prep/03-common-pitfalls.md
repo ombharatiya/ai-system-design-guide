@@ -61,7 +61,7 @@ Different tasks have different requirements. Using a frontier model for classifi
 
 - Intent classification: Fine-tuned BERT-class encoder or GPT-6 Luna
 - Simple responses: GPT-6 Luna, Gemini 3.8 Flash, DeepSeek V4.1-Flash,
-  or Claude Haiku 4.5
+  or Claude Haiku 5.5 (short prompts; it reprices above 100K tokens)
 - Complex reasoning: Claude Sonnet 5.5 or GPT-6.1 Sol
 - Code generation: Claude Sonnet 5.5 or GPT-6.1 Sol, with Claude Opus 5.5
   for the hardest cases (Fable 5.1 or GPT-6 Astra only where evals
@@ -171,8 +171,9 @@ LLM providers have outages. Anthropic's status page logged at least 12 major or 
    (a second model from the same vendor usually shares the outage)
    - OpenAI → Anthropic → local model
    - Abstract the interface, but keep per-model request shapes:
-     the newest Claude models reject forced tool_choice and
-     non-default temperature, and GPT-6 Astra rejects temperature,
+     the newest Claude models reject forced tool_choice, Claude API
+     version 2026-10-21 rejects any temperature on every model, and
+     GPT-6 Astra rejects temperature,
      so replaying one request body across providers returns 400s
    - Keep a tested prompt per fallback model
 
@@ -243,23 +244,25 @@ Candidates discuss features without understanding cost implications.
 **What to know:**
 - Pricing is per token, input vs output often priced differently
 - Output tokens usually cost 3-6x input tokens; 5x is the norm on current Claude, GPT-6 and Gemini Flash list prices
-- Long prompts can reprice the whole request: OpenAI bills everything at long-context rates once input passes 272K tokens, and xAI doubles all tokens at 200K and above, while Anthropic (Claude 4.6 and later) bills flat to 1M
+- Long prompts can reprice the whole request: OpenAI bills everything at long-context rates once input passes 272K tokens, xAI doubles all tokens at 200K and above, and Claude Haiku 5.5 bills the whole request at 5x once the prompt passes 100K tokens (cache reads and writes count toward it), while Claude Opus 5.5 and Sonnet 5.5 bill flat to 1M
 - Thinking tokens bill as output, and default effort differs by model (Claude Opus 5.5 `medium`, Sonnet 5.5 `high` on the API), so set effort explicitly per route
 - Streaming does not change cost
 
-**Quick reference (Standard-tier prices as of October 1, 2026, introductory where noted; several moved in September alone, so check the [pricing chapter](../02-model-landscape/03-pricing-and-costs.md) before quoting):**
+**Quick reference (Standard-tier prices as of November 2, 2026, introductory where noted; several changed in October alone, so check the [pricing chapter](../02-model-landscape/03-pricing-and-costs.md) before quoting):**
 
 | Model | Input/1M | Output/1M | Watch for |
 |-------|----------|-----------|-----------|
 | Claude Fable 5.1 | $10 | $50 | 30-day retention; zero data retention only by Anthropic authorization |
 | GPT-6 Astra | $10 | $50 | Above 272K input the whole request bills at $20 / $75 |
 | Claude Opus 5.5 | $4 | $20 | Anthropic's default starting point; cache reads $0.20 (0.05x) |
-| Claude Sonnet 5.5 | $2 | $10 | Flat pricing to 1M context |
+| Claude Sonnet 5.5 | $2 | $10 | Flat pricing to 1M context; cache reads $0.10 (0.05x) since October 7 |
 | GPT-6.1 Sol | $2 | $10 | Cache reads $0.10 (0.05x); above 272K $4 / $15 |
+| Gemini 4 Argon | $2 | $10 | Through Nov 30, 2026; $4 / $20 from Dec 1, so budget at $4 / $20. Implicit caching only |
 | Grok 4.7 | $2 | $6 | Prompts of 200K+ bill all tokens at $4 / $12 |
-| Claude Haiku 4.5 | $1 | $5 | Only current Haiku; Foundry retires it Nov 15, 2026, so keep a tested substitute ready |
+| GPT-6.1 Terra | $1 | $5 | Above 272K input the whole request bills at $2 / $7.50 |
 | Gemini 3.8 Flash | $0.75 | $3.75 | Introductory through Dec 31, 2026; $1.50 / $7.50 from Jan 1, 2027 |
 | DeepSeek V4.1-Flash | $0.30 | $1.20 | Peak rate; off-peak and weekends are half |
+| Claude Haiku 5.5 | $0.10 | $0.50 | Prompts up to 100K tokens; above that the whole request bills at $0.50 / $2.50, counting cache reads and writes. Rejects `temperature` and assistant prefill |
 | GPT-6 Luna | $0.10 | $0.50 | Above 272K $0.20 / $0.75 |
 
 **Cost calculation example:**
@@ -277,12 +280,12 @@ Daily cost = 10K × (2K × $2/1M + 500 × $10/1M)
 **The caching lever (often the difference between candidates):**
 ```
 Same workload, but 1.5K of the 2K input is a shared prefix
-(system prompt + tool schemas) served from cache at 10% of
-the input price:
+(system prompt + tool schemas) served from cache at 5% of
+the input price (Sonnet 5.5's cache read, $0.10/1M since October 7):
 
-Daily cost = 10K × (0.5K × $2/1M + 1.5K × $0.20/1M + 500 × $10/1M)
-          = 10K × ($0.001 + $0.0003 + $0.005)
-          = $63/day = ~$1.9K/month   (30% saved by prompt shape alone)
+Daily cost = 10K × (0.5K × $2/1M + 1.5K × $0.10/1M + 500 × $10/1M)
+          = 10K × ($0.001 + $0.00015 + $0.005)
+          = $61.50/day = ~$1.85K/month   (about 32% saved by prompt shape alone)
 
 Cache writes cost 1.25x ($2.50/1M for a 5-minute entry), but at ~7
 requests a minute the prefix stays warm, so writes are noise.
@@ -292,7 +295,7 @@ at the front of the prompt and the dynamic content at the end, so
 the prefix stays byte-identical across requests and the cache hits.
 ```
 
-The cache-read discount is no longer a constant 10%. Most Claude models and OpenAI's GPT-5.6 and later bill reads at 0.1x, Claude Opus 5.5 and GPT-6.1 Sol at 0.05x, and Claude Fable 5.1 at 0.025x. Write premiums and TTLs differ too: OpenAI (GPT-5.6 and later) charges 1.25x to write with a fixed 30-minute TTL, while Anthropic offers 5-minute or 1-hour entries at 1.25x or 2x. On a cache-heavy agent workload, those multipliers can matter more than the headline input price.
+The cache-read discount is no longer a constant 10%. Most Claude models (Haiku 5.5 included) and OpenAI's GPT-5.6 and later bill reads at 0.1x; Claude Opus 5.5, Claude Sonnet 5.5, GPT-6.1 Sol, and GPT-6.1 Terra at 0.05x; and Claude Fable 5.1 at 0.025x. Write premiums and TTLs differ too: OpenAI (GPT-5.6 and later) charges 1.25x for a 30-minute entry and, since October 20, 2026, 2.5x for a 12-hour entry, while Anthropic offers 5-minute or 1-hour entries at 1.25x or 2x, and Gemini 4 Argon caches only implicitly. On a cache-heavy agent workload, those multipliers can matter more than the headline input price.
 
 ---
 

@@ -271,7 +271,7 @@ QUESTION: {query}
     return format_with_source_links(response, chunks)
 ```
 
-No `temperature` here: the newest Claude models return a 400 for non-default sampling values and GPT-6 Astra does not accept them. Grounding comes from the prompt, retrieval and citation checks, not from sampling settings.
+No `temperature` here: Claude API version `2026-10-21` returns a 400 for any sampling parameter on every model, even at its default value, and GPT-6 Astra does not accept them. Grounding comes from the prompt, retrieval and citation checks, not from sampling settings.
 
 #### Scaling and Reliability
 
@@ -1005,7 +1005,7 @@ Refresh: quarterly, sampled from recent traffic; archive old sets
 **2. Scoring design:**
 
 - Binary pass/fail per dimension (faithfulness, completeness, tone, safety), not 1-5 scales. Binary decisions are reproducible; Likert drifts.
-- LLM-as-judge for scale: a cheap model (GPT-6 Luna, Gemini 3.8 Flash, Claude Haiku 4.5) with a rubric and few-shot anchors per dimension.
+- LLM-as-judge for scale: a cheap model (GPT-6 Luna, Gemini 3.8 Flash, Claude Haiku 5.5) with a rubric and few-shot anchors per dimension. Because the dimensions are binary, a decision model is a cheaper option for the clear-cut ones: OpenAI's Decisions API (GA October 22, 2026) returns a typed verdict with a probability, charges $0.10 per 1M uncached input tokens, and does not charge for output. It gives no rationale, and the probabilities need calibrating against the human-graded slice like any judge.
 - Judge calibration: monthly agreement check against the human-graded slice. Judge-human agreement is itself a dashboard metric; below 85% agreement, the judge prompt gets fixed before any product conclusions are drawn.
 
 **3. CI gating:**
@@ -1044,7 +1044,7 @@ dominant cost and it is what keeps the judge honest.
 
 **6. Tooling and portability:**
 
-Keep datasets, rubrics, judge prompts and gate thresholds in your own repo, and treat hosted eval platforms as replaceable runners. OpenAI's hosted Evals goes read-only on October 31, 2026 and shuts down November 30 (OpenAI points users to Promptfoo, which OpenAI agreed to acquire in March 2026), and LangSmith SaaS keeps extended-retention traces for at most 180 days from September 14, 2026. Quarter-over-quarter trend lines need a store you control.
+Keep datasets, rubrics, judge prompts and gate thresholds in your own repo, and treat hosted eval platforms as replaceable runners. OpenAI's hosted Evals shuts down November 30, 2026 (OpenAI points users to Promptfoo, which is now part of OpenAI and remains MIT-licensed), and LangSmith SaaS keeps extended-retention traces for at most 180 days from September 14, 2026. Quarter-over-quarter trend lines need a store you control.
 
 ### What Distinguishes Strong Candidates
 
@@ -1253,7 +1253,7 @@ TTFT and inter-token latency at p50 and p99, queue wait, batch occupancy, KV uti
 - They bound the queue and say what the client sees under overload.
 - They report goodput at an SLO, not peak throughput.
 - They say they would run vLLM or SGLang in production, since both already implement continuous batching and paged KV, and use the interview to show they understand what those engines do.
-- They treat the engine as a shared-fate domain. Inputs get validated before they reach the GPU: one unauthenticated request with a negative token ID to vLLM's embeddings endpoint crashed the engine for every client until restart (CVE-2026-93592, fixed in v0.28.0). And a shared prefix cache is a cross-tenant side channel, so salt cache keys per tenant (vLLM's `cache_salt`) and keep the engine patched (v0.30.0 fixed a path that dropped the salt and reopened a prefix-cache membership oracle).
+- They treat the engine as a shared-fate domain. Inputs get validated before they reach the GPU: one unauthenticated request with a negative token ID to vLLM's embeddings endpoint crashed the engine for every client until restart (CVE-2026-93592, fixed in v0.28.0). And a shared prefix cache is a cross-tenant side channel, so salt cache keys per tenant (vLLM's `cache_salt`) and keep the engine patched (v0.30.0 fixed a path that dropped the salt and reopened a prefix-cache membership oracle, and v0.32.0 is the current security floor).
 
 **Related prompts to practice** (candidate-reported from Anthropic and OpenAI loops via the prep vendor Aced, formerly Exponent; not confirmed by the companies): a GPU credit or quota accounting system, peer-to-peer distribution of a large file (think model weights) from one bandwidth-limited source to thousands of machines, and a token-generation service at 100,000 requests per second. The same moves apply: clarify the workload, find the binding resource, bound the queue, and measure at an SLO.
 
