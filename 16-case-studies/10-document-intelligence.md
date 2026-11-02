@@ -162,7 +162,7 @@ EXTRACTORS = {
 
 ## Cost Breakdown
 
-October 2026 prices, with Gemini 3.8 Flash at its January 1, 2027 list rate.
+November 2026 prices, with Gemini 3.8 Flash at its January 1, 2027 list rate.
 
 | Stage | Cost per 100-page Doc |
 |-------|----------------------|

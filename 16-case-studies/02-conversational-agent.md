@@ -247,13 +247,13 @@ class SupportKnowledgeBase:
         return await self.reranker.rerank(query, candidates, top_k=top_k)
 ```
 
-### Response Generation (Tiered: Claude Haiku 4.5 and Sonnet 5.5)
+### Response Generation (Tiered: Claude Haiku 5.5 and Sonnet 5.5)
 
-The 2025 version of this design toggled extended thinking per request on one model. That knob is gone on the newest models: Sonnet 5.5 runs adaptive thinking by default and returns 400 on `thinking: {type: "disabled"}`, and depth is set with `output_config.effort`. Haiku 4.5 rejects the effort parameter. The per-request dial is now **model routing plus effort**.
+The 2025 version of this design toggled extended thinking per request on one model. That knob is gone on the newest models: Sonnet 5.5 runs adaptive thinking by default and returns 400 on `thinking: {type: "disabled"}`, and depth is set with `output_config.effort`. Haiku 5.5 also runs adaptive thinking by default, at `medium` effort unless told otherwise, so the routine path sets `low` explicitly instead of inheriting a default that spends thinking tokens on password resets. The per-request dial is now **model routing plus effort**.
 
 ```python
 class ResponseGenerator:
-    ROUTINE_MODEL = "claude-haiku-4-5"   # $1 / $5 per 1M; no thinking unless enabled
+    ROUTINE_MODEL = "claude-haiku-5-5"   # $0.10 / $0.50 per 1M for prompts up to 100K tokens; adaptive thinking on
     COMPLEX_MODEL = "claude-sonnet-5-5"  # $2 / $10 per 1M; adaptive thinking on by default
 
     async def generate(self, query: str, context: list[dict]) -> dict:
@@ -264,8 +264,7 @@ class ResponseGenerator:
             "system": SUPPORT_SYSTEM_PROMPT,
             "messages": [{"role": "user", "content": f"Context: {context}\nQuery: {query}"}],
         }
-        if is_complex:
-            request["output_config"] = {"effort": "medium"}
+        request["output_config"] = {"effort": "medium" if is_complex else "low"}
         response = await self.anthropic.messages.create(**request)
         text = "".join(b.text for b in response.content if b.type == "text")
         return {"response": text, "model": request["model"]}
@@ -274,7 +273,7 @@ class ResponseGenerator:
 Budget latency per path, not per system. Thinking tokens arrive before the first visible token, and ~1K of them take seconds at typical output speeds, so the complex path cannot meet the 1-second TTFT target. Give complex billing turns their own latency target and stream a status line while the model works, or send `thinking: {type: "between_tools"}` on routes that do not need up-front reasoning and measure whether quality holds.
 
 > [!NOTE]
-> **Production wisdom: budget for forced migrations.** Support teams spend months tuning guardrails around one model's tone and refusal patterns, and that tuning does not transfer for free. Sonnet 4.5 retires November 30, 2026. Haiku 4.5 has a Claude API retirement floor of October 15, 2026 (no notice issued yet, and Anthropic gives at least 60 days) and retires on Foundry November 15, while Haiku 5.5 is announced but not released. Keep a regression set of real conversations with expected tone, escalation and refusal behavior, and run it on every model change.
+> **Production wisdom: budget for forced migrations.** Support teams spend months tuning guardrails around one model's tone and refusal patterns, and that tuning does not transfer for free. Sonnet 4.5 retires November 30, 2026 on the Claude API and Foundry (Bedrock moved it to Legacy on October 8, with end of life April 8, 2027). Haiku 4.5 is still Active with no deprecation notice, so under Anthropic's 60-day minimum it cannot retire on the Claude API before about January 2027. Moving this design's routine path to Haiku 5.5 (list price about 90% below Haiku 4.5) took that line from about $0.014 to under $0.002 per conversation, but it is not a model-string swap: `temperature`, `top_p`, `top_k`, `budget_tokens`, and assistant prefill return 400, the newer tokenizer counts about 30% more tokens for the same text, and tone and refusal behavior can shift with the generation. Keep a regression set of real conversations with expected tone, escalation and refusal behavior, and run it on every model change.
 
 ---
 
@@ -430,7 +429,7 @@ class QualityMonitor:
 
 ## Cost Analysis
 
-### Per-Conversation Cost Breakdown (October 2026 List Prices)
+### Per-Conversation Cost Breakdown (November 2026 List Prices)
 
 Assumes 4 turns per conversation and about 3K input tokens per turn (system prompt, retrieved chunks, account context, history).
 
@@ -438,22 +437,22 @@ Assumes 4 turns per conversation and about 3K input tokens per turn (system prom
 |-----------|------|-------|
 | Intent classification | $0.0003 | GPT-6 Luna ($0.10 / $0.50): one call per turn, ~500 in / 50 out |
 | Retrieval and reranking | $0.0040 | Query embeddings plus 50 candidates × ~400 tokens reranked per turn (Voyage rerank-3, $0.05 per 1M tokens): ~$0.001 per turn |
-| Generation, routine path | $0.0136 | Claude Haiku 4.5 on 80% of conversations: 4 × (3K in / 250 out) = $0.017, weighted 0.8 |
+| Generation, routine path | $0.0017 | Claude Haiku 5.5 at `low` effort on 80% of conversations: 4 × (3K in / 250 out plus ~200 thinking tokens) = $0.0021, weighted 0.8 |
 | Generation, complex path | $0.0148 | Claude Sonnet 5.5 on 20%: same turns plus ~1K thinking tokens per turn = $0.074, weighted 0.2 |
 | Quality sampling | $0.0013 | 5% of conversations scored by a mid-tier judge |
-| **Total** | **~$0.034** | **Per conversation, before prompt caching** |
+| **Total** | **~$0.022** | **Per conversation, before prompt caching** |
 
-The complex path is 20% of traffic and over 40% of the model spend, mostly thinking tokens billed at the output rate. Prompt caching the static system prompt and tool definitions trims the input share (cache reads bill at 0.1x on both models).
+The complex path is 20% of traffic and about two-thirds of the model spend, mostly thinking tokens billed at the output rate. Prompt caching the static system prompt and tool definitions trims the input share (cache reads bill at 0.1x on Haiku 5.5 and 0.05x on Sonnet 5.5). Every routine turn stays far below Haiku 5.5's 100K-token price threshold; a design that stuffed whole account histories into the prompt would cross it and pay 5x on the entire request.
 
 ### Monthly Cost Projection
 
 | Item | Calculation | Cost |
 |------|-------------|------|
-| Conversations | 500K × $0.034 | $17,000 |
+| Conversations | 500K × $0.022 | $11,000 |
 | Infrastructure | Fixed | $2,000 |
 | Human escalations | 190K × $5 (human cost) | $950,000 |
-| **Total** | | $969,000 |
-| **Savings vs all-human** | 500K × $5 - $969K | ~$1.53M/month |
+| **Total** | | $963,000 |
+| **Savings vs all-human** | 500K × $5 - $963K | ~$1.54M/month |
 
 Model spend is under 2% of the total. The lever that matters is the escalation rate: every point of escalation moved to a correct auto-resolution saves about $25,000 a month (5K conversations × $5), more than the entire model bill.
 
@@ -466,7 +465,7 @@ Model spend is under 2% of the total. The lever that matters is the escalation r
 1. **Intent-based routing** reduced latency by focusing retrieval on relevant sources
 2. **Confidence-based escalation** maintained quality while reducing human load
 3. **Account context** made responses more personalized and accurate
-4. **Structured outputs and pinned prompt versions** improved consistency more than sampling settings did. Temperature is no longer a dependable knob: the newest Claude models return 400 on non-default values, and GPT-6 Astra does not accept the parameter
+4. **Structured outputs and pinned prompt versions** improved consistency more than sampling settings did. Temperature is no longer a dependable knob: under API version `2026-10-21` every Claude model returns 400 on any `temperature`, even the default, and GPT-6 Astra does not accept the parameter
 
 ### What Did Not Work Initially
 

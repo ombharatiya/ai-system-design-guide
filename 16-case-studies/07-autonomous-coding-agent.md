@@ -66,9 +66,9 @@ flowchart LR
 | Anthropic, vendor-reported | Terminal-Bench 4.0: Sonnet 5.5 70.6%, Opus 5.5 66.4% (xhigh); neither model is on the leaderboard above |
 | DeepSWE v1.1 leaderboard (September 22, 2026) | GPT-6 Astra (xhigh), Gemini 3.8 Flash (high) and Claude Opus 5 (max) tie at 74% pass@1, at $4.43, $2.36 and $11.84 per task |
 
-Two lessons. At the top, pass rates are close enough that cost per task decides, and cost per task varies 5x at the same pass rate. And Sonnet 5.5's lead over Opus 5.5 is Anthropic's own measurement, so run both on tasks from your repository before committing. Both models charge $0.20 per 1M cached input tokens, so in a cache-heavy loop Opus 5.5 costs about 1.6x Sonnet 5.5, not the 2x their list prices suggest (see [Cost Breakdown](#cost-breakdown)). Gemini 3.8 Flash is the cost-per-task alternative if you can absorb its price doubling on January 1, 2027 and its 65K-token output cap.
+Two lessons. At the top, pass rates are close enough that cost per task decides, and cost per task varies 5x at the same pass rate. And Sonnet 5.5's lead over Opus 5.5 is Anthropic's own measurement, so run both on tasks from your repository before committing. Since October 7, 2026 Sonnet 5.5 reads cached input at $0.10 per 1M against $0.20 for Opus 5.5, so in a cache-heavy loop Opus 5.5 costs about 2x Sonnet 5.5, the same gap as their list prices (before the cut it was about 1.6x; see [Cost Breakdown](#cost-breakdown)). Gemini 3.8 Flash is the cost-per-task alternative if you can absorb its price doubling on January 1, 2027 and its 65K-token output cap.
 
-Paid speed tiers are a separate axis, and mostly the wrong one for this agent. Opus 5.5 fast mode ($8 / $40, research preview, Claude API only) and OpenAI's Ultrafast tier (6x standard API prices, live on GPT-6 Astra; OpenAI reports up to 8x faster generation in Codex) buy wall-clock time for a developer watching an interactive session. An unattended agent with a $0.50 budget cannot absorb a 2x to 6x price multiplier, so spend on parallelism across tasks instead of speed within one.
+Paid speed tiers are a separate axis, and mostly the wrong one for this agent. Opus 5.5 fast mode ($8 / $40, out of research preview since October 15, 2026, on the Claude API, Microsoft Foundry, and Claude Models on Google Cloud) and OpenAI's Ultrafast tier (6x standard API prices, on GPT-6 Astra and, since October 8, GPT-6.1 Sol at $12 / $60; OpenAI reports up to 8x faster generation in Codex) buy wall-clock time for a developer watching an interactive session. An unattended agent with a $0.50 budget cannot absorb a 2x to 6x price multiplier, so spend on parallelism across tasks instead of speed within one.
 
 ---
 
@@ -145,15 +145,15 @@ Assumptions per task: 25 model calls (planning, coding, 1.5 test-fix cycles); ~3
 
 | Line item | Sonnet 5.5, 90% cache hits | Sonnet 5.5, 50% cache hits | Opus 5.5, 90% cache hits |
 |-----------|---------------------------|---------------------------|--------------------------|
-| Cache reads ($0.20/1M on both models) | 675K → $0.14 | 375K → $0.08 | 675K → $0.14 |
+| Cache reads ($0.10/1M Sonnet, $0.20/1M Opus) | 675K → $0.07 | 375K → $0.04 | 675K → $0.14 |
 | Cache writes, 5-minute ($2.50/1M Sonnet, $5/1M Opus) | 75K → $0.19 | 375K → $0.94 | 75K → $0.38 |
 | Output ($10/1M Sonnet, $20/1M Opus) | 6K → $0.06 | 6K → $0.06 | 6K → $0.12 |
 | Embeddings for file retrieval | $0.01 | $0.01 | $0.01 |
-| **Total per task** | **~$0.39** | **~$1.08** | **~$0.64** |
+| **Total per task** | **~$0.33** | **~$1.05** | **~$0.64** |
 
 Same agent, same model: a drop from 90% to 50% cache hits takes the task from under the $0.50 budget to more than twice it. Sandbox compute is billed separately by the sandbox provider.
 
-Cache terms differ across vendors more than list prices do. GPT-6.1 Sol (the Codex CLI default since September 29, 2026) lists at the same $2 / $10 as Sonnet 5.5 and also bills cache writes at $2.50, but reads cached input at $0.10 per 1M and keeps a fixed 30-minute cache TTL. The same 90%-hit task comes to about $0.33, and a test run shorter than 30 minutes does not expire the cache. Compare vendors on your own measured hit rates: a cheaper read price is worth little if the harness keeps missing.
+Cache terms differ across vendors more than list prices do. GPT-6.1 Sol (the Codex CLI default since September 29, 2026) lists at the same $2 / $10 as Sonnet 5.5, bills 30-minute cache writes at the same $2.50, and since Sonnet 5.5's October 7 cut reads cached input at the same $0.10 per 1M, so the 90%-hit task costs about $0.33 on either. The difference is the TTL: OpenAI's 30-minute entry survives a test run that would expire Anthropic's 5-minute entry, and since October 20, 2026 OpenAI also sells a 12-hour entry at 2.5x input against Anthropic's 1-hour entry at 2x. GPT-6.1 Terra ($1 / $5, cached $0.05, October 26) roughly halves every line if it holds your pass rate. Compare vendors on your own measured hit rates and test durations: a cheaper read price is worth little if the harness keeps missing.
 
 What breaks the cache: anything that changes the prefix (a timestamp in the system prompt, reordered tool definitions, editing earlier turns instead of appending), switching models mid-session (caches are per model), and gaps longer than the cache TTL. If test runs take longer than 5 minutes, pay for 1-hour cache writes ($4/1M on Sonnet 5.5) or the cache expires between calls. What protects it: a frozen system prompt and tool list first, append-only history, and fewer static tokens. Cursor cut user token costs 7% (vendor-reported, September 23, 2026) by trimming about two thirds of its system prompt, loading rarely needed built-in tools on demand, and adding explicit cache breakpoints. Append-only is now a correctness rule too: Opus 5.5 and Sonnet 5.5 bind thinking blocks to the conversation that produced them, so a harness that rewrites earlier turns (trimming old tool output in place, for example) can get a 400 instead of a cache miss. Anthropic enforces that check for accounts created on or after August 31, 2026, so a harness that works on an older account can fail on a new one.
 

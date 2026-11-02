@@ -73,7 +73,7 @@ Two details matter in the shared tier. Keyword search scores with corpus statist
 3. **Application Layer**: ORM wrapper automatically injects tenant filter
 4. **LLM Layer**: System prompt explicitly states "You are answering for Tenant X only". This frames answers; it is not a control, and isolation must never depend on it
 5. **Output Layer**: Post-generation filter scans for any document IDs not belonging to tenant
-6. **Inference Layer**: If you self-host models, the prefix cache is shared state. vLLM isolates tenants with a per-request `cache_salt`, and in September 2026 one code path that dropped the salt reopened a cross-tenant prefix-cache membership oracle until 0.30.0 (GHSA-935w-9g4m-p28p). Pin vLLM >= 0.30.0 and test the salt on every endpoint you expose. See [Access Control](../12-security-and-access/02-access-control.md) for the cache-isolation details
+6. **Inference Layer**: If you self-host models, the prefix cache is shared state. vLLM isolates tenants with a per-request `cache_salt`, and in September 2026 one code path that dropped the salt reopened a cross-tenant prefix-cache membership oracle until 0.30.0 (GHSA-935w-9g4m-p28p). Pin vLLM >= 0.32.0 (the current security floor) and test the salt on every endpoint you expose. See [Access Control](../12-security-and-access/02-access-control.md) for the cache-isolation details
 
 ### 3. Why Not One Vector DB Per Tenant?
 

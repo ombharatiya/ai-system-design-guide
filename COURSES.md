@@ -80,7 +80,7 @@ A curated list of **reliable, trusted** online courses for AI engineers, ML prac
 | **[Evaluating and Debugging Generative AI](https://www.deeplearning.ai/short-courses/evaluating-debugging-generative-ai/)** | DeepLearning.AI + W&B | Free | Covers tracing, evaluation with W&B Weave, and experiment tracking. |
 | **[Quality and Safety for LLM Applications](https://www.deeplearning.ai/short-courses/quality-safety-llm-applications/)** | DeepLearning.AI + WhyLabs | Free | Covers hallucination detection, toxicity, bias evaluation, and drift monitoring. |
 | **[LangSmith Evaluation Concepts](https://docs.langchain.com/langsmith/evaluation-concepts)** | LangChain | Free | Official LangSmith docs are the best hands-on eval reference if you use the LangChain ecosystem. Covers offline and online evaluation. |
-| **[Arize Phoenix Docs](https://arize.com/docs/phoenix)** | Arize Phoenix | Free | Hands-on tutorials for tracing and evals with Phoenix, which is source-available under the Elastic License 2.0. Dynatrace agreed to acquire Arize in August 2026 and says Phoenix remains available. |
+| **[Arize Phoenix Docs](https://arize.com/docs/phoenix)** | Arize Phoenix | Free | Hands-on tutorials for tracing and evals with Phoenix, which is source-available under the Elastic License 2.0. Dynatrace completed its acquisition of Arize on October 1, 2026 and has said Phoenix remains available. |
 
 > 📖 Also see this repo's companion guides:
 > - [AI Evals: Comprehensive Study Guide (Phoenix + Langfuse)](ai_evals_comprehensive_study_guide.md)

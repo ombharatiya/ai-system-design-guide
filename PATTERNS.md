@@ -97,7 +97,7 @@ Query → Embed → Vector Search → Rerank → Top-K → Generate
 ```
 Need full autonomy + CLI → Claude Code / Codex CLI
 Need open-source + any LLM → OpenHands / Cline / OpenCode
-Need tight IDE integration → Cursor / Windsurf
+Need tight IDE integration → Cursor / Devin Desktop (formerly Windsurf)
 Need reproducible pipelines → OpenHands in Docker CI
 Need a harness you don't operate → OpenAI Agents API / Claude Managed Agents
 ```

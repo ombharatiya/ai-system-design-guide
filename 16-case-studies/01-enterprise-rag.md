@@ -151,7 +151,7 @@ flowchart TD
     GS --> UI
 ```
 
-### Technology Choices (October 2026)
+### Technology Choices (November 2026)
 
 | Component | Choice | Rationale |
 |-----------|--------|-----------|
@@ -159,11 +159,11 @@ flowchart TD
 | **Hard cross-document analysis** | Claude Opus 5.5 ($4 / $20) or GPT-6.1 Sol ($2 / $10) | Escalation path for the few percent of queries that need multi-step reasoning across many documents. Keep GPT-6.1 Sol prompts under 272K input tokens, above which OpenAI bills the whole request at $4 / $15 |
 | **Summarization and bulk tier** | Gemini 3.8 Flash ($0.75 / $3.75 introductory; $1.50 / $7.50 from January 1, 2027) | Cheap 1M-token context for document summaries and ingestion-time enrichment. Budget on the 2027 price |
 | **Embeddings** | text-embedding-3-large ($0.13 per 1M) | Proven and unchanged. If you expect to change models, Cohere Embed 5 (Pro and Fast) and the Voyage 4 family each share one embedding space across sizes, so you can index with the large model and query with the cheap one without re-indexing |
-| **Vector DB** | Qdrant 1.19 (self-hosted) | Performance, payload filtering and on-prem compliance. The `memory` setting (pinned, cached, cold) replaces `on_disk` and `always_ram` for tiering |
-| **Reranker** | Qwen3-Reranker-8B (self-hosted, Apache 2.0) or an API reranker (Cohere Rerank 4, Voyage rerank-3) | The API rerankers accept 32K tokens per document, which removes the old 512-token truncation of long chunks |
+| **Vector DB** | Qdrant 1.19 or later (self-hosted) | Performance, payload filtering and on-prem compliance. The `memory` setting (pinned, cached, cold) replaces `on_disk` and `always_ram` for tiering |
+| **Reranker** | Qwen3-Reranker-8B (self-hosted, Apache 2.0) or an API reranker (Cohere Rerank 4, Voyage rerank-3; Cohere Rerank 5 went GA on October 21, 2026 at $0.05 per 1M tokens for Pro and $0.02 for Fast) | Rerank 4 and rerank-3 accept 32K tokens per document, which removes the old 512-token truncation of long chunks; check the limit before swapping in a newer model |
 
 > [!NOTE]
-> **Shift: bigger retrieval units, priced deliberately.** With 1M-token windows on the main frontier models, teams retrieve whole document sections (10K to 50K tokens) for multi-document questions instead of hunting for the perfect 512-token chunk. The bill scales with it: at 1.5M queries a month, every extra 10K input tokens per query costs about $30,000 a month on Sonnet 5.5. Route by query type: small chunks for lookups, large sections only for synthesis questions. Pricing rules differ by vendor too: Claude 4.6 and later bill flat to 1M, while OpenAI reprices the whole request above 272K input tokens.
+> **Shift: bigger retrieval units, priced deliberately.** With 1M-token windows on the main frontier models, teams retrieve whole document sections (10K to 50K tokens) for multi-document questions instead of hunting for the perfect 512-token chunk. The bill scales with it: at 1.5M queries a month, every extra 10K input tokens per query costs about $30,000 a month on Sonnet 5.5. Route by query type: small chunks for lookups, large sections only for synthesis questions. Pricing rules differ by model, not just by vendor: Sonnet 5.5 and Opus 5.5 bill flat to 1M, Claude Haiku 5.5 bills the whole request at 5x once the prompt passes 100K tokens, and OpenAI reprices the whole request above 272K input tokens.
 
 ---
 
@@ -451,8 +451,8 @@ class LongContextGenerator:
         ]
         doc_blocks[-1]["cache_control"] = {"type": "ephemeral"}  # cache through the last document
 
-        # No temperature: Sonnet 5.5 rejects non-default sampling values,
-        # and the Python SDK 1.x removed them from the method signature
+        # No temperature: API version 2026-10-21 (the default in Python
+        # SDK 2.x) rejects any sampling parameter, even at its default value
         response = await self.client.messages.create(
             model="claude-sonnet-5-5",
             max_tokens=4096,
@@ -472,10 +472,10 @@ class LongContextGenerator:
 > [!TIP]
 > **Production choice vs. newest release**
 > Sonnet 5.5 shipped September 28, 2026. Teams with prompts and guardrails tuned on Sonnet 5 or Sonnet 4.6 should run their eval set before switching, because the upgrade is not drop-in:
-> - **Request shape**: forced `tool_choice` (`any` or `tool`) returns 400, `thinking: {type: "disabled"}` returns 400 (the lowest setting is `between_tools`), and non-default `temperature` returns 400 (already true on Sonnet 5).
+> - **Request shape**: forced `tool_choice` (`any` or `tool`) returns 400, `thinking: {type: "disabled"}` returns 400 (the lowest setting is `between_tools`), and non-default `temperature` returns 400 (already true on Sonnet 5); under API version `2026-10-21`, which the new SDK majors send by default, any `temperature`, `top_p`, or `top_k` returns 400 on every model, even at the default value.
 > - **Behavior**: effort levels were recalibrated, so re-run the effort sweep instead of carrying settings over.
 > - **Deadlines**: anything still pinned to Sonnet 4.5 has to move regardless; it retires November 30, 2026 on the Claude API and Foundry.
-> - **SDK**: Anthropic's Python SDK 1.0 (August 20, 2026) moved to `httpx2`, and httpx-based tracing and test mocks can silently miss calls. Verify span counts after upgrading.
+> - **SDK**: Anthropic's Python SDK 1.0 (August 20, 2026) moved to `httpx2`, and httpx-based tracing and test mocks can silently miss calls; Python SDK 2.0.0 then switched the default API version to `2026-10-21` and the license to Apache 2.0. Verify span counts and request shapes after upgrading.
 
 ---
 
@@ -548,7 +548,7 @@ class QueryCache:
 
 ## Cost Analysis
 
-### Monthly Cost Estimate (500 Users, 100 Queries/User/Day, October 2026 List Prices)
+### Monthly Cost Estimate (500 Users, 100 Queries/User/Day, November 2026 List Prices)
 
 | Component | Calculation | Monthly Cost |
 |-----------|-------------|--------------|
@@ -565,11 +565,11 @@ Model lines use Claude API list prices; Bedrock and Google Cloud price Claude on
 ### Cost Optimization Opportunities
 
 1. **Response caching**: 30% cache hit rate → ~$4,500 savings on LLM
-2. **Prompt caching**: Cache the static system prompt and instructions; cache reads bill at 0.1x the input price
-3. **Model routing**: Route simple lookups to a cheaper tier (Claude Haiku 4.5 at $1 / $5, or Gemini 3.8 Flash) → up to 40% LLM savings; Haiku 5.5 is announced but not yet released, so plan the migration
+2. **Prompt caching**: Cache the static system prompt and instructions; on Sonnet 5.5, cache reads bill at 0.05x the input price since October 7, 2026
+3. **Model routing**: Route simple lookups to a cheaper tier (Claude Haiku 5.5 at $0.10 / $0.50, or Gemini 3.8 Flash) → up to 40% LLM savings. Keep Haiku 5.5 on short-context lookups: once a prompt passes 100K tokens the whole request bills at $0.50 / $2.50, and it rejects `temperature` and assistant prefill, so run the eval set before moving traffic
 4. **Residency only where required**: Pin US-only processing for the departments that need it and run the rest on global endpoints → recovers up to ~$1,350 (the 10% uplift)
 5. **Batch re-embedding**: Run nightly re-embedding through OpenAI's Batch API → 50% off that line
-6. **Self-hosted reranker**: Replace the API reranker with Qwen3-Reranker → eliminates ~$1,500 of API spend, but one dedicated H100 runs about $2,000 a month at the October 1 Silicon Data index ($2.77 per GPU-hour), so this saves money only on GPU capacity you already have. It is also the default if compliance rules out sending candidate passages to a reranking API
+6. **Self-hosted reranker**: Replace the API reranker with Qwen3-Reranker → eliminates ~$1,500 of API spend, but one dedicated H100 runs about $2,100 a month at the November 1 Silicon Data index ($2.93 per GPU-hour), so this saves money only on GPU capacity you already have. It is also the default if compliance rules out sending candidate passages to a reranking API
 
 ---
 
