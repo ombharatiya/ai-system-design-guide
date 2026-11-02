@@ -2,7 +2,7 @@
 
 **DSPy** has become the industry reference for treating prompts as optimizable parameters. It represents a paradigm shift from "Prompt Engineering" (trial and error) to **Prompt Compilation** (automated optimization). Published results show large gains over hand-tuned prompts on some tasks, but the lift depends entirely on your metric and data, so measure it on your own eval set before promising a number.
 
-The 2026 story is a second shift, from optimizing **prompts** to optimizing **program structure**: GEPA (reflective prompt evolution, DSPy 3.0) made optimization trace-driven, and Flex (DSPy 3.3.0, Aug 3, 2026) uses it to search over how modules are composed, not only over instruction text. Current release: DSPy 3.4.0 (Sep 25, 2026).
+The 2026 story is a second shift, from optimizing **prompts** to optimizing **program structure**: GEPA (reflective prompt evolution, DSPy 3.0) made optimization trace-driven, and Flex (DSPy 3.3.0, Aug 3, 2026) uses it to search over how modules are composed, not only over instruction text. Current release: DSPy 3.4.1 (Oct 12, 2026).
 
 ## Table of Contents
 
@@ -101,6 +101,7 @@ DSPy churns like every other framework, so pin it:
 | 3.3.0 | Aug 3, 2026 | Flex structure optimization; **ReActV2** with native tool calling; start of a typed, provider-neutral LM boundary; NumPy optional |
 | 3.3.1 | Aug 21, 2026 | GEPA 0.1.4; hardened `PythonInterpreter`; MCP Python SDK v2 compatibility |
 | 3.4.0 | Sep 25, 2026 | Native LM engines with custom HTTP providers. **Breaking**: the experimental 3.3 typed LM API is removed. Also async ReActV2, `LocalInterpreter` (persistent CPython for trusted code, used with RLM and Flex), ReAnchor, and experimental typed decision outputs (`Noul`, `Choice`, `Score`) that integrate TypeSafe's Jev decision model |
+| 3.4.1 | Oct 12, 2026 | GEPA's structured `InstructionProposer` becomes the default instruction proposer, so **optimization results can differ from 3.4.0 even with the same seed**; `dspy.RLM` can build DSPy sub-agents from inside its REPL; Python 3.15 support; fixes a 3.4.0 import crash |
 
 Two deprecations to plan for: OpenAI-style `messages=` calls now warn and are slated for removal in 3.5, and custom `BaseLM.forward` integrations run with deprecation warnings until 3.5.
 
@@ -116,7 +117,7 @@ Because it replaces the **Manual trial-and-error loop** with an **Optimization L
 ### Q: What is the biggest drawback of using DSPy in a production environment?
 
 **Strong answer:**
-**Compilation Latency and Cost**. To compile a complex DSPy pipeline, you might need to run 100-500 LLM calls to test different prompt variations, and you repeat that for every model you target. This is a significant upfront cost. However, for a Staff-level engineer, this is a **Tradeoff**: You pay more in development/compilation time to gain **measured reliability** and lower **Run-time Failure Rates** against a metric you control. Nothing about it is guaranteed: the compiled program is only as good as the eval set. Another challenge is the learning curve; it requires thinking like an ML researcher rather than a traditional developer. A third is framework churn: 3.4 removed an experimental API that 3.3 had introduced less than eight weeks earlier, so pin the version and re-run the eval suite on upgrades.
+**Compilation Latency and Cost**. To compile a complex DSPy pipeline, you might need to run 100-500 LLM calls to test different prompt variations, and you repeat that for every model you target. This is a significant upfront cost. However, for a Staff-level engineer, this is a **Tradeoff**: You pay more in development/compilation time to gain **measured reliability** and lower **Run-time Failure Rates** against a metric you control. Nothing about it is guaranteed: the compiled program is only as good as the eval set. Another challenge is the learning curve; it requires thinking like an ML researcher rather than a traditional developer. A third is framework churn: 3.4 removed an experimental API that 3.3 had introduced less than eight weeks earlier, and the 3.4.1 patch changed GEPA's default proposer so the same seed no longer reproduces 3.4.0 results. Pin the version, record it with every compiled artifact, and re-run the eval suite on upgrades.
 
 ### Q: When would you use GEPA or Flex instead of MIPROv2?
 
@@ -129,7 +130,7 @@ MIPROv2 searches over instructions and demos for a fixed pipeline, and it needs 
 - Khattab et al. "DSPy: Compiling Declarative Language Model Calls into Self-Improving Pipelines" (arXiv 2310.03714, Oct 2023): https://arxiv.org/abs/2310.03714
 - Opsahl-Ong et al. "Optimizing Instructions and Demonstrations for Multi-Stage Language Model Programs" (arXiv 2406.11695, Jun 2024; the MIPRO paper): https://arxiv.org/abs/2406.11695
 - Agrawal et al. "GEPA: Reflective Prompt Evolution Can Outperform Reinforcement Learning" (arXiv 2507.19457, Jul 2025): https://arxiv.org/abs/2507.19457
-- DSPy 3.4.0 release notes (Sep 25, 2026): https://github.com/stanfordnlp/dspy/releases
+- DSPy release notes (3.4.0, Sep 25, 2026; 3.4.1, Oct 12, 2026): https://github.com/stanfordnlp/dspy/releases
 - DSPy. "Output Refinement: BestOfN and Refine": https://dspy.ai/tutorials/output_refinement/best-of-n-and-refine/
 
 ---

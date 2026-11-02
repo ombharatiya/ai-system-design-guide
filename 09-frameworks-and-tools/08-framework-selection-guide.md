@@ -42,9 +42,9 @@ The landscape of AI frameworks has consolidated significantly over the past year
 
 | Runtime | Tier | Primary Value | Key Weakness |
 |-----------|------|---------------|--------------|
-| **Claude Managed Agents** | L1 (Hosted) | Sandboxes, session budgets, server-evaluated permission policy, agents-as-code (`ant apply`) | Claude only; second cost meter ($0.08 per running session-hour) |
-| **OpenAI Agents API** | L1 (Hosted) | Managed Codex harness: compaction, recovery, subagents | Public beta; US residency only, no ZDR |
-| **Bedrock Managed Agents** | L1 (Hosted) | The Agents API inside AWS with IAM and CloudTrail | Preview; three US regions |
+| **Claude Managed Agents** | L1 (Hosted) | Sandboxes, session budgets, server-evaluated permission policy, agents-as-code (`ant apply`); Claude API, Claude Platform on AWS and Claude on Google Cloud | Beta; Claude only; second cost meter ($0.08 per running session-hour) |
+| **OpenAI Agents API** | L1 (Hosted) | Managed Codex harness: compaction, recovery, subagents; hosted sandboxes bill only during active turns (since Oct 9) | Public beta; US residency only, no ZDR |
+| **Bedrock Managed Agents** | L1 (Hosted) | The Agents API inside AWS with IAM and CloudTrail | Public preview; three US regions |
 
 ### Coding Agents
 
@@ -52,12 +52,13 @@ The landscape of AI frameworks has consolidated significantly over the past year
 |-----------|------|---------------|--------------|
 | **Claude Code** | L1 (Coding) | Autonomous CLI coding agent, plugins, enterprise managed settings | Requires Claude models; closed source |
 | **Codex CLI** | L1 (Coding) | Open-source (Apache-2.0) CLI, cloud environments, code review | OpenAI-centric defaults |
-| **Cursor / Windsurf** | L2 (IDE) | Tight IDE + agent integration, cloud agents | Closed-source infra; Cursor is now part of SpaceX, Windsurf part of Cognition |
+| **Cursor / Devin Desktop** | L2 (IDE) | Tight IDE + agent integration, cloud agents | Closed-source infra; Cursor is part of SpaceX, and Devin Desktop (Windsurf until June 2026) belongs to Cognition |
+| **GitHub Copilot** | L2 (IDE + platform) | GitHub-native coding agent and review; Copilot Fusion (GA Oct 28, 2026) routes across models with Standard, High and Max effort | Strongest inside GitHub; computer use and dynamic workflows launched as public previews (Oct 1) |
 | **OpenCode / OpenHands** | L2 (Coding) | Open-source, any model | You own hosting, sandboxing and upgrades |
 
 Semantic Kernel is not listed as a choice for new work: Microsoft Agent Framework is its successor, and existing SK users should plan the migration.
 
-Adoption data backs the "lab SDK at the leaf, neutral orchestrator at the core" advice. In the month to Oct 1, 2026 on PyPI: `langchain` 169.4M, `langgraph` 43.7M, `strands-agents` 36.5M, `claude-agent-sdk` 28.9M, `openai-agents` 12.1M, `google-adk` 9.9M, `llama-index-core` 6.6M, `pydantic-ai` 5.3M, `dspy` 5.2M, `crewai` 2.4M, `agno` 1.7M, `agent-framework-core` 0.92M, `haystack-ai` 0.54M, `autogen-agentchat` 0.38M, `semantic-kernel` 0.29M. On npm (Aug 31 to Sep 29): `ai` (Vercel AI SDK) 104.6M, `@anthropic-ai/claude-agent-sdk` 48.7M, `@langchain/langgraph` 13.9M, `@openai/agents` 7.3M, `@mastra/core` 6.9M. CI installs and transitive dependencies inflate all of these, so read them as relative signals.
+Adoption data backs the "lab SDK at the leaf, neutral orchestrator at the core" advice. In the 30 days to Nov 1, 2026 on PyPI: `langchain` 170.5M, `langgraph` 44.8M, `strands-agents` 37.1M, `claude-agent-sdk` 29.8M, `openai-agents` 12.5M, `google-adk` 10.1M, `llama-index-core` 6.6M, `pydantic-ai` 5.4M, `dspy` 5.3M, `crewai` 2.4M, `agno` 1.8M, `agent-framework-core` 1.0M, `haystack-ai` 0.57M, `autogen-agentchat` 0.38M, `semantic-kernel` 0.30M. On npm in October: `ai` (Vercel AI SDK) 115.4M, `@anthropic-ai/claude-agent-sdk` 46.4M, `@langchain/langgraph` 14.0M, `@mastra/core` 8.2M, `@openai/agents` 7.5M (Mastra passed OpenAI's TypeScript SDK this month). The ranking at the top has not moved in months. CI installs and transitive dependencies inflate all of these, so read them as relative signals.
 
 ---
 
@@ -83,7 +84,7 @@ Adoption data backs the "lab SDK at the leaf, neutral orchestrator at the core" 
 ### Coding Agents
 12. **Are you doing autonomous file-system level coding tasks?** → **Claude Code** or **Codex CLI** (terminal), **Cline** (VS Code).
 13. **Need an open-source coding agent that works with any LLM?** → **OpenCode** (MIT) or **OpenHands** (Docker).
-14. **Want the best IDE experience with AI?** → **Cursor** (closed) or **Windsurf** (Cognition).
+14. **Want the best IDE experience with AI?** → **Cursor** (closed, SpaceX), **Devin Desktop** (Cognition, formerly Windsurf), or **GitHub Copilot** if you live in GitHub.
 
 ---
 
@@ -111,7 +112,7 @@ A strong design answer describes these mechanisms and treats the framework as an
 1. **Framework Tunneling**: Trying to force a complex logic flow into a framework that doesn't support it (e.g., using a pure RAG library for a coding agent).
 2. **The Golden Hammer**: Using LangChain just because it's popular, when a 50-line Python script would be faster and cheaper.
 3. **Ignoring Observability**: Deploying any framework without an LLMOps layer (LangSmith, Langfuse, Phoenix), ideally one that ingests OpenTelemetry so you can export your traces.
-4. **Trusting Defaults**: Letting the framework pick the model. In August and September 2026, the OpenAI Agents SDK (0.20.0), Claude Code (2.1.280 and 2.1.284), Codex CLI (rust-v0.159.1) and the Strands harness packages all changed their default model, which silently changed cost, latency and behavior for every caller that never set one.
+4. **Trusting Defaults**: Letting the framework pick the model, or the agent's permissions. In August and September 2026, the OpenAI Agents SDK (0.20.0), Claude Code (2.1.280 and 2.1.284), Codex CLI (rust-v0.159.1) and the Strands harness packages all changed their default model, which silently changed cost, latency and behavior for every caller that never set one. In October, Claude Code 2.1.302 started headless and Agent SDK sessions with no permission mode in `default` mode on third-party providers, with telemetry off, or on a fresh install, so the same CI job could behave differently per environment.
 
 ---
 
@@ -146,7 +147,7 @@ For a modern, production-grade agentic system:
 ### Q: If you had to build a system that works across OpenAI, Anthropic, and local open-weight models, how would you architect it?
 
 **Strong answer:**
-I would use **DSPy** for the prompt layer and **LangGraph** for the orchestration layer. DSPy's **Signatures** allow me to decouple the task definition from the model's specific behavior. I would then use a **Universal Model Gateway** (like LiteLLM or an internal proxy) to handle the different API formats. The gateway holds every provider key, so it is security-critical infrastructure: LiteLLM alone had an unauthenticated RCE (CVE-2026-37004, CVSS 9.8, fixed in 1.83.7) and an auth bypass (CVE-2026-49468, fixed in 1.84.0) in 2026, and two PyPI releases (1.82.7 and 1.82.8) were compromised. Its stored-key exfiltration bug through `api_base` (CVE-2026-84377) is fixed only in specific patch releases on each minor line (for example 1.96.2), so a simple version floor is not enough. I pin an exact version from the advisory's fixed list, set `allow_client_side_credentials=false`, and keep the gateway off the public internet. The gateway must also stop injecting sampling parameters, because GPT-6 Astra and recent Claude models reject custom `temperature`. For tool access, I would use **MCP**: it is model-agnostic, so the same MCP servers work regardless of which LLM backend is active. If I need cross-team agent coordination, I would use **A2A** at the boundary layer. This stack ensures that if I need to switch from GPT-6.1 Sol to Claude Sonnet 5.5 for cost or latency reasons, I do not have to rewrite 50 prompts; I re-compile, re-run the eval suite, and update the config.
+I would use **DSPy** for the prompt layer and **LangGraph** for the orchestration layer. DSPy's **Signatures** allow me to decouple the task definition from the model's specific behavior. I would then use a **Universal Model Gateway** (like LiteLLM or an internal proxy) to handle the different API formats. The gateway holds every provider key, so it is security-critical infrastructure: LiteLLM alone had an unauthenticated RCE (CVE-2026-37004, CVSS 9.8, fixed in 1.83.7) and an auth bypass (CVE-2026-49468, fixed in 1.84.0) in 2026, two PyPI releases (1.82.7 and 1.82.8) were compromised, and on October 21 a leaked admin key that was never revoked ended in seven malicious PyPI wheels and container images, live for about two hours, that harvested cloud credentials, provider keys and the proxy's master and virtual keys. Its stored-key exfiltration bug through `api_base` (CVE-2026-84377) is fixed only in specific patch releases on each minor line (for example 1.96.2), so a simple version floor is not enough. I pin an exact version from the advisory's fixed list, verify artifact hashes rather than trusting a tag, set `allow_client_side_credentials=false`, and keep the gateway off the public internet. The gateway must also stop injecting sampling parameters: GPT-6 Astra rejects custom `temperature`, and under Anthropic API version `2026-10-21` every Claude model returns 400 for `temperature`, `top_p` or `top_k`, even at default values. For tool access, I would use **MCP**: it is model-agnostic, so the same MCP servers work regardless of which LLM backend is active. If I need cross-team agent coordination, I would use **A2A** at the boundary layer. This stack ensures that if I need to switch from GPT-6.1 Sol to Claude Sonnet 5.5 for cost or latency reasons, I do not have to rewrite 50 prompts; I re-compile, re-run the eval suite, and update the config.
 
 ### Q: With every AI lab shipping its own agent SDK (Claude Agent SDK, OpenAI Agents SDK, Google ADK), how do you avoid vendor lock-in?
 
@@ -163,6 +164,7 @@ The key is to **separate the orchestration layer from the model layer**. I use a
 - Google. "Agent Development Kit": https://google.github.io/adk-docs
 - OpenAI. Agents SDK releases: https://github.com/openai/openai-agents-python/releases
 - OpenAI. "Agents API overview" (beta, Sep 2026): https://developers.openai.com/api/docs/guides/agents-api/overview
+- GitHub. "Route and orchestrate models with GitHub Copilot Fusion" (Oct 28, 2026): https://github.blog/changelog/2026-10-28-route-and-orchestrate-models-with-github-copilot-fusion/
 - Vercel. "AI SDK 7" (Jun 2026): https://vercel.com/blog/ai-sdk-7
 - deepset. Haystack 3.0 release notes (Jul 2026): https://github.com/deepset-ai/haystack/releases/tag/v3.0.0
 - Agno 3.0 release notes (Aug 2026): https://github.com/agno-agi/agno/releases/tag/v3.0.0

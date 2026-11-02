@@ -59,8 +59,8 @@ Most major labs and platforms now ship computer use, and the product has split i
 | Provider | Offering | Approach | Key Strength |
 |----------|----------|----------|--------------|
 | Anthropic | `computer_toolset_20260801` (GA on the Claude API since Aug 19, 2026) and `browser_toolset_20260801` | Client toolsets you host: pixels for desktops, accessibility-tree element refs for browsers | Desktop and browser in one API; batch actions |
-| OpenAI | Agents API computer use (hosted browser added Sep 29, 2026, public beta), ChatGPT agent, dots | OpenAI-hosted browser on the managed Codex harness; persistent agents on their own cloud computer | Per-origin approvals; credentials kept out of model input |
-| Google | Gemini API computer use on mainline Flash models (`gemini-3.8-flash` recommended); Gemini Enterprise Computer Use sandboxes (GA Sep 9, 2026) | Browser, Android, and desktop actions on a normalized 0-999 grid | Built-in `require_confirmation` safety service; VPC-isolated managed sandboxes |
+| OpenAI | Agents API computer use (hosted browser added Sep 29, 2026, public beta), `computer_use` in the Responses API (GPT-6.1 Terra, Oct 26, 2026, $1/$5 per 1M), ChatGPT agent, dots | OpenAI-hosted browser on the managed Codex harness; a client-hosted tool on the Responses API; persistent agents on their own cloud computer | Per-origin approvals; credentials kept out of model input |
+| Google | Gemini API computer use (GA Oct 30, 2026; `gemini-3.8-flash` recommended, `gemini-4-argon` the most capable option); Gemini Enterprise Computer Use sandboxes (GA Sep 9, 2026) | Browser, Android, and desktop actions on a normalized 0-999 grid | Built-in `require_confirmation` safety service; VPC-isolated managed sandboxes |
 | Microsoft | GitHub Copilot computer use (public preview Oct 1, 2026), Copilot Autopilot (private preview), the UFO research framework | Accessible app content plus vision across desktop apps | Per-app approval grants; agent identity inside the customer tenant |
 | Amazon | Nova Act | Purpose-built browser model | E-commerce workflows |
 | Meta | Muse (Sep 8, 2026) | Consumer agent that runs a browser in a dedicated cloud VM | Retail and connector partnerships |
@@ -132,7 +132,7 @@ The model maintains context across iterations through the conversation history, 
 
 ## Claude Computer Use: Tools and API
 
-Anthropic ships computer use as client-side tools: you host the environment and execute the actions, and Claude decides what to do. Computer use left beta on the Claude API on August 19, 2026 (Google Cloud on August 20) as a **toolset**, one `tools` entry that expands into many member tools. It is still beta on Amazon Bedrock, Claude Platform on AWS, and Microsoft Foundry. Supported models are Fable 5 and 5.1, Mythos 5 and 5.1, Opus 5 and 5.5, Sonnet 5 and 5.5, and Opus 4.8.
+Anthropic ships computer use as client-side tools: you host the environment and execute the actions, and Claude decides what to do. Computer use left beta on the Claude API on August 19, 2026 (Google Cloud on August 20) as a **toolset**, one `tools` entry that expands into many member tools. It is still beta on Amazon Bedrock, Claude Platform on AWS, and Microsoft Foundry. Supported models are Fable 5 and 5.1, Mythos 5 and 5.1, Opus 5 and 5.5, Sonnet 5 and 5.5, Haiku 5.5, and Opus 4.8.
 
 ### The Tools
 
@@ -185,7 +185,7 @@ Claude's calls come back as `tool_use` blocks whose `name` is the member and whi
 Return one `tool_result` per call, all in the next user message, each echoing `"toolset_name": "computer"` (a result without it is rejected). Only `screenshot` and `zoom` need an image; a short `OK` is enough for the rest. In a batch, run the calls in order; if one fails, answer every later call with `is_error: true` and the text `Not executed: an earlier computer action in this turn failed.`
 
 **Migration traps from the beta tool:**
-- On the Claude API and Google Cloud, Claude Opus 5.5 and Sonnet 5.5 return HTTP 400 for the older `computer_20251124` tool. Amazon Bedrock still accepts it for both models. The two forms cannot share a request.
+- On the Claude API and Google Cloud, the 5.5 models (Opus, Sonnet, and Haiku) return HTTP 400 for the older `computer_20251124` tool. Amazon Bedrock still accepts it for all three. The two forms cannot share a request.
 - The action moved from `input.action` to the block's `name`, so an executor written for the old tool needs a rewrite, not a type swap.
 - `display_width_px`, `display_height_px`, and `display_number` are rejected. Coordinates are in the pixel space of the screenshots you return, and the API does not downscale for you, so screenshots must already fit the model's image limits: 2576 px on the long edge for Opus 4.7 and later (every toolset model), 1568 px for earlier models.
 - Samples that target `claude-sonnet-4-20250514` or `claude-3-7-sonnet-20250219` point at retired models, and the `computer_20250124` version they use supports only Claude Sonnet 4.5, Haiku 4.5, and older models.
@@ -367,10 +367,11 @@ The estimates below assume about 25K tokens of prior context per step, 1.5K new 
 
 | Model | List price per 1M (input / output / cache read) | Per action, warm cache | Per action, no cache |
 |-------|-------------------------------------------------|------------------------|----------------------|
-| Claude Sonnet 5.5 | $2 / $10 / $0.20 | ~$0.01 | ~$0.06 |
+| Claude Haiku 5.5 (prompts up to 100K tokens) | $0.10 / $0.50 / $0.01 | ~$0.001 | ~$0.003 |
+| Claude Sonnet 5.5 | $2 / $10 / $0.10 | ~$0.01 | ~$0.06 |
 | Claude Opus 5.5 | $4 / $20 / $0.20 | ~$0.02 | ~$0.11 |
 
-A 20-step workflow costs roughly $0.25 to $1.15 on Sonnet 5.5, or $0.40 to $2.30 on Opus 5.5, depending mostly on cache hit rate. For comparison, GPT-6 Astra lists at $10/$50 per 1M ($1 cached input), 2.5x Opus 5.5's list price, and Gemini 3.8 Flash at an introductory $0.75/$3.75 through December 31, 2026 ($1.50/$7.50 from January 1, 2027). Image token counts differ by vendor, so measure per-action cost on your own screenshots rather than porting these estimates.
+A 20-step workflow costs roughly $0.20 to $1.15 on Sonnet 5.5, or $0.40 to $2.30 on Opus 5.5, depending mostly on cache hit rate. Haiku 5.5 is an order of magnitude cheaper again, but its price applies only while the whole prompt, cache reads and writes included, stays at or under 100,000 tokens. A long session that crosses that line bills every request at $0.50/$2.50, so trim history on Haiku before it gets there, and weigh the capability gap: Anthropic reports 72.4% for Haiku 5.5 on its OSWorld 2.1 offline subset (partial credit, vendor-reported). For comparison, GPT-6 Astra lists at $10/$50 per 1M ($1 cached input), 2.5x Opus 5.5's list price, GPT-6.1 Terra at $1/$5 ($0.05 cached; above 272K input the whole request bills $2/$7.50), and Gemini 3.8 Flash at an introductory $0.75/$3.75 through December 31, 2026 ($1.50/$7.50 from January 1, 2027). Image token counts differ by vendor, so measure per-action cost on your own screenshots rather than porting these estimates.
 
 Effort is the other cost knob: Opus 5.5 defaults to `medium` effort and Sonnet 5.5 to `high`, and thinking tokens bill as output.
 
@@ -396,8 +397,8 @@ Quoted computer-use scores swing by 30 points or more depending on the benchmark
 | OSWorld 2.0 / 2.1 (XLANG Lab, June 2026, arXiv 2606.29537) | The current long-horizon yardstick | 108 tasks across 31 self-hosted websites and desktop apps; a median of about 1.6 skilled-human hours per task; about 27 scoring checkpoints per task; a 500-step budget. **Binary completion is the primary metric**; partial credit is reported alongside |
 
 Where the numbers stand:
-- **Official leaderboard (XLANG, updated September 17, 2026):** Claude Opus 5 at max effort with batched tools scores 44.33% binary and 77.67% partial on the v2.1 full set. Hour-scale binary completion is still under 50%.
-- **Vendor-reported, partial credit only:** Anthropic reports Opus 5.5 at 81.8% on "OSWorld 2.1" and gives no binary figure; its own run puts Opus 5 at 74.0%, which matches no leaderboard row. OpenAI reports GPT-6 Astra at 72.6% against 65.7% for GPT-5.6 Sol on its offline v2026.08.08 set.
+- **Official leaderboard (XLANG, September 17, 2026 update):** Claude Opus 5 at max effort with batched tools scored 44.33% binary and 77.67% partial on the v2.1 full set. Hour-scale binary completion was still under 50%.
+- **Vendor-reported, partial credit only:** Anthropic reports Opus 5.5 at 81.8% and Sonnet 5.5 at 80.1% on "OSWorld 2.1" and gives no binary figure; its own run puts Opus 5 at 74.0%, which matches no leaderboard row. Its Haiku 5.5 launch (October 7) reports 72.4% on an "OSWorld 2.1 (offline subset)", a smaller task set, so do not line that number up against the launch figures for the larger models. OpenAI reports GPT-6 Astra at 72.6% against 65.7% for GPT-5.6 Sol on its offline v2026.08.08 set.
 - **Paper baseline (June 2026):** Claude Opus 4.8 at max thinking scored 20.6% binary and 54.8% partial.
 
 Snorkel AI's analysis of OSWorld 2.0 runs names four failure modes, and each maps to a control you can build: agents rarely ask to clarify missing information (give them a clarification tool), they misperceive unfamiliar apps (add app-specific instructions), they submit prematurely or refuse to backtrack (add a verification step before submit), and they lose track over roughly 300-step trajectories (keep task state outside the context window).
@@ -431,6 +432,8 @@ Plan capacity on binary completion: a workflow that hits 80% of its checkpoints 
 | **Internal network reach** | Agent browses to loopback, cloud metadata, or private services | Network-layer domain allowlist that blocks loopback, link-local, and private ranges; http/https only |
 
 Gemini's safety service doubles as a ready-made risk taxonomy for your own confirmation gate: it flags financial transactions, sensitive data modification, communication tools, account creation, data modification, user consent management, and legal terms and agreements.
+
+Routing a computer-use agent to a cheaper model changes its injection exposure, not just its cost. Anthropic's Haiku 5.5 system card reports a Gray Swan prompt-injection attack success rate within 15 attempts of 7.1% overall but 24.4% on GUI computer use (vendor-reported). The GUI surface is the weakest one, so a model-routing change on a computer-use workload should trigger a security review, not only a cost review.
 
 The cardinal rule: **never run computer-use agents on your production workstation or with access to real credentials unless in a fully sandboxed container**. For the full defense-in-depth design, see [Safety and Governance](07-safety-and-governance.md).
 
@@ -550,7 +553,7 @@ I would build a pipeline with three stages. First, a document processing stage u
 
 For scale, I would run sandboxes in parallel, each processing claims sequentially. At roughly 2 minutes per claim, one sandbox handles about 240 claims in an 8-hour day, so three cover the steady-state volume; I would run 5 to 10 for headroom against retries, slow portal pages, and end-of-month peaks. I would add a dead-letter queue for claims that fail after 3 retries, with human review.
 
-On Sonnet 5.5 list prices, 20 actions per claim at roughly $0.01 to $0.06 each (warm versus cold prompt cache) comes to about $0.25 to $1.15 per claim, or $125 to $575 a day for 500 claims. Keeping the prompt prefix stable so history reads hit the cache is the biggest cost lever, and even the top of that range is likely cheaper than the manual data entry team it replaces.
+On Sonnet 5.5 list prices, 20 actions per claim at roughly $0.01 to $0.06 each (warm versus cold prompt cache) comes to about $0.20 to $1.15 per claim, or $100 to $575 a day for 500 claims. Keeping the prompt prefix stable so history reads hit the cache is the biggest cost lever, and even the top of that range is likely cheaper than the manual data entry team it replaces.
 
 ### Q: Compare computer-use agents with Selenium for web automation. When would you choose each?
 
@@ -566,7 +569,7 @@ The best production systems use both: Playwright handles the predictable steps (
 ### Q: A vendor says its computer-use model scores 81.8% on OSWorld. How do you turn that into a production capacity plan?
 
 **Strong answer:**
-I would first find out what the number is. Which benchmark: OSWorld-Verified is saturated in the mid-80s and tells me little, while OSWorld 2.x measures hour-scale tasks. Which metric: 81.8% is Anthropic's partial-credit figure for Opus 5.5 on OSWorld 2.1, and partial credit can sit 30 or more points above binary completion; the top binary score on the official leaderboard's v2.1 full set is 44.33% (Opus 5 at max effort with batched tools). Which effort level and harness, and who ran it: vendor runs and leaderboard runs disagree, and Anthropic's own 74.0% for Opus 5 matches no leaderboard row.
+I would first find out what the number is. Which benchmark: OSWorld-Verified is saturated in the mid-80s and tells me little, while OSWorld 2.x measures hour-scale tasks. Which metric: 81.8% is Anthropic's partial-credit figure for Opus 5.5 on OSWorld 2.1, and partial credit can sit 30 or more points above binary completion; the top binary score on the official leaderboard's v2.1 full set was 44.33% at its September 17, 2026 update (Opus 5 at max effort with batched tools). Which effort level and harness, and who ran it: vendor runs and leaderboard runs disagree, and Anthropic's own 74.0% for Opus 5 matches no leaderboard row.
 
 Then I would ignore the headline and build our own eval: 50 to 100 real tasks on our applications, scored on binary completion with an independent verification check, plus minutes and dollars per completed task. If binary completion lands around 45%, the plan is a human-in-the-loop system, not an autonomous one: an escalation queue sized for more than half the volume at launch, with the agent doing the preparation and a human finishing or approving.
 
@@ -579,7 +582,8 @@ Finally, I would treat the eval as continuous. Serving-side changes move results
 - Anthropic. "Computer use tool" API documentation (`computer_toolset_20260801`, 2026)
 - Anthropic. "Browser use tool" API documentation (`browser_toolset_20260801`, 2026)
 - Anthropic. "Bash Tool" and "Text Editor Tool" API documentation
-- Google. "Computer use" Gemini API documentation (2026)
+- Google. "Computer use" Gemini API documentation and changelog (GA October 30, 2026)
+- Anthropic. Claude Haiku 5.5 launch post and system card (October 2026)
 - OpenAI. "Introducing the Agents API" (September 2026)
 - E2B. "Sandboxed Cloud Environments for AI Agents" (2025)
 - XLANG Lab et al. "OSWorld 2.0" (arXiv 2606.29537, June 2026) and the official leaderboard at osworld-v2.xlang.ai

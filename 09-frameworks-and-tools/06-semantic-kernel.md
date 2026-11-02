@@ -1,6 +1,6 @@
 # Semantic Kernel
 
-**Semantic Kernel (SK)** is Microsoft's engine for enterprise-grade AI orchestration and the framework most existing **Azure/Microsoft** and **C#/.NET** AI code is written against. Its forward momentum has moved to the **Microsoft Agent Framework (MAF)**, the successor to AutoGen and SK built by the same teams. MAF 1.0 went GA for .NET and Python on April 2, 2026, with long-term support, and ships roughly weekly (Python 1.19.0 on Sep 18, .NET 1.23.0 on Oct 1, 2026). SK still ships (`semantic-kernel` 1.44.1, Aug 6, 2026) and Microsoft publishes a migration guide from SK to MAF.
+**Semantic Kernel (SK)** is Microsoft's engine for enterprise-grade AI orchestration and the framework most existing **Azure/Microsoft** and **C#/.NET** AI code is written against. Its forward momentum has moved to the **Microsoft Agent Framework (MAF)**, the successor to AutoGen and SK built by the same teams. MAF 1.0 went GA for .NET and Python on April 2, 2026, with long-term support, and ships roughly weekly (Python 1.24.0 and .NET 1.27.0 on Oct 30, 2026). SK still ships (Python `semantic-kernel` 1.46.0 on Oct 28, .NET 1.81.0 on Oct 6, 2026) and Microsoft publishes a migration guide from SK to MAF.
 
 **The practical rule**: maintain existing SK code, start new agent work on MAF. The concepts below (kernel functions, plugins, connectors, function calling) carry straight over.
 

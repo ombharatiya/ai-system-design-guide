@@ -11,7 +11,7 @@ The way AI agents interact with the outside world has undergone a dramatic shift
 - [Open Interpreter: Local Code Execution](#open-interpreter-local-code-execution)
 - [Claude Computer Use: Vision-Based Automation](#claude-computer-use-vision-based-automation)
 - [Claude Code: The Terminal Agent](#claude-code-the-terminal-agent)
-- [IDE Agents: Cursor, Windsurf, Cline](#ide-agents-cursor-windsurf-cline)
+- [IDE Agents: Cursor, Devin Desktop, Cline](#ide-agents-cursor-devin-desktop-cline)
 - [Comparison Matrix](#comparison-matrix)
 - [Market Trends and Adoption (2026)](#market-trends-and-adoption-2026)
 - [System Design Interview Angle](#system-design-interview-angle)
@@ -33,18 +33,18 @@ The 2026 tool-use ecosystem has consolidated around five deployment categories, 
 |  |  LOCAL AGENTS     |  |  CLOUD AGENTS     |  |  IDE AGENTS       |  |
 |  |                   |  |                   |  |                   |  |
 |  |  OpenClaw         |  |  Claude Code      |  |  Cursor           |  |
-|  |  Open Interpreter |  |  OpenAI Codex     |  |  Windsurf         |  |
+|  |  Open Interpreter |  |  OpenAI Codex     |  |  Devin Desktop    |  |
 |  |  OpenHands (local)|  |  OpenHands Cloud  |  |  Cline            |  |
-|  |  OpenCode         |  |  Google Jules     |  |  GitHub Copilot   |  |
+|  |  OpenCode         |  |  Devin (cloud)    |  |  GitHub Copilot   |  |
 |  +-------------------+  +-------------------+  +-------------------+  |
 |                                                                       |
 |  +-------------------+  +-------------------+  +-------------------+  |
 |  |  COMPUTER-USE     |  |  MCP SERVERS      |  |  MESSAGING AGENTS |  |
 |  |                   |  |                   |  |                   |  |
 |  |  Claude computer  |  |  10,000+ servers  |  |  OpenClaw (multi) |  |
-|  |  and browser tools|  |  TS SDK v1: ~232M |  |  Custom bots      |  |
+|  |  and browser tools|  |  TS SDK v1: ~246M |  |  Custom bots      |  |
 |  |  Gemini 3.8 Flash |  |  npm downloads    |  |  via MCP bridges  |  |
-|  |  Copilot (preview)|  |  (Sep 2026)       |  |                   |  |
+|  |  Copilot (preview)|  |  (Oct 2026)       |  |                   |  |
 |  +-------------------+  +-------------------+  +-------------------+  |
 |                                                                       |
 |  +-------------------+  +------------------------------------------+  |
@@ -73,7 +73,7 @@ Agents that run on the user's own hardware. The LLM call may go to the cloud, bu
 - User owns all data; no vendor lock-in
 - Security responsibility falls entirely on the operator
 
-**Examples:** OpenClaw, Open Interpreter, local OpenHands deployments, and open-source terminal harnesses such as OpenCode (MIT, about 211K GitHub stars on October 1, 2026)
+**Examples:** OpenClaw, Open Interpreter, local OpenHands deployments, and open-source terminal harnesses such as OpenCode (MIT, about 224K GitHub stars in early November 2026)
 
 ### 2. Cloud Agents (Vendor-Hosted, API-Driven)
 
@@ -85,7 +85,7 @@ Agents that run in vendor-managed cloud environments. Code execution happens in 
 - Vendor handles scaling, security, and infrastructure
 - Pay-per-use or subscription pricing
 
-**Examples:** Claude Code (cloud mode), OpenAI Codex (reusable cloud environments since DevDay, September 29, 2026), Google Jules, OpenHands Cloud
+**Examples:** Claude Code (cloud mode), OpenAI Codex (reusable cloud environments since DevDay, September 29, 2026), Devin, OpenHands Cloud. Google Jules is winding down (read-only after November 11, 2026, shut down December 31), a reminder to keep hosted coding agents behind an interface you can repoint.
 
 The sandbox no longer has to be the vendor's. Claude Code self-hosted runners (Team and Enterprise, v2.1.224, August 2026), Cursor Self-hosted Machines (September 2, 2026) and the OpenAI Agents API's self-hosted environments all keep the vendor's control plane while tool execution, credentials and egress stay inside the customer perimeter.
 
@@ -99,9 +99,9 @@ Agents embedded directly in code editors. They have deep understanding of projec
 - Background agents that work asynchronously on branches
 - Optimized for developer workflow, not general automation
 
-**Examples:** Cursor (Agent Mode, cloud agents, Projects), Windsurf (Cascade), Cline, GitHub Copilot, Google Antigravity (a product family: the Antigravity 2.0 multi-agent app, the IDE, a CLI and an SDK; bundled into eligible Gemini Enterprise subscriptions since August 20, 2026). Google positions the Antigravity CLI as the successor to Gemini CLI, but Gemini CLI is still maintained (v0.62.0 shipped September 29, 2026).
+**Examples:** Cursor (Agent Mode, cloud agents, Projects), Devin Desktop (formerly Windsurf), Cline, GitHub Copilot, Google Antigravity (a product family: the Antigravity 2.0 multi-agent app, the IDE, a CLI and an SDK; bundled into eligible Gemini Enterprise subscriptions since August 20, 2026). The Antigravity CLI is now Google's general-purpose terminal agent: Gemini CLI (v0.66.0, October 27, 2026) is scoped to Gemini Code Assist Standard and Enterprise and Code Assist for GitHub, and its README says it is not optimized for Gemini 4 models.
 
-**Pin managed agent versions.** Google's `antigravity-preview-09-2026` replaced `antigravity-preview-05-2026` on September 17, 2026 with about three weeks' notice (shutdown October 5). Built-in tool parameters moved from snake_case to PascalCase and file edits became line-range replacements, so any code that executes the built-in tools locally or parses their calls broke. Pin dated agent versions and contract-test tool schemas in CI.
+**Pin managed agent versions.** Google's `antigravity-preview-09-2026` replaced `antigravity-preview-05-2026` on September 17, 2026 with about three weeks' notice (shutdown scheduled for October 5). Built-in tool parameters moved from snake_case to PascalCase and file edits became line-range replacements, so any code that executes the built-in tools locally or parses their calls broke. Pin dated agent versions and contract-test tool schemas in CI.
 
 ### 4. Computer-Use Agents (Vision-Based, GUI-Driven)
 
@@ -113,7 +113,7 @@ Agents that interact with software the way humans do: by looking at screenshots 
 - Higher latency (screenshot-action loop is 1-3 seconds per model round trip; batch actions now put several steps in one round trip)
 - Requires sandboxed environments for safety (VM + VNC)
 
-**Examples:** Claude's computer and browser toolsets (GA August 19, 2026), Gemini computer use (the docs now recommend `gemini-3.8-flash`), computer use in the OpenAI Agents API through an OpenAI-hosted browser (September 29, 2026), GitHub Copilot computer use (public preview October 1, 2026), and the original Python Open Interpreter's Computer API
+**Examples:** Claude's computer and browser toolsets (GA August 19, 2026), Gemini computer use (GA October 30, 2026; the docs recommend `gemini-3.8-flash` and list `gemini-4-argon` as the most capable option), computer use in the OpenAI Agents API through an OpenAI-hosted browser (public beta since September 29, 2026) and through the Responses API on GPT-6.1 Terra ($1/$5 per 1M tokens, October 26), GitHub Copilot computer use (public preview October 1, 2026), and the original Python Open Interpreter's Computer API
 
 The browser variants increasingly target **accessibility-tree element references** rather than raw pixels, which survive layout shifts and cut misclicks. Pixels remain the fallback for desktop apps.
 
@@ -129,11 +129,11 @@ The newest category, and the one that changes the design questions. Instead of s
 
 **Examples:**
 
-| Product | Status (October 1, 2026) | Design detail worth stealing |
+| Product | Status (November 2026) | Design detail worth stealing |
 |---------|--------------------------|------------------------------|
-| Claude Managed Agents | Available; budgets (August 7), `ant apply` (September 3) and the auto policy (September 10) are recent additions | Session spend caps that pause with `budget_reached`; server-evaluated auto permission policy; agents-as-code via `ant apply` and a committed `claude-lock.json` |
-| OpenAI Agents API | Public beta (September 10) | Managed Codex harness; per-origin browser approval; credentials entered out of band, never in model input; US data residency only and no ZDR at launch |
-| Amazon Bedrock Managed Agents (powered by OpenAI) | Preview (September 29) | Per-agent IAM role, CloudTrail logging, runtime and inference stay inside AWS |
+| Claude Managed Agents | Beta; budgets (August 7), `ant apply` (September 3) and the auto policy (September 10) are recent additions, and it now also runs on Claude on Google Cloud | Session spend caps that pause with `budget_reached`; server-evaluated auto permission policy; agents-as-code via `ant apply` and a committed `claude-lock.json` |
+| OpenAI Agents API | Public beta (September 10); since October 9, hosted sandboxes bill only during active turns | Managed Codex harness; per-origin browser approval; credentials entered out of band, never in model input; US data residency only and no ZDR at launch |
+| Amazon Bedrock Managed Agents (powered by OpenAI) | Public preview (September 29) | Per-agent IAM role, CloudTrail logging, runtime and inference stay inside AWS |
 | OpenAI dots | Announced September 29 (Pro, Business Premium) | One cloud computer per agent; read-only research when idle; Custom Rules to allow, block or require approval; saved passwords used without exposing them to the model |
 | Meta Muse | Launched September 8 (consumer) | Runs in a dedicated cloud VM; Meta says it expects to profit from a small fee on transactions |
 | Microsoft Copilot Autopilot (formerly Scout) | Private preview (end of September) | Own identity, memory and computer inside the customer tenant |
@@ -156,7 +156,7 @@ OpenClaw is a self-hosted, open-source personal AI assistant created by Austrian
 - 38 million monthly visitors to the project site
 - 24+ messaging platform integrations
 
-In early October 2026 the repository showed about 391K stars and 82K forks. The project is now stewarded by the **OpenClaw Foundation**, an independent 501(c)(3) with no paid tier, hosted service or token; its README describes OpenAI as "a donor, not an owner." Releases run on two trains: calendar-versioned builds (2026.9.7 on September 30) and gateway-only extended-stable builds that the project treats as its LTS line (2026.8.35 on October 2). The code is MIT-licensed. See the [OpenClaw deep dive](03-openclaw-deep-dive.md) for the architecture in detail.
+In early November 2026 the repository showed about 394K stars and 83K forks. The project is now stewarded by the **OpenClaw Foundation**, an independent 501(c)(3) with no paid tier, hosted service or token; its README describes OpenAI as "a donor, not an owner." Releases run on two trains: calendar-versioned builds (2026.9.7 on September 30) and gateway-only extended-stable builds that the project treats as its LTS line (2026.8.35 on October 2). The code is MIT-licensed. See the [OpenClaw deep dive](03-openclaw-deep-dive.md) for the architecture in detail.
 
 ### How It Works
 
@@ -345,7 +345,7 @@ The Python design suits data analysis, file manipulation, and system administrat
 
 ### What It Is
 
-Claude Computer Use is an Anthropic API feature that allows Claude to control a desktop via screenshots, mouse movements, keyboard input, and application interaction. Introduced in October 2024 as a beta, it reached general availability on the Claude API on August 19, 2026 (Google Cloud on August 20) as the `computer_toolset_20260801` client toolset. It remains in beta on Bedrock, Claude Platform on AWS and Foundry. Supported models are Fable 5/5.1, Mythos 5/5.1, Opus 5/5.5, Sonnet 5/5.5 and Opus 4.8.
+Claude Computer Use is an Anthropic API feature that allows Claude to control a desktop via screenshots, mouse movements, keyboard input, and application interaction. Introduced in October 2024 as a beta, it reached general availability on the Claude API on August 19, 2026 (Google Cloud on August 20) as the `computer_toolset_20260801` client toolset. It remains in beta on Bedrock, Claude Platform on AWS and Foundry. Supported models are Fable 5/5.1, Mythos 5/5.1, Opus 5/5.5, Sonnet 5/5.5, Haiku 5.5 and Opus 4.8.
 
 ### The Vision-Action Loop
 
@@ -388,7 +388,7 @@ Claude Computer Use is an Anthropic API feature that allows Claude to control a 
 - **Batch actions**: Claude can return several `tool_use` blocks in one turn. The executor runs them in order and halts at the first failure, answering each later block with an error ("Not executed: an earlier computer action in this turn failed"). This cuts model round trips, and it means a confirmation placed between model turns arrives too late, because one turn can now complete a multistep consequential action. Anthropic's docs put the human check before each block runs: inspect the whole batch when it arrives and pause before each consequential action, including one in the middle of a batch.
 - **Zoom Action**: Inspects small UI elements at high resolution before clicking. Reduces misclick rates on dense interfaces. On by default in the GA toolset.
 - **Element refs for browsers**: The browser toolset targets accessibility-tree refs, which survive layout shifts but go stale after navigation. Anthropic scans returned page text and screenshots for prompt injection.
-- **Breaking change**: On the Claude API and Google Cloud, Opus 5.5 and Sonnet 5.5 return HTTP 400 for the older `computer_20251124` tool (Bedrock still accepts it). Code written against the beta tool needs migrating.
+- **Breaking change**: On the Claude API and Google Cloud, the 5.5 models (Opus, Sonnet and Haiku) return HTTP 400 for the older `computer_20251124` tool (Bedrock still accepts it). Code written against the beta tool needs migrating.
 - **Screenshot budget**: Models from Opus 4.7 onward accept up to 2576 px on the long edge. Anthropic estimates roughly 1,000-1,800 input tokens per screenshot and recommends keeping 20 or fewer images per request or resizing to 2000 px or less per side.
 - **Consumer surfaces**: Cowork is being merged with chat into one Claude app (rollout to Pro and Max from September 16, 2026), with Claude asking for approval before acting by default.
 - **Sandboxing best practice**: Always run in a sandboxed VM (Docker + VNC, or E2B cloud). Never give computer-use access to an unsandboxed host machine. For browsers, Anthropic's guidance adds a fresh profile with no credentials and a network-layer domain allowlist that blocks loopback, link-local and private ranges.
@@ -403,6 +403,7 @@ Claude Computer Use is an Anthropic API feature that allows Claude to control a 
 | Q1 2026 | OSWorld-Verified | 72.5% | Sonnet 4.6, Zoom Action |
 | Sep 2026 | OSWorld 2.0 (v2.1 full set, XLANG leaderboard) | 44.33% binary / 77.67% partial | Opus 5, max effort, batched tools |
 | Sep 2026 | OSWorld 2.1 (Anthropic, vendor-reported) | 81.8% partial | Opus 5.5 |
+| Oct 2026 | OSWorld 2.1 offline subset (Anthropic, vendor-reported) | 72.4% partial | Haiku 5.5 |
 
 Do not read these rows as one trend line. Self-reported OSWorld-Verified scores now sit in the mid-80s, so that benchmark is saturated. **OSWorld 2.0** (June 2026) has 108 long-horizon tasks with a median of about 1.6 skilled-human hours each, scored primarily on binary completion at a 500-step budget. Quoted numbers swing 30-40 points with binary vs partial scoring, effort level and task-release version, so always ask which one is being cited. The interview point: short, single-session desktop tasks are close to solved, but hour-scale binary completion is still under 50% on the public leaderboard.
 
@@ -454,16 +455,16 @@ Built-in Tools: bash, read, write, edit, glob, grep, browser,
 - Context compression for long sessions (1M+ token context)
 - Subagent spawning for parallel workstreams
 - Worktree isolation for parallel branch execution
-- Permission governance (allow/deny rules for tools). Since v2.1.284 (September 28, 2026), interactive sessions with no permission mode configured start in **auto mode**, where a server-side classifier decides whether each action runs, is denied, or asks
+- Permission governance (allow/deny rules for tools). Since v2.1.284 (September 28, 2026), interactive sessions with no permission mode configured start in **auto mode**, where a server-side classifier decides whether each action runs, is denied, or asks. Headless runs differ: since v2.1.302 (October 16), `claude -p` and Agent SDK sessions with no mode start in `default` mode on third-party providers, with telemetry off, or on a fresh install, so CI callers should set the permission mode explicitly
 - Task system with dependency graphs
 - Hooks for custom automation (pre/post commit, file changes), and since v2.1.287 (October 1, 2026) **mods**: TypeScript functions shipped inside plugins that can rewrite prompts, block or rewrite tool calls, approve or deny permission requests, and redact tool output. Anthropic warns they are not sandboxed and run with Claude Code's own access, so plugin review is now part of the agent's trust boundary
 - Self-hosted runners (`claude self-hosted-runner`, Team and Enterprise) for running sessions on your own infrastructure
 
-**Not the only serious terminal harness.** As of October 1, 2026: OpenCode (MIT, about 211K stars), Codex CLI (Apache-2.0, about 128K stars; its default model switched to GPT-6.1 Sol on September 29), and Gemini CLI (Apache-2.0, about 107K stars, still shipping weekly) are the main alternatives, alongside the anthropics/claude-code repo at about 149K stars. Aider has gone quiet (last release February 12, last commit May 22, 2026). Silent default-model swaps like Codex's are a reason to pin the model explicitly in any automation built on these CLIs.
+**Not the only serious terminal harness.** In early November 2026: OpenCode (MIT, about 224K stars), Codex CLI (Apache-2.0, about 133K stars; its default model switched to GPT-6.1 Sol on September 29), and Google's Antigravity CLI are the main alternatives, alongside the anthropics/claude-code repo at about 154K stars. Gemini CLI (Apache-2.0, about 109K stars) still ships, but only for Google's enterprise Code Assist licenses. Aider has gone quiet (last release February 12, last commit May 22, 2026). Silent default-model swaps like Codex's are a reason to pin the model explicitly in any automation built on these CLIs.
 
 ---
 
-## IDE Agents: Cursor, Windsurf, Cline
+## IDE Agents: Cursor, Devin Desktop, Cline
 
 ### Cursor
 
@@ -480,26 +481,26 @@ What shipped since, all vendor-described:
 - **Projects** (beta, September 10): a coordinator agent plans the work, fans it out to as many parallel subagents as needed, keeps context for months, and returns finished work for review. Cursor reports that new Projects users merge 30% more PRs (vendor-reported, internal data).
 - **Rollouts and Security Review** (September 23, Teams and Enterprise): a monitor attached to every PR that tracks change health per environment after merge, plus a PR scanner for exploitable bugs.
 
-### Windsurf
+### Devin Desktop (formerly Windsurf)
 
-Windsurf (originally Codeium, acquired by Cognition for $250M in July 2025) features:
-- **Cascade**: Multi-step AI agent that analyzes project structure, coordinates cross-file changes, and self-recovers from errors
+Windsurf (originally Codeium, acquired by Cognition for $250M in July 2025) was renamed **Devin Desktop** in v3.0.12 (June 2, 2026), and the rename was more than cosmetic:
+- **Devin Local**: since v3.9.19 (September 8, 2026) the only agent in the product. It replaced Cascade, Windsurf's original multi-step agent, and Cognition describes it as the same harness its terminal agent uses
+- **Agent Command Center**: a Kanban-style view of local and cloud agent sessions, with one-click delegation from a local session to cloud Devin, which runs on its own VM
 - **Proprietary models**: SWE-1.5 (13x faster than Sonnet 4.5, per Cognition) and Fast Context, followed by the SWE-2 flagship model (September 10, 2026)
 - **Codemaps**: AI-powered visual code navigation
-- **Cross-IDE plugins**: Available for 40+ IDEs (JetBrains, Vim, NeoVim, XCode)
 
-Cognition (Windsurf and Devin) raised more than $2B at a $48B valuation on September 8, 2026 and reports over $1B in annualized revenue run rate (September 25, vendor-reported): an independent coding-agent company that owns both an IDE and its own models.
+Cognition (Devin Desktop and cloud Devin) raised more than $2B at a $48B valuation on September 8, 2026 and reports over $1B in annualized revenue run rate (September 25, vendor-reported): an independent coding-agent company that owns both an IDE and its own models. The design lesson from the rename: when a vendor swaps the agent inside a product you have standardized on, prompts, rules files and approval habits tuned for the old agent need re-evaluation, so treat it as a migration.
 
 ### Cline
 
-Cline is a VS Code extension that operates as a full agent rather than an autocomplete tool. It takes a series of steps, evaluates results, fixes its own errors, and continues. More autonomous than Cursor or Windsurf but with less polish. It is Apache-2.0, at v4.1.22 with an SDK as of October 1, 2026.
+Cline is a VS Code extension that operates as a full agent rather than an autocomplete tool. It takes a series of steps, evaluates results, fixes its own errors, and continues. More autonomous than Cursor or Devin Desktop but with less polish. It is Apache-2.0 and ships an SDK; v4.1.26 is from October 26, 2026.
 
 ### GitHub Copilot
 
 Copilot now ships orchestration patterns that were paper ideas a year ago:
 - **Computer use** (public preview, October 1, 2026, Copilot CLI and the Copilot app on macOS and Windows): operates desktop apps with per-app approval, reviewable permanent grants, and an org-level off switch.
 - **Dynamic workflows** (public preview, October 1): code-defined programs that mix automated steps and agents in sequential or parallel stages, with checkpoints for human review. GitHub contrasts them with `/fleet`, which lets the model delegate.
-- **HydraFusion** (research preview, September 30, VS Code 1.140+): **cascade** mode drafts with an efficient model, gates on quality, and escalates to a stronger model; **critique** mode has a model from a different family review the draft once.
+- **Copilot Fusion** (GA October 28, 2026, on all Copilot plans; it grew out of the HydraFusion research preview): you pick Standard, High or Max effort, and Fusion picks a workflow per task. **Single** sends the task to one model; **cascade** drafts with an efficient model, gates on quality, and escalates to a stronger one; **critique** has a second model review the draft before the first revises it. Each model used bills at its own rate, so the cost of a task now depends on the route Fusion picks.
 
 ### IDE Agent Architecture Comparison
 
@@ -513,10 +514,10 @@ Copilot now ships orchestration patterns that were paper ideas a year ago:
 |                    |                                              |
 |                    +--> [Cloud Agent] --> [Cloud/own VM] --> [PR] |
 |                                                                   |
-|  Windsurf:                                                        |
-|  [Editor] --> [Cascade Agent] --> [RAG Codebase] --> [Apply Edits]|
+|  Devin Desktop:                                                   |
+|  [Editor] --> [Devin Local] --> [Repo Context] --> [Apply Edits]  |
 |                    |                                              |
-|                    +--> [SWE-1.5 Model] --> [Fast Context]        |
+|                    +--> [Cloud Devin, own VM] --> [PR]            |
 |                                                                   |
 |  Cline:                                                           |
 |  [Editor] --> [Agent Loop] --> [Evaluate] --> [Self-Fix] --> [Act]|
@@ -533,7 +534,7 @@ Copilot now ships orchestration patterns that were paper ideas a year ago:
 |---------|----------|-----------|-----------------|-------------------|-------------|--------|
 | **Type** | Local agent | Dev agent | Local code exec | Vision automation | Terminal agent | IDE agent |
 | **License** | MIT | MIT | Apache-2.0 (Rust rewrite); AGPL-3.0 (Python fork) | Proprietary API | Proprietary | Proprietary |
-| **GitHub Stars (Oct 2026)** | ~391K | ~90K | ~68K | N/A (API) | ~149K (issues and plugins repo) | N/A |
+| **GitHub Stars (Nov 2026)** | ~394K | ~92K | ~69K | N/A (API) | ~154K (issues and plugins repo) | N/A |
 | **Sandboxed** | Optional (main session on host by default) | Yes (Docker) | Native OS sandbox (Rust); No (Python) | Requires VM | Configurable | Yes (cloud agents) |
 | **LLM Support** | Any (model-agnostic) | Any | 100+ models | Claude only | Claude only | Multi-model |
 | **GUI Control** | Browser tool | Yes (BrowserGym) | Computer API (Python fork); browser and app QA skills (Rust) | Yes (native) | Via computer-use | Computer use on cloud agent workers |
@@ -550,9 +551,9 @@ Copilot now ships orchestration patterns that were paper ideas a year ago:
 
 ### The Numbers
 
-- **MCP ecosystem**: 10,000+ active servers. In September 2026 the v1 TypeScript SDK alone had about 232M npm downloads, with the v2 split packages climbing (about 31M for `@modelcontextprotocol/core`). Tier 1 SDKs now cover TypeScript, Python, C#, Go, Rust and Ruby
+- **MCP ecosystem**: 10,000+ active servers. In October 2026 the v1 TypeScript SDK alone had about 246M npm downloads against about 62M for v2 `@modelcontextprotocol/core`, 49M for `server` and 33M for `client`: v2 roughly doubled in a month but is still only 13 to 25% of v1 volume. Tier 1 SDKs now cover TypeScript, Python, C#, Go, Rust and Ruby
 - **Gartner projection**: 40% of enterprise applications will incorporate AI agents by end of 2026 (up from under 5% in early 2025)
-- **OpenClaw**: Fastest project to 300K GitHub stars in history (under 5 months); about 391K by October 1, 2026
+- **OpenClaw**: Fastest project to 300K GitHub stars in history (under 5 months); about 394K in early November 2026
 - **Claude Code**: $2.5B ARR by February 2026, the fastest enterprise software product to $1B
 - **Cursor**: $2B annualized revenue and half of the Fortune 500 (early 2026); part of SpaceX since August 2026, and OpenAI is winding down its model supply to Cursor (proposed cutoff November 12, 2026)
 - **Cognition**: valued at $48B after a $2B+ round (September 8, 2026)
@@ -561,15 +562,15 @@ Copilot now ships orchestration patterns that were paper ideas a year ago:
 
 **1. Convergence of Agent Types**: The boundaries between local, cloud, and IDE agents are dissolving. Claude Code runs locally but uses cloud models. Cursor's cloud agents run on Cursor's VMs or on your own machines. OpenClaw connects to any LLM. The pattern is moving toward a universal agent architecture that can operate in any environment.
 
-**2. MCP as the Universal Tool Layer**: MCP has become the standard for tool integration, with adoption by Anthropic, OpenAI, Google, and hundreds of tool providers. The current spec revision, 2026-07-28, made the protocol core stateless. The maintainers' August 22, 2026 roadmap prioritizes agentic messaging (Tasks, server-initiated events), Streamable HTTP as the single transport, agent identity (DPoP and workload identity federation, both still open drafts), a redesign of the `tools/call` result shape, and server-side progressive discovery for large tool catalogs. No date is set for the next revision.
+**2. MCP as the Universal Tool Layer**: MCP has become the standard for tool integration, with adoption by Anthropic, OpenAI, Google, and hundreds of tool providers, under the Linux Foundation's Agentic AI Foundation (10 hosted projects and 305 member organizations as of October 22, 2026). The current spec revision, 2026-07-28, made the protocol core stateless. The maintainers' August 22, 2026 roadmap prioritizes agentic messaging (Tasks, server-initiated events), Streamable HTTP as the single transport, agent identity (DPoP and workload identity federation, both still open drafts), a redesign of the `tools/call` result shape, and server-side progressive discovery for large tool catalogs. The next revision is targeted for March 30, 2027 (SEP-3398, accepted October 27, subject to confirmation), with releases after that generally on the last Tuesday of March and September. Extensions now carry maturity stages (SEP-3392): MCP Apps and enterprise auth are Stable, while Tasks, Skills and Server Cards are Beta and can still break.
 
 **3. Sandboxing Becomes Non-Negotiable**: The OpenClaw security crisis (135,000 exposed instances) has pushed the industry toward sandboxed-by-default architectures. New agents are expected to provide isolation out of the box.
 
-**4. Cost Optimization as First-Class Concern**: The Plan-and-Execute pattern (a capable model plans, cheaper models execute) cuts cost by roughly 85-90% in illustrative math (see the next chapter). For coding agents the bigger lever is now input tokens: Anthropic's Claude Code telemetry (September 24, 2026, vendor-reported) shows the input-to-output ratio rising from 189:1 to 324:1, so cache-read price and cache hit rate dominate the bill. Opus 5.5 cache reads cost $0.20 per 1M tokens (0.05x its $4 input price). This is the agentic equivalent of cloud cost optimization.
+**4. Cost Optimization as First-Class Concern**: The Plan-and-Execute pattern (a capable model plans, cheaper models execute) cuts cost by roughly 85-90% in illustrative math (see the next chapter). For coding agents the bigger lever is now input tokens: Anthropic's Claude Code telemetry (September 24, 2026, vendor-reported) shows the input-to-output ratio rising from 189:1 to 324:1, so cache-read price and cache hit rate dominate the bill. Opus 5.5 and Sonnet 5.5 both read cache at 0.05x input ($0.20 and, since October 7, $0.10 per 1M tokens). This is the agentic equivalent of cloud cost optimization.
 
 **5. Background and Asynchronous Agents**: Cursor's cloud agents and Projects, Codex cloud environments, and Claude Code's subagent spawning represent a shift from synchronous, interactive agents to autonomous, asynchronous workers that notify you when done. OpenAI dots and Meta Muse push the same idea to consumers: an always-on agent with its own computer.
 
-**6. The Harness Becomes the Product**: Anthropic (Claude Managed Agents), OpenAI (Agents API) and AWS (Bedrock Managed Agents, built on OpenAI's harness) now sell the agent loop as a managed runtime, and the coding vendors converge on a **split plane**: vendor control plane, customer-hosted execution plane. Build-vs-rent is now a design-review question, and so are the gaps: the OpenAI Agents API launched with US data residency only and no Zero Data Retention.
+**6. The Harness Becomes the Product**: Anthropic (Claude Managed Agents), OpenAI (Agents API) and AWS (Bedrock Managed Agents, built on OpenAI's harness) now sell the agent loop as a managed runtime, and the coding vendors converge on a **split plane**: vendor control plane, customer-hosted execution plane. Build-vs-rent is now a design-review question, and so are the gaps: the OpenAI Agents API launched with US data residency only and no Zero Data Retention, and in November 2026 all three managed runtimes were still in beta or preview. Billing models are converging too: since October 9, OpenAI bills hosted sandbox compute only during active turns, so an agent waiting on a human approval no longer burns sandbox time.
 
 ---
 
@@ -634,7 +635,9 @@ Sandboxed (Docker/VM): Use for untrusted code execution, multi-tenant systems, o
 - Google. Gemini API computer use documentation and changelog (2026)
 - XLANG Lab. OSWorld 2.0 leaderboard (September 2026)
 - Gartner. "AI Agent Adoption Projections" (2025-2026)
-- Cursor, Windsurf, Cline, and GitHub Copilot official documentation and changelogs (2025-2026)
+- Cursor, Devin Desktop (formerly Windsurf), Cline, and GitHub Copilot official documentation and changelogs (2025-2026)
+- GitHub. "Route and orchestrate models with GitHub Copilot Fusion" (changelog, October 28, 2026)
+- Model Context Protocol. SEP-3398 "Release Cycle Updates" and SEP-3392 "Extension Lifecycle" (October 2026)
 
 ---
 

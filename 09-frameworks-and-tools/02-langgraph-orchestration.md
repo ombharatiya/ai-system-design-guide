@@ -1,8 +1,8 @@
 # LangGraph Orchestration
 
-LangGraph is the **de facto standard** for building stateful, multi-agent systems. It reached v1.0 in October 2025 and is at 1.2.12 (Sep 21, 2026); LangGraph 0.4 stays in maintenance mode until December 2026. Unlike simple chains, LangGraph allows for **Cycles**, **State Persistence**, and **Human-in-the-Loop** interventions.
+LangGraph is the **de facto standard** for building stateful, multi-agent systems. It reached v1.0 in October 2025 and is at 1.2.19 (Oct 30, 2026; seven patch releases in October); LangGraph 0.4 stays in maintenance mode until December 2026. Unlike simple chains, LangGraph allows for **Cycles**, **State Persistence**, and **Human-in-the-Loop** interventions.
 
-Adoption depends on which number you read. On GitHub stars CrewAI still leads (about 59.3K versus 42.6K for `langchain-ai/langgraph` on Oct 1, 2026). On downloads LangGraph leads by an order of magnitude: about 43.7M PyPI downloads in the month to Oct 1 versus about 2.4M for `crewai`, plus about 13.9M npm downloads of `@langchain/langgraph` (Aug 31 to Sep 29). Stars measure attention; downloads measure dependency, inflated by CI and transitive installs. Quote the metric that matches the claim you are making.
+Adoption depends on which number you read. On GitHub stars CrewAI still leads (about 60.4K versus 44.3K for `langchain-ai/langgraph` on Nov 2, 2026). On downloads LangGraph leads by an order of magnitude: about 44.8M PyPI downloads in the 30 days to Nov 1 versus about 2.4M for `crewai`, plus about 14.0M npm downloads of `@langchain/langgraph` in October. Stars measure attention; downloads measure dependency, inflated by CI and transitive installs. Quote the metric that matches the claim you are making.
 
 ## Table of Contents
 
@@ -55,6 +55,7 @@ Current LangGraph uses **Thread-based Persistence**.
 - **The Win**: If a user comes back after 2 days, the agent remembers the exact point it was at in a multi-step workflow.
 - **Interrupts**: `interrupt()` pauses a node for human approval and resumes from the checkpoint, which is how durable human-in-the-loop works without a polling loop.
 - **Time-Travel**: Developers can "re-run" a specific thread from a previous state to debug a failure.
+- **Checkpoint storage is a tuning knob, and defaults move**: LangGraph 1.2.18 (Oct 26, 2026) changed `DeltaChannel` to write a full snapshot every 100 updates instead of every 1,000, which makes reads on long threads faster and grows storage (`snapshot_frequency=1000` restores the old behavior). Watch checkpoint-store size after upgrades, not just latency.
 
 The moat has narrowed. CrewAI added checkpointing in 1.14 (Apr 2026), Microsoft Agent Framework ships workflow checkpointing, and Google ADK 2.0 added graph workflows with pause and resume. LangGraph's remaining edge is maturity: branch-from-any-checkpoint debugging and the LangSmith trace integration.
 

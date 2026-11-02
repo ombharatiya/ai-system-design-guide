@@ -32,12 +32,12 @@ A single agent with 50 tools experiences **Cognitive Load**.
 The most common enterprise pattern as of 2026.
 
 - **The Supervisor**: A high-reasoning model (Claude Opus 5.5 or Fable 5.1, GPT-6 Astra or GPT-6.1 Sol) that decomposes the user prompt and delegates to workers.
-- **Workers**: Fast, cost-efficient models (Claude Sonnet 5.5 or Haiku 4.5, GPT-6 Luna, Gemini 3.8 Flash) that perform the work.
+- **Workers**: Fast, cost-efficient models (Claude Sonnet 5.5 or Haiku 5.5, GPT-6 Luna or GPT-6.1 Terra, Gemini 3.8 Flash) that perform the work.
 - **Reviewer**: A separate agent that validates the consolidated output against the supervisor's original plan.
 
 **Architecture**: LangGraph remains the dominant framework for implementing these state-aware hierarchical loops. The Claude Agent SDK, Google ADK, and Microsoft Agent Framework all support this pattern natively as of 2026.
 
-**Re-check the tier split before you pay for it.** The price gap that justified cheap workers under an expensive supervisor has narrowed: Claude Sonnet 5.5, GPT-6 Sol, and GPT-6.1 Sol all list at $2/$10 per 1M tokens, Opus 5.5 dropped to $4/$20, and Anthropic's own (vendor-reported) agentic evals put Sonnet 5.5 within a few points of Opus 5.5. If the worker tier is nearly as capable and only 2x cheaper, the coordination overhead of a supervisor tree can cost more than it saves. Re-run the routing eval on each model generation.
+**Re-check the tier split before you pay for it.** The price gap that justified cheap workers under an expensive supervisor has narrowed: Claude Sonnet 5.5, GPT-6 Sol, and GPT-6.1 Sol all list at $2/$10 per 1M tokens, Opus 5.5 dropped to $4/$20, and Anthropic's own (vendor-reported) agentic evals put Sonnet 5.5 within a few points of Opus 5.5. If the worker tier is nearly as capable and only 2x cheaper, the coordination overhead of a supervisor tree can cost more than it saves. October reopened the gap at the bottom: Claude Haiku 5.5 lists at $0.10/$0.50 for prompts up to 100K tokens (5x on the whole request above that) and GPT-6.1 Terra at $1/$5, so narrow, short-context worker tasks are cheap again while long-context workers can cross a price cliff. Re-run the routing eval on each model generation.
 
 **The supervisor is now also a product.** Coding products and managed runtimes ship the coordinator for you: Cursor's Projects beta (September 10, 2026) has a coordinator agent plan the work and delegate to as many parallel subagents as needed, and Cursor reports (vendor figure, internal use) that new Projects users merge 30% more PRs; OpenAI's Agents API caps fan-out with `max_concurrent_subagents` (default 6); Claude Managed Agents adds an `advisor` entry to the multiagent roster that the primary thread can consult mid-turn. A platform-level concurrency cap is the budget control the supervisor pattern always needed, so set it deliberately rather than inheriting the default.
 
@@ -63,7 +63,7 @@ The distinction that matters is **who owns the control flow**:
 |----------|----------------------|----------|----------|-------------------------|
 | **Workflow as code** | Your program | Deterministic, auditable, testable stages; human checkpoints at fixed points | Rigid when the task shape varies | GitHub Copilot dynamic workflows (public preview October 1): sequential or parallel stages, structured results between stages, subagents verifying each other, pauses for human review |
 | **Model-driven delegation** | A coordinator model | Adapts to tasks whose shape is unknown up front | Harder to bound cost and to audit | GitHub's `/fleet`, Cursor Projects |
-| **Cascade with a quality gate** | Code, with a model-scored gate | Cheap model drafts; escalate only when the gate fails | Gate calibration becomes the critical component | GitHub HydraFusion "cascade" mode (research preview September 30) |
+| **Cascade with a quality gate** | Code, with a model-scored gate | Cheap model drafts; escalate only when the gate fails | Gate calibration becomes the critical component | GitHub Copilot Fusion's Cascade workflow (GA October 28, grown out of the September 30 HydraFusion research preview) |
 
 Use workflows-as-code when the stages are known and the audit trail matters; use model-driven delegation when they are not; and put a cascade in front of either when most inputs are easy.
 
@@ -83,8 +83,8 @@ The architectural momentum in 2026 has shifted decisively toward **graph-based o
 
 | Framework | Graph Model | Key Differentiator |
 |-----------|-------------|-------------------|
-| **LangGraph** (~42.6k stars) | Imperative DAG with typed state | Most mature, broadest community |
-| **Google ADK** (~21.7k stars) | Graph workflows (2.x) with built-in A2A | Native Google Cloud integration; ADK TypeScript 2.0 deprecates Sequential, Parallel, and Loop agents in favor of graphs |
+| **LangGraph** (~44.3k stars) | Imperative DAG with typed state | Most mature, broadest community |
+| **Google ADK** (~22.1k stars) | Graph workflows (2.x) with built-in A2A | Native Google Cloud integration; ADK TypeScript 2.0 deprecates Sequential, Parallel, and Loop agents in favor of graphs |
 | **Microsoft Agent Framework** | Workflow graphs (sequential, concurrent, handoff) | Unified .NET + Python, enterprise governance |
 | **Claude Agent SDK** | Supervisor-based hierarchical trees | Built-in tools (bash, editor), production-ready |
 
@@ -111,19 +111,19 @@ The **Agent-to-Agent (A2A) protocol** (see [Tool Use and MCP](03-tool-use-and-mc
 
 ## The 2026 Framework Landscape for Multi-Agent
 
-Every major AI lab now ships an agent framework. The multi-agent orchestration landscape as of October 2026 (star counts as of October 1):
+Every major AI lab now ships an agent framework. The multi-agent orchestration landscape as of early November 2026 (versions and star counts as of November 2):
 
 | Framework | Provider | Multi-Agent Model | Status |
 |-----------|----------|-------------------|--------|
-| **LangGraph** | LangChain | Graph-based, most flexible | Production; LangGraph 1.2.12 (~42.6k stars) |
+| **LangGraph** | LangChain | Graph-based, most flexible | Production; LangGraph 1.2.19 (~44.3k stars) |
 | **Claude Agent SDK** | Anthropic | Supervisor trees with built-in tools | GA (Python + TypeScript) |
-| **Google ADK** | Google | Graph workflows with A2A native support | Python 2.10.0, TypeScript 2.0.0, Go 2.0, Java 1.10.1 |
-| **Microsoft Agent Framework** | Microsoft | Workflows + group chat patterns, A2A and MCP interop | GA April 2, 2026; Python 1.19.0, .NET 1.23.0; AutoGen is in maintenance mode |
-| **OpenAI Agents SDK** | OpenAI | Handoff-based swarms with guardrails | Python 0.22.3 (~29.8k stars); Python + TypeScript |
-| **CrewAI** | CrewAI Inc. | Role-based crews with Flows | 1.15.23 (~59.3k stars; vendor claims 60%+ of Fortune 500) |
+| **Google ADK** | Google | Graph workflows with A2A native support | Python 2.13.0, TypeScript 2.4.0, Go 2.6.0, Java 1.13.0 |
+| **Microsoft Agent Framework** | Microsoft | Workflows + group chat patterns, A2A and MCP interop | GA April 2, 2026; Python 1.24.0, .NET 1.27.0; AutoGen is in maintenance mode |
+| **OpenAI Agents SDK** | OpenAI | Handoff-based swarms with guardrails | Python 0.24.0, TypeScript 0.21.0 (~30.4k stars); still pre-1.0 |
+| **CrewAI** | CrewAI Inc. | Role-based crews with Flows | 1.15.34 (~60.4k stars; vendor claims 60%+ of Fortune 500) |
 | **Smolagents** | HuggingFace | Lightweight, open-source | 1.26.0 (May 29, 2026); no release since |
 
-**Key trend**: No single framework excels at all four multi-agent patterns (supervisor, swarm, pipeline, debate). Teams increasingly combine frameworks, e.g., LangGraph for complex orchestration with CrewAI for business-user-facing automations. The other trend is the managed runtime: OpenAI's Agents API, Claude Managed Agents, and Amazon Bedrock Managed Agents (preview) host the harness itself, which moves the build-versus-rent decision up a layer (see [Durable Execution](11-durable-execution.md)).
+**Key trend**: No single framework excels at all four multi-agent patterns (supervisor, swarm, pipeline, debate). Teams increasingly combine frameworks, e.g., LangGraph for complex orchestration with CrewAI for business-user-facing automations. The other trend is the managed runtime: OpenAI's Agents API (public beta), Claude Managed Agents (beta), and Amazon Bedrock Managed Agents (public preview) host the harness itself, which moves the build-versus-rent decision up a layer (see [Durable Execution](11-durable-execution.md)). None of the three is GA as of early November 2026, so check beta terms (API stability, data retention, residency) before you rent.
 
 ---
 
@@ -146,7 +146,7 @@ For high-accuracy tasks (e.g., Legal or Medical), we use **Agentic Debate**.
 - **Agent A**: Refines the answer based on B's critique.
 - **Result**: Convergence on a higher-quality result than any single agent could produce.
 
-**Use a different model family for the critic.** Same-family critics share blind spots. GitHub's HydraFusion "critique" mode (research preview, September 30, 2026) bakes this in: a critic from a different model family reviews the draft and the drafter revises once. Capping the exchange at one revision is the other half of the lesson; open-ended debate is loopmaxxing with two agents.
+**Use a different model family for the critic.** Same-family critics share blind spots. GitHub's HydraFusion "critique" mode (research preview, September 30, 2026) baked this in: a critic from a different model family reviewed the draft and the drafter revised once. It went GA on October 28 inside **Copilot Fusion**, whose Critique workflow has one model draft, a read-only critic review, and the original model revise (alongside Single and Cascade workflows at Standard, High, or Max effort). Capping the exchange at one revision is the other half of the lesson; open-ended debate is loopmaxxing with two agents.
 
 ---
 

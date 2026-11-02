@@ -233,7 +233,7 @@ for step in range(50):  # The vision-action loop, with a hard step cap
     messages.append({"role": "user", "content": results})  # all results in one message
 ```
 
-The older `computer_20251124` tool returns HTTP 400 on Opus 5.5 and Sonnet 5.5 on the Claude API and Google Cloud (Bedrock still accepts it), and the GA toolset rejects the old `name` and display-size fields. Loops that append one assistant message per `tool_use` block, as many early samples did, also break once the model batches actions. One more trap on the 5.5-generation models: do not prune old screenshots from the history to save tokens. Editing earlier turns invalidates the thinking blocks that follow, so resize screenshots before sending them (2000 px or less per side) and let server-side tool-result clearing trim old images instead.
+The older `computer_20251124` tool returns HTTP 400 on the 5.5 models (Opus, Sonnet and Haiku) on the Claude API and Google Cloud (Bedrock still accepts it), and the GA toolset rejects the old `name` and display-size fields. Loops that append one assistant message per `tool_use` block, as many early samples did, also break once the model batches actions. One more trap on Opus 5.5 and Sonnet 5.5: do not prune old screenshots from the history to save tokens. Editing earlier turns invalidates the thinking blocks that follow, so resize screenshots before sending them (2000 px or less per side) and let server-side tool-result clearing trim old images instead.
 
 ### When to Use This Pattern
 
@@ -286,7 +286,7 @@ User (NL): "Analyze the CSV and plot the top 10 products"
 - **Always ask** (the Python Open Interpreter's default): Every code block requires explicit approval
 - **Auto-approve** (trusted mode): Dangerous but fast
 - **Rules-based** (Claude Code model): Allow/deny patterns in configuration. For example: allow `git` commands, deny `rm -rf`
-- **Classifier-based**: A policy model scores each action and runs it, denies it, or escalates to a human. This became a default in stages: Claude Code made auto mode the default for Pro, Max and Team on August 14, 2026, and since v2.1.284 (September 28) any interactive session with no configured permission mode starts in it; Claude Managed Agents evaluates each tool call server-side under its auto permission policy (September 10). It trades approval fatigue for a calibration problem: you now have to choose and monitor the threshold at which the classifier defers
+- **Classifier-based**: A policy model scores each action and runs it, denies it, or escalates to a human. This became a default in stages: Claude Code made auto mode the default for Pro, Max and Team on August 14, 2026, and since v2.1.284 (September 28) any interactive session with no configured permission mode starts in it. Headless runs are the exception: since v2.1.302 (October 16), `claude -p` and Agent SDK sessions with no mode start in `default` mode on third-party providers, with telemetry off, or on a fresh install, so a CI job that never sets the mode can behave differently across environments. Set it explicitly. Claude Managed Agents evaluates each tool call server-side under its auto permission policy (September 10). It trades approval fatigue for a calibration problem: you now have to choose and monitor the threshold at which the classifier defers
 
 **3. Execute and Capture**: The code runs in a runtime with full (or restricted) system access. Stdout, stderr, return values, and any generated files are captured.
 
@@ -387,7 +387,7 @@ Plan-and-Execute:
 
 The 2026 trend is treating agent cost optimization as a first-class concern, similar to how cloud cost optimization became essential in the microservices era. Two refinements to the arithmetic above:
 
-- **Cascades with a quality gate** can beat static plan/execute splits when task difficulty varies: draft with a cheap model, gate, escalate only on failure. GitHub Copilot's HydraFusion (research preview, September 30, 2026) ships exactly this as its cascade mode. The price spread is what makes it tempting: GPT-6 Luna lists at $0.10/$0.50 per 1M tokens against $10/$50 for GPT-6 Astra. The catch is that prompt caches are per model, so an escalation hits a cold cache and pays for the whole context at the stronger model's uncached input rate. Before building a cascade, measure the stronger model alone at a lower effort setting on the same tasks.
+- **Cascades with a quality gate** can beat static plan/execute splits when task difficulty varies: draft with a cheap model, gate, escalate only on failure. GitHub Copilot Fusion (GA October 28, 2026, grown out of the HydraFusion preview) ships exactly this as its cascade workflow, next to single-model and critique workflows. The price spread is what makes it tempting: GPT-6 Luna lists at $0.10/$0.50 per 1M tokens against $10/$50 for GPT-6 Astra. The catch is that prompt caches are per model, so an escalation hits a cold cache and pays for the whole context at the stronger model's uncached input rate. Before building a cascade, measure the stronger model alone at a lower effort setting on the same tasks.
 - **Input tokens dominate long tool loops.** Anthropic's Claude Code telemetry (September 24, 2026, vendor-reported) puts the input-to-output ratio at 324:1, so the cache-read price and the cache hit rate matter more than the output price. Claude Opus 5.5 lists at $4/$20 with cache reads at $0.20 (0.05x input); keep the system prompt and tool definitions stable so they stay cached.
 
 ---
@@ -408,7 +408,7 @@ This is the most consequential architecture decision for any tool-use agent.
   | Risk: data exfiltration|             | network, processes     |
   |                        |             |                        |
   | Used by: OpenClaw      |             | Used by: OpenHands,    |
-  | (main session), Python |             | OpenAI Codex, Jules,   |
+  | (main session), Python |             | OpenAI Codex, Devin,   |
   | Open Interpreter,      |             | Cursor cloud agents,   |
   | Claude Code (default)  |             | Open Interpreter (Rust)|
   +------------------------+             +------------------------+
@@ -579,13 +579,13 @@ Central gateway handles auth, rate limiting, and audit logging. Agents authentic
 
 In May 2026 the MCP specification was missing three production primitives: identity propagation, adaptive tool budgeting, and structured error semantics. Their status against the current spec revision (2026-07-28, stateless core) and the maintainers' August 22, 2026 roadmap:
 
-| Gap | Status (October 2026) | What to do meanwhile |
+| Gap | Status (November 2026) | What to do meanwhile |
 |-----|-----------------------|----------------------|
-| **Identity propagation** | Enterprise-Managed Authorization (stable since June 18, 2026) covers IdP-provisioned access for users. Agent identity is next: DPoP (SEP-1932) and Workload Identity Federation (SEP-1933) are open drafts, and an Agent Identity working group is forming | Keep the gateway as the identity broker for headless agents |
+| **Identity propagation** | Enterprise-Managed Authorization (stable since June 18, 2026, and classified Stable under the extension lifecycle in SEP-3392) covers IdP-provisioned access for users. Agent identity is next: DPoP (SEP-1932) and Workload Identity Federation (SEP-1933) are open drafts, and an Agent Identity working group is forming | Keep the gateway as the identity broker for headless agents |
 | **Adaptive tool budgeting** | Not among the August 22 roadmap's priority areas. The closest work is server-side progressive discovery for large tool catalogs, which saves schema tokens, not spend | Enforce budgets in the harness or gateway: session spend caps (Claude Managed Agents pauses with `budget_reached`), per-tool rate limits |
 | **Structured error semantics** | Partly addressed: the roadmap plans a redesign of the `tools/call` result shape, because returning both `content` and `structuredContent` produced diverging implementations | Normalize errors at the gateway into your own taxonomy (see the table above) |
 
-No date has been set for the next spec revision. The [tool use and MCP chapter](../07-agentic-systems/03-tool-use-and-mcp.md) covers the stateless rewrite and the full roadmap.
+The next spec revision is targeted for March 30, 2027 (SEP-3398, accepted October 27, subject to confirmation), and releases after it fall generally on the last Tuesday of March and September, so plan SDK upgrades on that cadence. The [tool use and MCP chapter](../07-agentic-systems/03-tool-use-and-mcp.md) covers the stateless rewrite and the full roadmap.
 
 ---
 
@@ -642,7 +642,7 @@ Discuss failure modes: "Tool calls can fail due to transient errors (retry with 
 
 ### 5. Cost Model
 
-Address economics: "For the orchestrator, I would use the Plan-and-Execute pattern: Opus 5.5 plans the task and Haiku 4.5 executes each step. At list prices Haiku costs a quarter of Opus per token, so this cuts cost by up to roughly two-thirds compared to using Opus for everything; the saving is smaller in cache-heavy loops, because Haiku's cache reads ($0.10 per 1M) are half of Opus 5.5's ($0.20), not a quarter. Because input outweighs output by two orders of magnitude in long tool loops, I would also keep the system prompt and tool definitions stable so they stay in the prompt cache."
+Address economics: "For the orchestrator, I would use the Plan-and-Execute pattern: Opus 5.5 plans the task and Haiku 5.5 executes each step. Haiku 5.5 lists at $0.10/$0.50 per 1M tokens against $4/$20 for Opus 5.5, a 40x gap, and its cache reads cost $0.01 against $0.20. The catch is a price cliff: once a Haiku 5.5 prompt passes 100,000 tokens, counting cache reads and writes, the whole request bills at $0.50/$2.50, so I keep executor contexts short and hand each step only what it needs. It also rejects `temperature`, `top_p`, `top_k` and assistant prefill, so executor code ported from Haiku 4.5 needs a contract test. Because input outweighs output by two orders of magnitude in long tool loops, I would keep the system prompt and tool definitions stable so they stay in the prompt cache."
 
 ---
 

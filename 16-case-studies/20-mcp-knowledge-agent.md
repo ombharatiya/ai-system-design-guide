@@ -58,7 +58,7 @@ flowchart TB
 |-------|------|---------|
 | Identity | Okta plus role-mapping service | Per-user identity for every call |
 | Gateway | Internal Envoy with OPA policy | Enforce auth, per-tool policy, and rate limits |
-| Agent runtime | Claude Sonnet 5.5 with strict tool schemas | Multi-step reasoning; no forced `tool_choice`, which the newest Claude models reject |
+| Agent runtime | Claude Sonnet 5.5 with strict tool schemas | Multi-step reasoning; no forced `tool_choice`, which the newest Claude models reject, and no sampling parameters, which Anthropic API version `2026-10-21` rejects on every model |
 | MCP transport | HTTP for Snowflake, Confluence, Jira, and Slack (Slack's official remote server); sandboxed STDIO only for legacy internal tools | Per-server choice |
 | OAuth Resource Server | Each first-party MCP server is an RS with audience binding | RFC 8707 |
 | Credential broker | Vault holding per-user third-party tokens (Slack), each bound to its issuer | OAuth mix-up defense |
@@ -80,7 +80,7 @@ flowchart TB
 
 ### 1. Per-tenant scoping with audience binding (RFC 8707)
 
-Each first-party MCP server validates that the token's `aud` claim matches the server's own canonical URI. The token issuer (Okta plus our role-mapping service) signs the JWT with claims `aud=https://snowflake-mcp.internal.example.com`, `scope=read:metrics`, and the per-user identity claims. A token issued for Snowflake cannot be replayed against Confluence; the audience check fails server-side. This is the pattern required by the [MCP authorization spec (revision 2026-07-28)](https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization), which also has clients validate the authorization server's RFC 9207 `iss` parameter. Without audience binding, a compromised MCP server can replay tokens to siblings, which Adversa AI demonstrated in their security roundup.
+Each first-party MCP server validates that the token's `aud` claim matches the server's own canonical URI. The token issuer (Okta plus our role-mapping service) signs the JWT with claims `aud=https://snowflake-mcp.internal.example.com`, `scope=read:metrics`, and the per-user identity claims. A token issued for Snowflake cannot be replayed against Confluence; the audience check fails server-side. The check has to be switched on: in the official TypeScript SDK the audience validation added in October (CVE-2026-111771, `sdk` 1.32.0 and `server` 2.3.0) is opt-in through `expectedResource`, so every first-party server built on that SDK sets it, and the contract tests prove a wrong-audience token gets a 401. This is the pattern required by the [MCP authorization spec (revision 2026-07-28)](https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization), which also has clients validate the authorization server's RFC 9207 `iss` parameter. Without audience binding, a compromised MCP server can replay tokens to siblings, which Adversa AI demonstrated in their security roundup.
 
 ### 2. HTTP-based MCP by default; sandboxed STDIO only for legacy internal tools
 
@@ -123,7 +123,7 @@ The naive alternative is to crawl all four systems into a single vector index an
 
 ### 10. Use the stateless revision's routing headers at the gateway
 
-The 2026-07-28 revision makes `Mcp-Method` and `Mcp-Name` headers mandatory on Streamable HTTP POSTs, so the Envoy plus OPA gateway can enforce per-tool policy (which roles may call `jira.create_issue`) without parsing JSON-RPC bodies. Stateless servers also mean any pod can serve any request behind a plain load balancer. Where a server needs cross-call state, it mints a random handle bound server-side to the authenticated user (`<user_id>:<handle>`) and never treats possession of a handle as proof of identity, which closes the state-handle hijacking hole the revised security guidance names.
+The 2026-07-28 revision makes `Mcp-Method` and `Mcp-Name` headers mandatory on Streamable HTTP POSTs, so the Envoy plus OPA gateway can enforce per-tool policy (which roles may call `jira.create_issue`) without parsing JSON-RPC bodies. Stateless servers also mean any pod can serve any request behind a plain load balancer, but not that one in-process server object can serve every client: the team's TypeScript servers build a fresh server and transport per request, because sharing them leaked one client's responses to another (CVE-2026-111770, fixed in `@modelcontextprotocol/server` 2.3.0 only together with that code change). Where a server needs cross-call state, it mints a random handle bound server-side to the authenticated user (`<user_id>:<handle>`) and never treats possession of a handle as proof of identity, which closes the state-handle hijacking hole the revised security guidance names.
 
 ## Sample Query Sequence
 
@@ -182,7 +182,7 @@ An agent decomposes a single user prompt into 40 tool calls; the per-call rate l
 
 ### F7: MCP server or SDK upgrade incompatibility
 
-An upstream MCP server upgrades its schema; the agent's planning step uses the new schema; legacy MCP-client wrappers in production break. The protocol itself is mid-migration: 2025-11-25 stateful clients and 2026-07-28 stateless clients coexist, and `pip install mcp` now resolves to the 2.x SDK, where `FastMCP` became `MCPServer`. Mitigation: schema-pinning per agent version; SDK versions pinned explicitly; explicit MCP-server version compatibility tests in CI that exercise both protocol eras; staged rollout of new MCP-server versions.
+An upstream MCP server upgrades its schema; the agent's planning step uses the new schema; legacy MCP-client wrappers in production break. The protocol itself is mid-migration: 2025-11-25 stateful clients and 2026-07-28 stateless clients coexist, and `pip install mcp` now resolves to the 2.x SDK, where `FastMCP` became `MCPServer`. Mitigation: schema-pinning per agent version; SDK versions pinned explicitly; explicit MCP-server version compatibility tests in CI that exercise both protocol eras; staged rollout of new MCP-server versions. The calendar is now predictable: the next spec revision is targeted for March 30, 2027 (SEP-3398, with releases generally on the last Tuesday of March and September and SDK betas about 1.5 months ahead), so the team schedules compatibility work against the SDK beta rather than reacting to the release. It also checks extension maturity before depending on one: enterprise auth is Stable, while Tasks, Skills, and Server Cards are Beta and may still break.
 
 ### F8: Compromised internal MCP server
 
@@ -207,6 +207,7 @@ A malicious or compromised third-party MCP server names its own authorization se
 | Audit log integrity | 100 percent chain valid daily |
 | Token-replay attempts blocked | 100 percent |
 | Token-validation contract tests (bad, expired, wrong audience or issuer) | 100 percent rejected, every deploy |
+| Cross-client isolation test (two concurrent identities, responses never cross) | 100 percent pass, every deploy |
 | Per-user runaway spend incidents | under 1 per quarter |
 | User-perceived answer quality | over 75 percent thumbs-up |
 
@@ -242,12 +243,13 @@ Auditors come quarterly. The pack we hand them: a sample of audit chain segments
 
 ### Migration plan for STDIO MCP servers
 
-Snowflake, Confluence, Jira, and Slack all run on HTTP MCP servers now (Slack through its official remote server). What remains on STDIO is a short list of legacy internal tools, sandboxed as described above, each with a migration ticket; new internal servers are built HTTP-native and stateless against the 2026-07-28 revision from day one. The SDK side has its own migration: clients and servers still on the v1 TypeScript or Python SDK needed the September security releases for the OAuth mix-up fix (TypeScript 1.31.0, Python 1.30.0, or the 2.2.0 lines), and the Python releases also added a 4 MiB request-body cap and reclamation of idle stateful sessions.
+Snowflake, Confluence, Jira, and Slack all run on HTTP MCP servers now (Slack through its official remote server). What remains on STDIO is a short list of legacy internal tools, sandboxed as described above, each with a migration ticket; new internal servers are built HTTP-native and stateless against the 2026-07-28 revision from day one. The SDK side has its own migration: clients and servers still on the v1 TypeScript or Python SDK needed the September security releases for the OAuth mix-up fix (TypeScript 1.31.0, Python 1.30.0, or the 2.2.0 lines), and the Python releases also added a 4 MiB request-body cap and reclamation of idle stateful sessions. October added two more TypeScript items that an upgrade alone does not finish: `server` 2.3.0 for the shared server and transport leak (which requires restructuring to one server per request or session) and the opt-in `expectedResource` audience check.
 
 ## What Strong Interview Candidates Cover
 
 - They name MCP, OAuth 2.1, and RFC 8707 by name and explain why audience binding matters across many servers.
-- They distinguish STDIO from HTTP MCP, explain why HTTP is the default, and know HTTP's own failure modes (DNS rebinding on local servers, token checks that test presence instead of validity).
+- They distinguish STDIO from HTTP MCP, explain why HTTP is the default, and know HTTP's own failure modes (DNS rebinding on local servers, token checks that test presence instead of validity, audience checks that ship off by default).
+- They know a stateless protocol does not make server objects shareable across clients (CVE-2026-111770), and that some security fixes need code or configuration changes, not just a version bump.
 - They separate first-party servers (gateway-minted, audience-bound tokens) from third-party servers (the vendor's own authorization server, issuer-bound credentials in a broker) and can explain the OAuth mix-up attack.
 - They build defense in depth: tool-argument filter, tool-result trust tagging, capability gating, and audit chain are different layers; they explain why each one matters.
 - They walk through IPI explicitly and reference the CaMeL or similar capability-gating pattern.
@@ -262,6 +264,8 @@ Snowflake, Confluence, Jira, and Slack all run on HTTP MCP servers now (Slack th
 - IETF, [OAuth 2.1 draft](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1)
 - MCP TypeScript SDK, [OAuth authorization-server mix-up advisory (GHSA-6qxp-vccf-f47h)](https://github.com/modelcontextprotocol/typescript-sdk/security/advisories/GHSA-6qxp-vccf-f47h)
 - MCP Python SDK, [OAuth mix-up advisory (GHSA-qx49-fqc8-xw99)](https://github.com/modelcontextprotocol/python-sdk/security/advisories/GHSA-qx49-fqc8-xw99)
+- MCP TypeScript SDK, [shared server and transport advisory, CVE-2026-111770 (GHSA-jm63-cq47-j5jp)](https://github.com/advisories/GHSA-jm63-cq47-j5jp)
+- MCP, [SEP-3398: Release Cycle Updates](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/seps/3398-release-cycle-updates.md)
 - [GitHub Advisory Database: reviewed MCP advisories](https://github.com/advisories?query=type%3Areviewed+mcp)
 - Slack, [MCP server documentation](https://docs.slack.dev/ai/mcp-server)
 - Adversa AI, [2026 MCP Security Roundup](https://adversa.ai/blog/mcp-security)

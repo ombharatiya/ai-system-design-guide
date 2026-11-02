@@ -2,7 +2,7 @@
 
 LangChain is no longer just a "prompting library." It has matured into a **Modular Ecosystem** for building production-grade LLM applications. LangGraph (which graduated to v1.0 in October 2025 and is the default runtime for all LangChain agents) handles the stateful orchestration. **LCEL (LangChain Expression Language)** remains the fastest way to build composable chains.
 
-Version snapshot, with release dates because these numbers move monthly: `langchain` 1.4.3 (Sep 28, 2026), `langchain-core` 1.6.6 (Sep 29, 2026), `langgraph` 1.2.12 (Sep 21, 2026). On the JS side (as of Oct 1, 2026), `langchain` 1.5.15, `@langchain/core` 1.2.14 and `@langchain/langgraph` 1.4.18.
+Version snapshot, with release dates because these numbers move monthly: `langchain` 1.4.7 (Oct 21, 2026), `langchain-core` 1.7.3 (Oct 29, 2026), `langgraph` 1.2.19 (Oct 30, 2026). On the JS side, `langchain` 1.6.0 (Oct 28), `@langchain/core` 1.3.2 (Oct 29) and `@langchain/langgraph` 1.6.0 (Oct 30).
 
 ## Table of Contents
 
@@ -129,7 +129,7 @@ const CreateInvoice = v.object({
 });
 
 const llm = new ChatAnthropic({ model: "claude-sonnet-5-5" });
-// @langchain/anthropic (1.5.12) still defaults to a forced tool call, which
+// @langchain/anthropic defaulted to a forced tool call as of 1.5.12, which
 // Fable 5.1, Opus 5.5 and Sonnet 5.5 reject with a 400: ask for native JSON-schema output.
 const structured = llm.withStructuredOutput(toJsonSchema(CreateInvoice), {
   method: "jsonSchema",
@@ -163,6 +163,7 @@ The version pin matters. `langchain-core >= 1.0` is the supported floor for new 
 - Tool decorators import from `langchain_core.tools`, not `langchain.tools`.
 - Output parsers that depend on Pydantic v1 must be ported. `langchain-core` v1.0 dropped the v1 shim ([release notes](https://github.com/langchain-ai/langchain/releases/tag/langchain-core%3D%3D1.0.0)).
 - `langchain-core` 1.6.4 (Sep 21, 2026) deprecates the chat message history classes. Conversation state belongs in LangGraph checkpointers.
+- `langchain-core` 1.7.0 (Oct 22, 2026) and `@langchain/core` 1.3.0 stream tool-call arguments as `tool-call-delta` slices instead of snapshots of the arguments so far. `.tool_calls` and the assembled message are unchanged, but anything that reads raw stream events mid-call, including custom stream transformers and older LangGraph SDK clients, must be updated first; pin `langchain-core<1.7` (or `@langchain/core<1.3.0`) to hold back.
 - Code that imported `langchain-mcp-adapters` can move to `langchain.mcp` on 1.4+; keep the adapter pinned until you have tested elicitation and auth flows against your servers.
 
 ---
@@ -182,7 +183,7 @@ The key is to **Import only Core**. I use `langchain-core` for the abstractions 
 ### Q: A structured-extraction chain worked on Claude Opus 5 and started failing with HTTP 400 after the team switched the model ID to Opus 5.5. What happened, and what is the fix?
 
 **Strong answer:**
-The chain was almost certainly getting structured output by **forcing a tool call** (`tool_choice` of type `tool` or `any`), which was the standard framework trick for two years. Fable 5.1, Opus 5.5 and Sonnet 5.5 reject forced tool choice with a 400, and thinking cannot be switched off on Opus 5.5 either. The immediate fix is to upgrade `langchain-anthropic` (1.7.3 reroutes `with_structured_output` to native JSON-schema output for Fable and Opus 5.5; 1.7.5 adds Sonnet 5.5) or call `with_structured_output(..., method="json_schema")` explicitly. The explicit form is the safer habit, because not every integration reroutes: the JS `@langchain/anthropic` still defaults to a forced tool call, so there you pass `method: "jsonSchema"` yourself. The process fix matters more: a model ID is a dependency, so a model swap goes through the same eval gate as a package upgrade, and partner packages get upgraded before the model ID changes, not after. I would also grep the codebase for hard-coded `temperature` and `tool_choice`, because GPT-6 Astra and the Anthropic Python SDK 1.x reject or remove sampling parameters too.
+The chain was almost certainly getting structured output by **forcing a tool call** (`tool_choice` of type `tool` or `any`), which was the standard framework trick for two years. Fable 5.1, Opus 5.5 and Sonnet 5.5 reject forced tool choice with a 400, and thinking cannot be switched off on Opus 5.5 either. The immediate fix is to upgrade `langchain-anthropic` (1.7.3 reroutes `with_structured_output` to native JSON-schema output for Fable and Opus 5.5; 1.7.5 adds Sonnet 5.5) or call `with_structured_output(..., method="json_schema")` explicitly. The explicit form is the safer habit, because not every integration reroutes: the JS `@langchain/anthropic` defaulted to a forced tool call as of 1.5.12, so there you pass `method: "jsonSchema"` yourself. The process fix matters more: a model ID is a dependency, so a model swap goes through the same eval gate as a package upgrade, and partner packages get upgraded before the model ID changes, not after. I would also grep the codebase for hard-coded `temperature` and `tool_choice`, because GPT-6 Astra rejects custom sampling parameters, and under Anthropic API version `2026-10-21` (the default in the October SDK majors) every Claude model returns 400 for `temperature`, `top_p` or `top_k`, even at default values.
 
 ---
 

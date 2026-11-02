@@ -27,16 +27,18 @@ Modern agency is often described as:
 
 Architecting an agent requires choosing the right "Thinking Mode":
 
-| Mode | Cognitive Type | Analogy | Current stack (October 2026) |
+| Mode | Cognitive Type | Analogy | Current stack (November 2026) |
 |------|----------------|---------|---------------|
-| **System 1** | Fast, intuitive, reactive | Reflexes | Claude Haiku 4.5 / GPT-6 Luna / Gemini 3.8 Flash at `low` thinking |
+| **System 1** | Fast, intuitive, reactive | Reflexes | Claude Haiku 5.5 / GPT-6 Luna / Gemini 3.8 Flash at `low` thinking |
 | **System 2** | Slow, logical, planning | Deliberation | Claude Opus 5.5 or Fable 5.1 at high effort / GPT-6 Astra or GPT-6.1 Sol at high effort or above |
 
 **The Design Pattern**: Use System 1 models for "Fast UI" and "Routing." Use System 2 models for "Decision Gates" and "Complex Planning."
 
+A third shape arrived in October 2026: **decision models** (sometimes marketed as "System One models") that return a typed answer, such as a predicate, a choice, or a score, with a probability instead of text. OpenAI's Decisions API went GA on October 22 on `gpt-6-luna` (1 to 400 questions per request, $0.10 per 1M uncached input, output not charged), vLLM and SGLang added native endpoints, and Ollama added local decision models. They fit routers and gates well because the output needs no parsing, but papers report underconfident probabilities, so calibrate thresholds on your own labeled traffic before trusting them.
+
 **The line is now a dial, not a model swap.** On the newest frontier models thinking cannot be fully switched off: Opus 5.5 rejects disabling it, Sonnet 5.5's lowest setting is `between_tools`, and GPT-6 Astra has no `none` effort. You set depth per call with the effort parameter, which means effort is part of your agent's configuration and must be pinned. Defaults move under you: Opus 5.5 defaults to `medium` effort where Opus 5 defaulted to `high`, so an unpinned migration silently changes latency and quality.
 
-**Harness defaults move too, and they swap the model itself.** OpenAI Agents SDK 0.20.0 made `gpt-5.6-luna` its implicit default model, Codex CLI switched its default to GPT-6.1 Sol on September 29, and Claude Code moved its default Opus and Sonnet to the 5.5 models within days of each launch. Pin model IDs as well as effort, and re-run evals on every SDK or harness upgrade.
+**Harness defaults move too, and they swap the model itself.** OpenAI Agents SDK 0.20.0 made `gpt-5.6-luna` its implicit default model, Codex CLI switched its default to GPT-6.1 Sol on September 29, and Claude Code moved its default Opus and Sonnet to the 5.5 models within days of each launch (and its default Haiku to Haiku 5.5 in 2.1.293, October 2026). Small model swaps carry API changes, too: Haiku 5.5 rejects `temperature`, `top_p`, `top_k`, and assistant prefill, and bills the whole request at 5x once a prompt passes 100,000 tokens. Pin model IDs as well as effort, and re-run evals on every SDK or harness upgrade.
 
 ---
 
