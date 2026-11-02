@@ -256,7 +256,7 @@ The shape is the same as PLAID (cheap approximate candidates, full MaxSim on a f
 | Engine | Multi-vector support | Status |
 |--------|----------------------|--------|
 | **Milvus 3.0** | On-disk EmbList + DiskANN index for embedding lists, with MUVERA and LEMUR acceleration | GA July 29, 2026 (3.0.2 on Sep 20) |
-| **Weaviate** | Native multi-vector embeddings (1.29+), with optional MUVERA encoding on HNSW since 1.31 (2025); MUVERA for the disk-backed HFresh index is new in 1.40 | Multi-vector and MUVERA on HNSW shipping; the HFresh MUVERA path is in the 1.40 release candidates (rc.2 on Sep 30, 2026), not GA |
+| **Weaviate** | Native multi-vector embeddings (1.29+), with optional MUVERA encoding on HNSW since 1.31 (2025); MUVERA for the disk-backed HFresh index is new in 1.40 | Multi-vector and MUVERA on HNSW shipping; the HFresh MUVERA path shipped in 1.40.0 (October 7, 2026) with no GA or preview label in the notes, so check its status |
 | **Qdrant** | Native multivector fields scored with MaxSim | Shipping; Qdrant's open PubMed-Multi-Vector dataset (8.37B BGE-M3 token vectors) benchmarks dense vs sparse vs ColBERT |
 | **Vespa** | Native ColBERT tensor ranking | Shipping |
 

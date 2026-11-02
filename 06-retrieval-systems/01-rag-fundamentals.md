@@ -79,8 +79,8 @@ flowchart TD
 Frontier context windows have settled at about **1M tokens**: Claude Opus 5.5, Sonnet 5.5 and Fable 5.1 at 1M, the GPT-6 family at 1.05M, Gemini 3.8 Flash at 1,048,576 input tokens. The 2M windows of the Gemini 1.5 era did not become the norm. What changed in 2026 is not the window size but the **price of rereading it**.
 
 - **In-Context RAG (ICR)**: For small, stable corpora, skip the vector DB and put everything in a cached prompt prefix.
-- **Prompt caching** discounts reread tokens, but the discount now varies by model: cache reads are 0.1x input on most models, 0.05x on Claude Opus 5.5 and GPT-6.1 Sol, and 0.025x on Claude Fable 5.1 ($0.25 per 1M against $10 list). You still pay the cache write: 1.25x on OpenAI GPT-5.6 and later (fixed 30-minute TTL) and on Anthropic's 5-minute TTL, 2x on Anthropic's 1-hour TTL.
-- **Long-context cliffs**: OpenAI bills the **entire request** at long-context rates once input passes 272K tokens (2x input and cache, 1.5x output; GPT-6 Sol goes from $2/$10 to $4/$15), xAI doubles every token once a Grok prompt reaches 200K, and Gemini 3.1 Pro Preview steps up from $2/$12 to $4/$18 above 200K. Anthropic Claude 4.6 and later stay flat to 1M. A 273K-token prompt on GPT-6 Sol costs roughly twice a 272K one, so pack context just under the threshold or retrieve instead.
+- **Prompt caching** discounts reread tokens, but the discount now varies by model: cache reads are 0.1x input on most models, 0.05x on Claude Opus 5.5, Claude Sonnet 5.5 (cut from 0.1x on October 7, 2026), GPT-6.1 Sol, and GPT-6.1 Terra, and 0.025x on Claude Fable 5.1 ($0.25 per 1M against $10 list). You still pay the cache write: 1.25x for OpenAI's 30-minute cache on GPT-5.6 and later and for Anthropic's 5-minute TTL, 2x for Anthropic's 1-hour TTL, and 2.5x for OpenAI's 12-hour option (added October 20, 2026). A longer TTL only pays off if the corpus is reread often enough to amortize the pricier write.
+- **Long-context cliffs**: OpenAI bills the **entire request** at long-context rates once input passes 272K tokens (2x input and cache, 1.5x output; GPT-6 Sol goes from $2/$10 to $4/$15), xAI doubles every token once a Grok prompt reaches 200K, and Gemini 3.1 Pro Preview steps up from $2/$12 to $4/$18 above 200K. Anthropic Claude 4.6 and later stay flat to 1M with one exception: Claude Haiku 5.5 bills the whole request at $0.50/$2.50 instead of $0.10/$0.50 once the prompt passes 100K tokens, and cache reads and writes count toward that length. A 273K-token prompt on GPT-6 Sol costs roughly twice a 272K one, and a 101K-token prompt on Haiku 5.5 costs about five times a 100K one, so pack context just under the threshold or retrieve instead.
 
 ### The Break-Even Moved
 
@@ -92,10 +92,10 @@ N x cache_read_multiplier = k        =>        N_break_even = k / multiplier
 
 With a retrieved context of 5K tokens (the same assumption [Production RAG at Scale](14-production-rag-at-scale.md#the-cache-read-break-even) uses):
 
-| Cache-read multiplier | Example models (October 2026 list) | Break-even cached corpus |
+| Cache-read multiplier | Example models (November 2026 list) | Break-even cached corpus |
 |---|---|---|
-| 0.1x | Sonnet 5.5, GPT-6 Sol, most others | ~50K tokens |
-| 0.05x | Opus 5.5, GPT-6.1 Sol | ~100K tokens |
+| 0.1x | Haiku 5.5, GPT-6 Sol, most others | ~50K tokens |
+| 0.05x | Opus 5.5, Sonnet 5.5, GPT-6.1 Sol, GPT-6.1 Terra | ~100K tokens |
 | 0.025x | Fable 5.1 | ~200K tokens |
 
 Double the retrieved context (10K tokens of chunks) and every break-even doubles with it.

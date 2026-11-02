@@ -313,20 +313,20 @@ Using an LLM to evaluate another LLM's output is the dominant evaluation paradig
 3. **Require evidence**: Force the judge to cite the specific context passage that supports/contradicts each claim.
 4. **Calibrate with human agreement**: Run 100+ examples through both LLM and human judges. Measure Cohen's Kappa. Target > 0.7.
 5. **Use a strong model for calibration, a cheap one for volume**: a frontier judge (Claude Opus 5.5, GPT-6 Sol) for the human-agreement calibration set and CI; a small model for sampled production traffic once it matches the frontier judge's verdicts on that set. Never use the same model that generated the answer.
-6. **Pin and version the judge**: a judge swap is a metric change. Claude Sonnet 4.5 retires on November 30, 2026 (Claude API and Foundry), and Claude Haiku 4.5 retires on Foundry on November 15, so teams judging with either there must switch this quarter. Re-run the human-agreement calibration and re-baseline thresholds before comparing scores across the switch.
+6. **Pin and version the judge**: a judge swap is a metric change. Claude Sonnet 4.5 retires on November 30, 2026 (Claude API and Foundry), and Claude Haiku 4.5 retires on Foundry on November 15, so teams judging with either there must switch this quarter. The obvious small replacement, Claude Haiku 5.5 (GA October 7), is a metric change too: it rejects `temperature`, `top_p`, `top_k`, and assistant prefill with a 400, and its tokenizer counts about 30% more tokens for the same text. Re-run the human-agreement calibration and re-baseline thresholds before comparing scores across the switch.
 
 ### A Third Judge Tier: Typed Decision Models
 
-Many RAG checks are binary ("Is this claim supported? YES/NO"), and a 2026 class of models returns exactly that without generating text. TypeSafe's **Jev** (early access since September 2026) returns typed decisions (yes/no, choice, or score) with probabilities at $0.042 per 1M input tokens, output unmetered, and was integrated into LangSmith, Langfuse, Braintrust, Opik and DeepEval within two weeks of launch.
+Many RAG checks are binary ("Is this claim supported? YES/NO"), and a 2026 class of models returns exactly that without generating text. TypeSafe's **Jev** (early access since September 2026) returns typed decisions (yes/no, choice, or score) with probabilities at $0.042 per 1M input tokens, output unmetered, and was integrated into LangSmith, Langfuse, Braintrust, Opik and DeepEval within two weeks of launch. OpenAI's Decisions API (GA October 22, 2026, on `gpt-6-luna`) is the first-party equivalent: up to 400 typed questions per request at $0.10 per 1M uncached input tokens, output not charged.
 
 | | Frontier LLM judge | Small LLM judge | Decision-model judge |
 |---|---|---|---|
-| **Example** | Claude Opus 5.5, GPT-6 Sol | GPT-6 Luna, Claude Haiku 4.5 | Jev |
+| **Example** | Claude Opus 5.5, GPT-6 Sol | GPT-6 Luna, Claude Haiku 5.5 | Jev, OpenAI Decisions API |
 | **Output** | Verdict plus written rationale | Verdict plus rationale | Typed decision with probability; no rationale, no abstention |
 | **Good for** | Calibration, CI, ambiguous cases | Sampled production traffic | Binary claim checks on 100% of traffic |
 | **Cannot do** | Cheap volume | Hardest edge cases | Claim extraction, question generation, open-ended critique |
 
-The independent check matters more than the price. A September 2026 study (Rao and Callison-Burch, arXiv 2609.29769) found LLM rubric judges cost 16 to 325x more than Jev with accuracy differing significantly in at most 8 of 27 comparisons, but on Jev's most confident errors about 96% of LLM verdicts repeated the same wrong answer, and no cascade beat the best single judge by more than 2.7 points. **Escalating from a cheap judge to an expensive one saves money; it does not catch correlated errors.** Only a human-labeled slice does. Two reported limitations hit RAG directly: accuracy degrades with irrelevant context (exactly what a long retrieved context contains), and an independent benchmark found weaknesses on graded relevance. Test it at your context lengths before trusting it for faithfulness or context-relevance scoring.
+The independent check matters more than the price. A September 2026 study (Rao and Callison-Burch, arXiv 2609.29769) found LLM rubric judges cost 16 to 325x more than Jev with accuracy differing significantly in at most 8 of 27 comparisons, but on Jev's most confident errors about 96% of LLM verdicts repeated the same wrong answer, and no cascade beat the best single judge by more than 2.7 points. **Escalating from a cheap judge to an expensive one saves money; it does not catch correlated errors.** Only a human-labeled slice does. Two reported limitations hit RAG directly: accuracy degrades with irrelevant context (exactly what a long retrieved context contains), and an independent benchmark found weaknesses on graded relevance. Test it at your context lengths before trusting it for faithfulness or context-relevance scoring, and fit any probability threshold on your own labels: an October 2026 benchmark (TypedBench, arXiv 2610.11392) found the hosted decision model it tested systematically underconfident.
 
 ---
 
@@ -447,7 +447,7 @@ Every RAG pipeline change (new embeddings, chunk size, prompt edit, reranker swa
 
 Any metric below its absolute minimum blocks the PR. Any regression beyond threshold triggers a warning and flags the specific queries that degraded.
 
-Run the same suite on a schedule against production, not only on your own PRs. **A pinned model ID is not a pinned behavior**: on September 25, 2026 OpenAI fixed an image-encoding bug in GPT-6 Sol and GPT-6 Luna under unchanged model IDs and told customers to rerun image evals. Image-dependent RAG scores measured before the fix may reflect the defect rather than your pipeline.
+Run the same suite on a schedule against production, not only on your own PRs. **A pinned model ID is not a pinned behavior**: on September 25, 2026 OpenAI fixed an image-encoding bug in GPT-6 Sol and GPT-6 Luna under unchanged model IDs and told customers to rerun image evals. Image-dependent RAG scores measured before the fix may reflect the defect rather than your pipeline. Aliases move too: since October 8, 2026, Google routes `gemini-3.7-flash` requests to `gemini-3.8-flash` and `gemini-3.5-flash` to `gemini-3.6-flash`, so a judge string can keep working while the model behind it changes. Log the model version the response reports, not just the one you requested.
 
 ---
 
@@ -478,14 +478,16 @@ LLM-as-judge evaluation is powerful but expensive. Understanding the cost struct
 
 ### Cost per Query (Full RAG Triad)
 
-List prices on October 1, 2026, assuming 90% of tokens are input and 10% output, before reasoning tokens:
+List prices on November 2, 2026, assuming 90% of tokens are input and 10% output, before reasoning tokens:
 
-| Metric | LLM Calls | Tokens | Claude Opus 5.5 ($4 / $20) | Claude Haiku 4.5 ($1 / $5) | GPT-6 Luna ($0.10 / $0.50) |
-|--------|-----------|--------|----------------------------|----------------------------|----------------------------|
-| Faithfulness | ~3 (extract + verify) | ~3k | $0.017 | $0.0042 | $0.00042 |
-| Context Relevance | ~5 (per chunk) | ~2.5k | $0.014 | $0.0035 | $0.00035 |
-| Answer Relevance | ~2 (question gen) | ~1.6k | $0.009 | $0.0022 | $0.00022 |
-| **Full Triad** | **~10** | **~7k** | **~$0.04** | **~$0.01** | **~$0.001** |
+| Metric | LLM Calls | Tokens | Claude Opus 5.5 ($4 / $20) | Claude Sonnet 5.5 or GPT-6 Sol ($2 / $10) | GPT-6 Luna or Claude Haiku 5.5 ($0.10 / $0.50) |
+|--------|-----------|--------|----------------------------|-------------------------------------------|------------------------------------------------|
+| Faithfulness | ~3 (extract + verify) | ~3k | $0.017 | $0.0084 | $0.00042 |
+| Context Relevance | ~5 (per chunk) | ~2.5k | $0.014 | $0.0070 | $0.00035 |
+| Answer Relevance | ~2 (question gen) | ~1.6k | $0.009 | $0.0045 | $0.00022 |
+| **Full Triad** | **~10** | **~7k** | **~$0.04** | **~$0.02** | **~$0.001** |
+
+Haiku 5.5's price holds only while a prompt (counting cache reads and writes) stays at or under 100K tokens. Judge prompts sit far below that, but its tokenizer counts about 30% more tokens than Haiku 4.5's for the same text, so measure its token counts instead of assuming parity with Luna.
 
 Two caveats change the real bill. Claude Opus 5.5 cannot run with thinking disabled (default effort `medium`), so set `low` effort for judge calls and measure the reasoning tokens. And the binary verification calls can move to a decision-model judge (about $0.0003 per query at Jev's $0.042 per 1M input tokens), leaving only claim extraction and question generation on a generative model.
 
@@ -500,7 +502,7 @@ Two caveats change the real bill. Claude Opus 5.5 cannot run with thinking disab
 
 Frontier rows use Claude Opus 5.5 prices; GPT-6 Sol at $2 / $10 roughly halves them.
 
-**Insight**: The judge bill is small next to the human-labeling bill; the expensive mistake is a cheap judge that disagrees with your annotators. Use a small model (GPT-6 Luna, Claude Haiku 4.5) for high-volume sampling only after it matches the frontier judge on the calibration set, and reserve Claude Opus 5.5 or GPT-6 Sol for CI and deep audits. Nightly and weekly jobs can wait, so run them through a Batch API at 50% off.
+**Insight**: The judge bill is small next to the human-labeling bill; the expensive mistake is a cheap judge that disagrees with your annotators. Use a small model (GPT-6 Luna, Claude Haiku 5.5) for high-volume sampling only after it matches the frontier judge on the calibration set, and reserve Claude Opus 5.5 or GPT-6 Sol for CI and deep audits. Nightly and weekly jobs can wait, so run them through a Batch API at 50% off.
 
 ---
 
@@ -515,10 +517,10 @@ Frontier rows use Claude Opus 5.5 prices; GPT-6 Sol at $2 / $10 roughly halves t
 | **TruLens** | RAG Triad evaluation, observability | Yes | Coined the RAG Triad, good tracing | Less active development |
 | **UpTrain** | Production monitoring, drift detection | Yes | Hybrid eval (LLM + heuristic), drift alerts | Lower ranking accuracy |
 | **Braintrust** | Team collaboration, experiment tracking | Commercial | Best UI/UX, experiment comparison | Paid for advanced features |
-| **LangSmith** | Tracing, evals, trace-to-fine-tune loop | Commercial | Deepest LangChain/LangGraph integration; SDK and OTel ingestion for other stacks | SaaS extended-retention traces capped at 180 days (from Sep 14, 2026): not an audit log |
+| **LangSmith** | Tracing, evals, trace-to-fine-tune loop | Commercial | Deepest LangChain/LangGraph integration; SDK and OTel ingestion for other stacks | Usage-based LSU pricing since Oct 1, 2026 (1 LSU = $1); SaaS extended-retention traces capped at 180 days (from Sep 14, 2026): not an audit log |
 | **Langfuse** | Self-hosted tracing + evals | Yes | OTel-native, exportable; Python SDK 4.x (`@observe()`; the v2 `trace()` API is gone) | Self-hosting means operating ClickHouse, Redis and object storage alongside Postgres |
-| **Arize Phoenix** | Self-hosted tracing + RAG evals | Source-available (Elastic-2.0) | OTel-native, strong retrieval views | Dynatrace agreed to acquire Arize (August 13, 2026): watch the roadmap |
-| **Promptfoo** | CI assertions, red-teaming | Yes (MIT) | Declarative test suites; OpenAI's migration target for OpenAI Evals (read-only Oct 31, shut down Nov 30, 2026) | OpenAI agreed to acquire it (announced March 2026): weigh vendor neutrality |
+| **Arize Phoenix** | Self-hosted tracing + RAG evals | Source-available (Elastic-2.0) | OTel-native, strong retrieval views | Part of Dynatrace since October 1, 2026: watch the roadmap and license |
+| **Promptfoo** | CI assertions, red-teaming | Yes (MIT) | Declarative test suites; OpenAI's migration target for OpenAI Evals (shuts down Nov 30, 2026) | Now part of OpenAI (still MIT): weigh vendor neutrality |
 
 ### When to Use What
 
@@ -536,8 +538,8 @@ Frontier rows use Claude Opus 5.5 prices; GPT-6 Sol at $2 / $10 roughly halves t
     --> LangSmith or Braintrust (SaaS), Langfuse or Phoenix (self-hosted, OTel)
 
   Still on OpenAI Evals?
-    --> It goes read-only on October 31, 2026 and shuts down November 30:
-        export results and move to Promptfoo or your own harness before then
+    --> It shuts down November 30, 2026: export datasets, graders and
+        results now, then move to Promptfoo or your own harness
 
   Building custom eval pipeline?
     --> Roll your own with LLM-as-judge + the RAG Triad structure
@@ -618,7 +620,7 @@ Five strategies, in order of impact:
 
 4. **Heuristic pre-filters**: Before calling the LLM judge, run cheap heuristic checks. If the answer contains "I don't know" or has zero overlap with the context (ROUGE-L < 0.1), skip the expensive faithfulness evaluation and assign a score directly.
 
-5. **Batch and decision models**: Move nightly and weekly runs to a Batch API (50% off), and move binary claim verification to a typed decision-model judge such as Jev. I would not expect the decision model to add accuracy: research in September 2026 found its confident errors are mostly shared by LLM judges, so cascading saves money but a human-labeled slice is still the real check.
+5. **Batch and decision models**: Move nightly and weekly runs to a Batch API (50% off), and move binary claim verification to a typed decision-model judge such as Jev or OpenAI's Decisions API. I would not expect the decision model to add accuracy: research in September 2026 found its confident errors are mostly shared by LLM judges, so cascading saves money but a human-labeled slice is still the real check.
 
 The goal is to spend evaluation budget where it provides the most signal: on ambiguous, borderline cases where the LLM judge's nuanced reasoning matters, and on the human labels that keep every judge honest.
 

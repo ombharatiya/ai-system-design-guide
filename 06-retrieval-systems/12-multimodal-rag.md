@@ -117,10 +117,12 @@ Replaces CLIP's softmax cross-entropy with a sigmoid loss, allowing each image-t
 | Voyage Multimodal 3.5 | Mixed documents; text, images and video | 256-2048 (1024 default) | High | High |
 | Cohere embed-v5.0-pro / -fast | Visually rich enterprise docs; text, image, or fused text+image input | 256-2048 (Matryoshka) | High: ViDoRe V3 85.8 / 84.5 (vendor-reported) | Not reported |
 | Gemini Embedding 2 | One space for text, images, video, audio and PDFs | 128-3072 (768/1536/3072 recommended) | High: ViDoRe V3 83.2 (Cohere's vendor-run table) | Not reported |
+| EmbeddingGemma 2 (open weights, Apache 2.0) | Self-hosted single space for text, code, images, video and audio; 740M parameters, 8K context | 128-768 (Matryoshka) | Not reported on ViDoRe | Not reported |
 
-**What changed in 2026**: two hosted multimodal embedders now cover the "unified space" pattern without a separate image model.
+**What changed in 2026**: two hosted multimodal embedders now cover the "unified space" pattern without a separate image model, and in October an open-weight one joined them.
 - **Gemini Embedding 2** (`gemini-embedding-2`, announced March 10, stable since April 2026) is Google's multimodal model: text up to 8,192 tokens, up to 6 images, video up to 120 seconds, native audio, and PDFs up to 6 pages per input, including interleaved inputs. `gemini-embedding-001` is text-only and shuts down May 14, 2028; Google names Gemini Embedding 2 as its replacement.
 - **Cohere Embed 5** (September 30, 2026): `embed-v5.0-pro` at $0.12 and `embed-v5.0-fast` at $0.08 per 1M text tokens, $0.40 per 1M image tokens, 128K context. Pro and Fast share one embedding space, so you can index with Pro and query with Fast without re-indexing.
+- **EmbeddingGemma 2** (October 2026, Apache 2.0): 740M parameters split across a 270M text model, a 170M vision encoder and a 300M audio encoder, mapping text, images, video and audio into one 768-dim space. It is the self-hosted answer when audio or video cannot leave your network, but Google publishes MTEB text and code scores (vendor-reported), not ViDoRe, so run your own page-level eval before choosing it for documents.
 
 Cohere's own ViDoRe V3 table puts Embed 5 Pro at 85.8, Fast 84.5, voyage-4-large 83.7, Gemini Embedding 2 83.2 and OpenAI text-embedding-3-large 75.5. The spread among the top four is under three points and vendor-run, so it does not settle a choice; your own page-level eval set does.
 
@@ -146,6 +148,7 @@ Is it a mix of text, images, and structured data?
 
 Does it include audio or video clips?
   YES --> Gemini Embedding 2 for retrieval (clips up to 120 s per input),
+          or EmbeddingGemma 2 if the media must stay self-hosted,
           plus transcripts in the text index for exact-term search
 ```
 
@@ -387,7 +390,7 @@ Design implications:
 
 | Concern | Solution |
 |---------|----------|
-| **Index Size** | ColPali stores ~1024 vectors/page. For 1M pages = ~1B vectors. Use quantization (binary, PQ), MUVERA-style single-vector encodings for candidate generation (Milvus 3.0; Weaviate 1.31+, with the disk-backed HFresh path in the 1.40 release candidates), or fewer vectors per page (see [Late Interaction & ColBERT](11-late-interaction-colbert.md#compressing-the-vectors-themselves)). |
+| **Index Size** | ColPali stores ~1024 vectors/page. For 1M pages = ~1B vectors. Use quantization (binary, PQ), MUVERA-style single-vector encodings for candidate generation (Milvus 3.0; Weaviate 1.31+, with the disk-backed HFresh path added in 1.40), or fewer vectors per page (see [Late Interaction & ColBERT](11-late-interaction-colbert.md#compressing-the-vectors-themselves)). |
 | **Ingestion Latency** | Frontier VLM extraction is slow (~2-5s/page). Specialist parsers are faster: jina-ocr-v1 runs 2.57 pages/s on one A100 at concurrency 32; Cohere reports 4.5 pages/s per GPU for Parse (both vendor-reported). Use async workers. |
 | **Query Latency** | Multi-index fan-out adds latency. Use parallel retrieval + aggressive top-k pruning. |
 | **Cost** | Ingestion is one-time; amortize over query volume. At October 2026 list prices, assuming ~1.7K input and ~800 output tokens per page: ~$0.004/page on Gemini 3.8 Flash (intro price), ~$0.011/page on Claude Sonnet 5.5 or GPT-6 Sol, before reasoning tokens; Batch APIs halve both. Cohere Parse lists $1.50 per 1,000 pages. |

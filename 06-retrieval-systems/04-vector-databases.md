@@ -181,12 +181,12 @@ Compress vectors to reduce memory and speed up comparison.
 
 ### Low-Bit and Rotation-Based Quantization
 
-Between May and September 2026 several engines shipped or extended 1 to 8-bit vector storage, mostly as opt-in or preview options rather than defaults. The newest trick is **rotate first, then quantize**. Embedding dimensions have very uneven variance, so per-dimension scalar quantization wastes bits on quiet dimensions and clips loud ones. Multiplying by a random or Hadamard rotation spreads the energy evenly across dimensions, after which a uniform 4-bit or 1-bit grid loses far less information.
+Between May and October 2026 several engines shipped or extended 1 to 8-bit vector storage, mostly as opt-in or preview options rather than defaults. The newest trick is **rotate first, then quantize**. Embedding dimensions have very uneven variance, so per-dimension scalar quantization wastes bits on quiet dimensions and clips loud ones. Multiplying by a random or Hadamard rotation spreads the energy evenly across dimensions, after which a uniform 4-bit or 1-bit grid loses far less information.
 
 | Engine | Feature | Status | Footprint |
 |---|---|---|---|
-| Qdrant | TurboQuant with Hadamard rotation (1.18, May 2026); Turbo4 storage type keeps only the 4-bit form (1.19, August 2026) | Opt-in | From 36 bits per coordinate in 1.18 (float32 original plus 4-bit copy) to 4 bits with Turbo4, a ninefold cut |
-| Weaviate | 4-bit Rotational Quantization (1.39, August 2026), adding to the 8-bit and 1-bit RQ it already had | Preview, HNSW only | 1,536-dim vector from 6,144 bytes to 784 bytes (7.84x) |
+| Qdrant | TurboQuant with Hadamard rotation (1.18, May 2026); Turbo4 storage type keeps only the 4-bit form (1.19, August 2026); `turbo8` and `turbo16` vector datatypes (1.20, October 2026) | Opt-in | From 36 bits per coordinate in 1.18 (float32 original plus 4-bit copy) to 4 bits with Turbo4, a ninefold cut |
+| Weaviate | 4-bit Rotational Quantization (1.39, August 2026), adding to the 8-bit and 1-bit RQ it already had; 1.40 (October 2026) adds "RQ4 centered quantization" | Preview in 1.39, HNSW only; the 1.40 notes give no status label, so confirm before relying on it | 1,536-dim vector from 6,144 bytes to 784 bytes (7.84x) |
 | Elasticsearch | DiskBBQ (`bbq_disk`, GA since 9.2) gained a symmetric 1-bit OSQ scorer and merge-time calibration (9.5, August 2026) | GA; default index type for float vectors from 9.4 where the license includes it (Enterprise) | ~1 bit per dimension plus correction terms |
 | turbopuffer | Plain `i8` vector type (June 2026), no rotation | Shipped | 75% less storage and query cost than f32 for quantization-aware models (vendor) |
 
@@ -222,8 +222,8 @@ No approximation, exact search.
 | Database | Type | Best For | Pricing Model |
 |----------|------|----------|---------------|
 | **Pinecone** | Managed cloud (serverless standard); BYOC GA September 23, 2026 (data plane in your AWS, GCP or Azure account) | Easy start, scale, managed SLAs; BM25 full-text search GA September 9, 2026 | Storage plus read and write units |
-| **Qdrant** | Open source / Cloud (Rust, high-perf) | Self-hosted control, strong filtered search; vendor benchmarks cite ~12ms p99 at 10M vectors | Per GB (cloud) or free |
-| **Weaviate** | Open source / Cloud | Native hybrid (BM25 + dense + metadata) in a single query, MMR diversity and Boost API (GA in 1.39), multimodal | Per dimension-hour |
+| **Qdrant** | Open source / Cloud (Rust, high-perf) | Self-hosted control, strong filtered search; vendor benchmarks cite ~12ms p99 at 10M vectors; 1.20 (October 2026) adds BM25 scoring on the full-text index, a `code` tokenizer, and per-element nested payload indexes | Per GB (cloud) or free |
+| **Weaviate** | Open source / Cloud | Native hybrid (BM25 + dense + metadata) in a single query, MMR diversity and Boost API (GA in 1.39), multimodal; 1.40 (October 2026) makes namespaces GA as a licensed feature, stops creating an implicit legacy vector index (auto-schema creates a `default` named vector), and defaults the vectorizer to none, so schemas that relied on the old defaults change on upgrade | Per dimension-hour |
 | **Milvus** | Open source / Cloud (Zilliz) | Distributed scale; 3.0 (July 2026) adds External Collections over Parquet, Iceberg, Lance and Vortex in object storage, plus online column backfill | Free (self-host) or Zilliz Cloud |
 | **turbopuffer** | Managed, object-storage-first | Many cold namespaces (per-tenant indexes) at low cost; native embedding GA September 29, 2026 | Usage-based |
 | **Chroma** | Open source | Prototyping, local dev, embedded use | Free |
@@ -474,7 +474,9 @@ class VectorDBMaintenance:
 
 ### Patching
 
-Treat the vector store like any other database on the CVE feed. pgvector 0.8.7 (October 1, 2026) fixes CVE-2026-103484, a buffer overflow during IVFFlat index builds that can lead to code execution for any database role allowed to create an index; earlier 2026 patches fixed a parallel HNSW build overflow (0.8.2) and possible index corruption during HNSW vacuuming (0.8.3). On managed Postgres, confirm the provider has shipped 0.8.7, and do not grant `CREATE INDEX` to application roles in multi-tenant schemas. Milvus 3.0.1 likewise fixed unauthenticated access through streaming gRPC calls on the external proxy port.
+Treat the vector store like any other database on the CVE feed. pgvector 0.8.7 (October 1, 2026) fixes CVE-2026-103484, a buffer overflow during IVFFlat index builds that can lead to code execution for any database role allowed to create an index; earlier 2026 patches fixed a parallel HNSW build overflow (0.8.2) and possible index corruption during HNSW vacuuming (0.8.3). On managed Postgres, confirm the provider has shipped 0.8.7, and do not grant `CREATE INDEX` to application roles in multi-tenant schemas.
+
+For Milvus, the floor is **3.0.3** (October 14, 2026). It rejects malformed sparse vectors in Search and HybridSearch that could cause a heap out-of-bounds write on the query node, and it stops DescribeCollection from showing metadata of collections the caller cannot access (3.0.1 had already fixed unauthenticated access through streaming gRPC calls on the external proxy port). Budget for its breaking changes in the same upgrade: the legacy `/api/v1/*` routes on the metrics port are gone (point health probes at `/healthz` or `/livez`), and binlog imports now need the cluster-level `ImportBinlog` privilege. Qdrant 1.20 changes a security default in the other direction: `service.enforce_internal_auth` is now on whenever an API key is configured, so verify internal cluster traffic carries credentials before you roll it out.
 
 ### Monitoring
 
@@ -746,6 +748,7 @@ results = index.query(vector=query, namespace=tenant_id)
 - [Milvus 3.0.0 release notes (July 2026)](https://github.com/milvus-io/milvus/releases/tag/v3.0.0)
 - [Qdrant 1.19 release (Aug 2026)](https://qdrant.tech/blog/qdrant-1.19.x/)
 - [Weaviate 1.39 release (Aug 2026)](https://weaviate.io/blog/weaviate-1-39-release)
+- [Qdrant 1.20.0 release notes (Oct 2026)](https://github.com/qdrant/qdrant/releases/tag/v1.20.0), [Weaviate 1.40.0 release notes (Oct 2026)](https://github.com/weaviate/weaviate/releases/tag/v1.40.0), and [Milvus 3.0.3 release notes (Oct 2026)](https://github.com/milvus-io/milvus/releases/tag/v3.0.3)
 - [Elasticsearch release notes](https://www.elastic.co/docs/release-notes/elasticsearch)
 - [turbopuffer. "RIP, vector database" (Sep 2026)](https://turbopuffer.com/blog/rip-vector-database)
 - [Qdrant-FineWeb-10B benchmark (Sep 2026)](https://qdrant.tech/blog/qdrant-fineweb-10b-release/)

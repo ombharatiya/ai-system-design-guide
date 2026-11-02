@@ -149,7 +149,7 @@ I would price all three, then route instead of picking one.
 
 - **Frontier VLM for everything**: about $57K a month on Claude Sonnet 5.5 or GPT-6 Sol at list price (roughly half with a Batch API), or about $21K on Gemini 3.8 Flash at its intro price, doubling to about $43K when the intro price ends on January 1, 2027.
 - **Specialist API**: 5M pages at Cohere Parse's $1.50 per 1,000 is $7,500 a month.
-- **Self-hosted parsing VLM**: at 2.5 pages per second per GPU, 5M pages is about 556 GPU-hours, roughly $1,500 a month at the $2.77 per H100-hour Silicon Data index (October 1, 2026), assuming full utilization. Real cost is higher once the pool is sized for peak and someone owns it, and the license must allow commercial use (jina-ocr-v1's CC BY-NC 4.0 does not).
+- **Self-hosted parsing VLM**: at 2.5 pages per second per GPU, 5M pages is about 556 GPU-hours, roughly $1,600 a month at the $2.93 per H100-hour Silicon Data index (November 1, 2026; it read $2.78 in early October), assuming full utilization. Real cost is higher once the pool is sized for peak and someone owns it, and the license must allow commercial use (jina-ocr-v1's CC BY-NC 4.0 does not).
 
 The design: self-host or use the specialist API for the bulk, validate every page, and escalate the few percent that fail (charts, handwriting, dense tables) to a frontier model. At 5% escalation that is about 250K frontier pages, under $3K a month. Before committing, I would run 500 of our own pages through each option, because the frontier-versus-specialist comparison cited above (ParseBench) is vendor-run and shows a five-point frontier advantage that may or may not show up on our documents.
 

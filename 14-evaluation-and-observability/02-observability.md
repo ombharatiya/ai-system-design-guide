@@ -320,14 +320,16 @@ class Rate:
     input: float        # uncached input
     output: float       # output, including reasoning tokens
     cache_read: float   # input served from the prompt cache
-    cache_write: float  # input written to the cache (Anthropic 5-minute tier; OpenAI bills 1.25x input)
+    cache_write: float  # input written to the cache (Anthropic 5-minute tier; OpenAI 1.25x on the 30-minute cache, 2.5x on the 12-hour option)
 
 class CostTracker:
-    # Standard-tier list prices, October 2026. Load these from config in production:
+    # Standard-tier list prices, November 2026. Load these from config in production:
     # promotions, long-context tiers, speed tiers, and residency premiums change monthly.
+    # claude-haiku-5-5 ($0.10/$0.50, cache read $0.01) holds only up to a 100K-token prompt;
+    # above that the whole request bills $0.50/$2.50, so it needs a tiered rate, not one Rate.
     PRICING = {
         "claude-opus-5-5":   Rate(input=4.00, output=20.00, cache_read=0.20, cache_write=5.00),
-        "claude-sonnet-5-5": Rate(input=2.00, output=10.00, cache_read=0.20, cache_write=2.50),
+        "claude-sonnet-5-5": Rate(input=2.00, output=10.00, cache_read=0.10, cache_write=2.50),
         "gpt-6-sol":         Rate(input=2.00, output=10.00, cache_read=0.20, cache_write=2.50),
         "gpt-6-luna":        Rate(input=0.10, output=0.50,  cache_read=0.01, cache_write=0.125),
     }
@@ -363,10 +365,10 @@ class CostTracker:
 
 Four billing rules break naive per-token math:
 
-- **Cache reads dominate agent bills.** Anthropic's aggregate Claude Code usage data (published September 24, 2026, vendor-reported) puts the input-to-output token ratio at 324:1, up from 189:1 in March. At that ratio the cached-input price and your cache hit rate move cost far more than the output price. Cache-read discounts also vary by model: most Claude models bill reads at 0.1x input, Opus 5.5 at 0.05x, and Fable 5.1 at 0.025x.
-- **Long-context tiers reprice the whole request.** OpenAI bills the entire request at long-context rates once input passes 272K tokens (GPT-6 Sol goes from $2/$10 to $4/$15), and xAI bills every token at 2x on Grok 4.7 prompts of 200K tokens or more. Anthropic prices its 4.6-and-later models flat to 1M.
-- **Speed and residency tiers multiply the rate.** OpenAI's Fast tier is 2x (Ultrafast is 6x on GPT-6 Astra), and data-residency options run about 10% above list (Anthropic's `inference_geo: "us"` is 1.1x).
-- **Promotions expire.** Gemini 3.8 Flash's introductory $0.75/$3.75 runs through December 31, 2026 and becomes $1.50/$7.50 on January 1, 2027. Budget on list prices.
+- **Cache reads dominate agent bills.** Anthropic's aggregate Claude Code usage data (published September 24, 2026, vendor-reported) puts the input-to-output token ratio at 324:1, up from 189:1 in March. At that ratio the cached-input price and your cache hit rate move cost far more than the output price. Cache-read discounts also vary by model: most Claude models bill reads at 0.1x input, Opus 5.5 and Sonnet 5.5 at 0.05x (Sonnet's dropped from 0.1x on October 7, 2026), and Fable 5.1 at 0.025x. Write multipliers vary too: OpenAI's 12-hour cache option (October 20, 2026) bills writes at 2.5x input.
+- **Long-context tiers reprice the whole request.** OpenAI bills the entire request at long-context rates once input passes 272K tokens (GPT-6 Sol goes from $2/$10 to $4/$15), and xAI bills every token at 2x on Grok 4.7 prompts of 200K tokens or more. Anthropic's 4.6-and-later models are flat to 1M with one exception: Claude Haiku 5.5 bills $0.10/$0.50 up to a 100K-token prompt and $0.50/$2.50 on the whole request above it, and the prompt length counts cache reads and writes. Log prompt length per request, or a cheap model's bill will jump 5x without a traffic change.
+- **Speed and residency tiers multiply the rate.** OpenAI's Fast tier is 2x (Ultrafast is 6x on GPT-6 Astra, and GPT-6.1 Sol Ultrafast is $12/$60 for all API users since October 8, 2026), and data-residency options run about 10% above list (Anthropic's `inference_geo: "us"` is 1.1x).
+- **Promotions expire.** Gemini 4 Argon's $2/$10 runs through November 30, 2026 and becomes $4/$20 on December 1; Gemini 3.8 Flash's introductory $0.75/$3.75 runs through December 31, 2026 and becomes $1.50/$7.50 on January 1, 2027. Budget on list prices.
 
 So tag every cost record with the tier, the region, and the cache buckets, and put cache hit rate on the same dashboard as spend.
 
@@ -478,10 +480,10 @@ Plan the critical tier around vendor-wide outages, not single-model failures. Be
 
 | Tool | Focus | Best For | Watch |
 |------|-------|----------|-------|
-| LangSmith | Tracing and evals; trace-to-fine-tune in public beta since September 24, 2026 | LangChain and LangGraph apps | SaaS traces with extended retention are kept at most 180 days from September 14, 2026 (self-hosted and BYOC unchanged) |
+| LangSmith | Tracing and evals; trace-to-fine-tune in public beta since September 24, 2026 | LangChain and LangGraph apps | Usage-based pricing in LangChain Standard Units (1 LSU = $1) replaced per-run and uptime pricing on October 1, 2026, so re-forecast trace volume; SaaS traces with extended retention are kept at most 180 days from September 14, 2026 (self-hosted and BYOC unchanged) |
 | Langfuse | Open-source, OpenTelemetry-based tracing and evals | Self-hosted, privacy | Part of ClickHouse since January 2026; Python SDK v4 changed the API and filters exported spans to LLM scopes by default |
 | Weights & Biases | Experiment tracking; Weave for LLM tracing and evals | ML teams that also track training and fine-tuning runs | Part of CoreWeave since 2025 |
-| Arize Phoenix | LLM tracing and evals | Production monitoring | Elastic-2.0 license (source-available, not OSI open source); Dynatrace agreed in August 2026 to buy Arize for $915M and says Phoenix remains available |
+| Arize Phoenix | LLM tracing and evals | Production monitoring | Elastic-2.0 license (source-available, not OSI open source); Dynatrace completed its $915M acquisition of Arize on October 1, 2026 and says Phoenix remains available |
 | Helicone | API proxy logging | Simple integration | Acquired by Mintlify (announced March 2026); confirm the roadmap before adopting |
 
 **Choose for exit, not just features.** This layer is consolidating fast, so vendor risk is a selection criterion. Emit OpenTelemetry with `gen_ai.*` attributes from your own code so you can switch backends, keep the traces you need for audit or compliance in storage you control (a SaaS tracing store with a 180-day cap is not an audit log), and export eval datasets and judge prompts in a format you own.
