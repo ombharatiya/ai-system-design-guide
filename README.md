@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/ombharatiya-ai-system-design-guide-badge.png)](https://mseep.ai/app/ombharatiya-ai-system-design-guide)
+
 # 🧠 AI System Design Guide
 ### The Complete Interview & Production Reference
 
