@@ -81,7 +81,7 @@ Tune the threshold on a labeled set of query pairs (equivalent and not equivalen
 
 ## Multimodal Semantic Caching
 
-With native multimodal frontier models (Gemini 3.8 Flash, GPT-6.1 Sol, Claude Opus 5.5), we now cache **Image and Audio queries**.
+With natively multimodal models (Gemini 3.8 Flash, GPT-6.1 Sol, Claude Opus 5.5), we now cache **Image and Audio queries**.
 - **Visual Similarity**: Caching the description of an image if a semantically similar image was processed before.
 - **Audio Fingerprinting**: Caching transcripts for similar voice commands.
 

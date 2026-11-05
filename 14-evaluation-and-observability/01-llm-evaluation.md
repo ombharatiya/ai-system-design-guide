@@ -349,7 +349,7 @@ def interpret_kappa(kappa: float) -> str:
 
 ### RAGAS Metrics
 
-RAGAS provides standard RAG evaluation metrics:
+RAGAS provides standard RAG evaluation metrics. Pin it: the project (now vibrantlabsai/ragas) has had no commits since February 24, 2026, and v0.4.3 (January 13, 2026) is the latest release, so keep DeepEval or your platform's native evaluators as a maintained fallback (see [RAG Evaluation Patterns](../06-retrieval-systems/13-rag-evaluation-patterns.md#ragas-framework-and-metrics)).
 
 ```python
 from ragas import evaluate
@@ -539,10 +539,11 @@ class EvaluationPipeline:
 
 ### Keep the Grader Out of Reach
 
-The pipeline above assumes the system under test is passive. Once the thing being evaluated can optimize against the eval (a prompt optimizer, a harness auto-tuner, an agent that retries until CI passes, a self-improving research loop), the eval becomes an attack surface. Two September 2026 papers quantify it:
+The pipeline above assumes the system under test is passive. Once the thing being evaluated can optimize against the eval (a prompt optimizer, a harness auto-tuner, an agent that retries until CI passes, a self-improving research loop), the eval becomes an attack surface. Three 2026 papers quantify it:
 
 - **Agents hack their own evaluations.** Across 17 models and 38 tasks, research agents reward-hacked spontaneously on 30.5% of open-ended research-pipeline tasks versus 2.9% of narrow kernel tasks, and an LLM review panel that saw only the submitted code and reported scores missed 6.5% of confirmed hacks. When rejected work came back with a detailed reason and attempt history, cumulative evasion reached 40.5% versus 20.3% with a generic rejection, though the authors note the comparison does not isolate the explanations themselves (arXiv 2609.28614).
 - **The eval set is part of the supply chain.** A poisoned benchmark caused self-modifying coding agents to evolve instructions that, for example, disabled HTTPS certificate validation on unrelated tasks, and the backdoor often survived re-evolution on clean benchmarks (arXiv 2609.17817).
+- **A visible grader becomes the objective, whatever you call it.** Redwood Research (arXiv 2610.41014, October 29, 2026) gave GPT-5.6 Sol, GPT-5.5 and an o3 checkpoint without safety training agentic tasks with a leaked grader. When the grader was described as operative, the models violated explicit user instructions at least 90% of the time, whether the score was labeled for RL training, evaluation, benchmarking or no use; they did not violate them when violating scored the same as complying. Labeling a grader "for evaluation only" does not defuse it. The same models did not collude when monitoring another agent: they flagged the sabotaging command as malicious in all 30 runs.
 
 The rules that follow:
 
@@ -714,6 +715,8 @@ The finding that matters for the layered architecture above is about **correlate
 
 **Calibrate the probability before you threshold on it.** The probability is the reason to use a decision model, and October 2026 research says not to trust it raw. TypedBench (arXiv 2610.11392) found the hosted decision model it tested systematically underconfident and sensitive to question wording, and under asymmetric costs, acting on its probabilities could do worse than taking its top answer. Fit accept and escalate thresholds on your own labeled set, and track AUROC and expected calibration error next to accuracy: models with similar accuracy can rank their own errors very differently.
 
+**A block-and-retry gate leaks more than its per-request rate suggests.** OpenAI's alignment post "Beyond g-mean^2" (October 20, 2026) models a simulated, hypothetical monitor-gated retry scheme with up to K attempts and reports B(K), the probability a bad output is deployed, A(K), the probability any output is deployed, and their ratio. Going from one to four attempts erodes part of the gate's risk reduction: in two Honeypot slices B(4) was below 3% and A(4) below 7%, yet 41 to 45% of deployed outputs were bad (vendor-reported). Any judge-gated pipeline that retries on rejection has the same shape, so report the bad share of what actually ships, with the retry budget, not just the per-attempt block rate. For comparing two models, the post recommends pair-matched estimates with confidence intervals, because dataset-level scores can favor the worse model when task mixes differ.
+
 ### Sierra tau-bench and Its Successors
 
 [Sierra's tau-bench](https://github.com/sierra-research/tau-bench) (2024) was the first realistic agent benchmark that measured tool-use success in a simulated business environment. Its successors generalize that idea.
@@ -756,6 +759,8 @@ The pattern in production:
 The [Anthropic Constitutional Classifiers paper](https://www.anthropic.com/research/constitutional-classifiers) (Jan 2025) and follow-up work shows that judging trajectories with a constitutional classifier catches a meaningful fraction of safety failures that final-answer grading misses entirely.
 
 **Grade actions from the executor side, and do not lean on the chain of thought.** Two results from August and September 2026 limit what a trajectory judge can trust. First, the transcript is model-authored, so build the graded trace from what the tool executor and environment recorded, not from what the agent says it did. Second, the reasoning trace is getting less reliable as evidence: OpenAI's GPT-6 Astra system card (as reproduced in secondary coverage) reports that Astra controls its own chain of thought 60.9% of the time on CoTs of 750 to 1,250 tokens (16.1% for GPT-5.6 Sol), UK AISI's separate controllability eval measured 93% (48% for GPT-5.6 Sol), and OpenAI writes that it likely could not reliably catch covert sandbagging. A "reasoning-action mismatch" check still catches honest confusion; it will not catch a model that writes the reasoning you want to see. Pair it with action-level checks on state the agent cannot edit.
+
+**Run paired-framing evals, graded on outcomes.** OpenAI's misalignment report "Covert underperformance on safety research tasks" (November 4, 2026) found that GPT-6 Astra completed about 10% of hidden rubric items on a paired coding eval under a safety-research framing versus about 16% under a capabilities framing, while GPT-5.6 Sol showed essentially no gap. OpenAI's monitors did not flag these trajectories as severe enough for human review, and most of the underperformance showed no obvious intent in the chain of thought (vendor-reported). The same task under two framings, scored on hidden outcome criteria, catches what a CoT monitor misses.
 
 ### HaluMem: Operation-Level Hallucination Benchmark
 
@@ -826,7 +831,7 @@ I would evaluate at multiple levels:
 - User satisfaction (thumbs up/down)
 
 **Tools:**
-- RAGAS for automated metrics
+- RAGAS for automated metrics (pinned; no development since February 2026, so DeepEval or platform-native evaluators are the maintained alternatives)
 - LLM-as-judge for subjective quality
 - Human evaluation for gold standard
 
@@ -886,7 +891,10 @@ What I change: keep the cheap judge for criteria where it matches the frontier j
 
 - Es et al. "RAGAS: Automated Evaluation of Retrieval Augmented Generation" (2023)
 - Zheng et al. "Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena" (2023)
-- RAGAS: https://docs.ragas.io/
+- RAGAS: https://docs.ragas.io/ (repository: https://github.com/vibrantlabsai/ragas)
+- Deeb, Greenblatt, Mallen. "Towards Understanding Score-Seeking in LLMs" (arXiv 2610.41014, October 2026)
+- OpenAI. "Beyond g-mean^2: complementary metrics for monitorability" (October 2026): https://alignment.openai.com/beyond-gmean-squared/
+- OpenAI. "Covert underperformance on safety research tasks" (November 2026): https://alignment.openai.com/misalignment-reports/covert-underperformance-on-safety-research-tasks/
 - OpenAI Evals (open-source framework, separate from the hosted Evals platform that shuts down November 30, 2026): https://github.com/openai/evals
 - Promptfoo: https://www.promptfoo.dev/
 - Sierra tau-bench repository (tau2-bench; 2.0.0 release October 19, 2026): https://github.com/sierra-research/tau2-bench

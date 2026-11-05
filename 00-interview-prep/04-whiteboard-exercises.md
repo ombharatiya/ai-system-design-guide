@@ -526,7 +526,7 @@ Strategy:
 ```
 
 6. **Approval Authority:**
-The assistant comments; by default it does not approve. GitHub now lets Copilot code review submit approvals that count toward required reviews (public preview since September 2026, off by default, path-scoped by admins). If you enable anything similar, limit it to low-risk paths, never let an agent approve a PR an agent wrote, and dismiss the approval on every new push. Expect this separation-of-duties follow-up.
+The assistant comments; by default it does not approve. Since October 28, 2026, Copilot code review approvals are generally available on GitHub: when an admin turns them on (they are off by default), a Copilot approval counts toward the repository's required approvals, admins choose which file paths Copilot may approve, and pushing new commits dismisses the approval. So "agent approves agent" is now a supported configuration, not a hypothetical. If you enable it or anything similar, limit it to low-risk paths, never let an agent approve a PR an agent wrote, and dismiss the approval on every new push. Expect this separation-of-duties follow-up.
 
 ---
 
@@ -1254,7 +1254,7 @@ TTFT and inter-token latency at p50 and p99, queue wait, batch occupancy, KV uti
 - They bound the queue and say what the client sees under overload.
 - They report goodput at an SLO, not peak throughput.
 - They say they would run vLLM or SGLang in production, since both already implement continuous batching and paged KV, and use the interview to show they understand what those engines do.
-- They treat the engine as a shared-fate domain. Inputs get validated before they reach the GPU: one unauthenticated request with a negative token ID to vLLM's embeddings endpoint crashed the engine for every client until restart (CVE-2026-93592, fixed in v0.28.0). And a shared prefix cache is a cross-tenant side channel, so salt cache keys per tenant (vLLM's `cache_salt`) and keep the engine patched (v0.30.0 fixed a path that dropped the salt and reopened a prefix-cache membership oracle, and v0.32.0 is the current security floor).
+- They treat the engine as a shared-fate domain. Inputs get validated before they reach the GPU: one unauthenticated request with a negative token ID to vLLM's embeddings endpoint crashed the engine for every client until restart (CVE-2026-93592, fixed in v0.28.0). And a shared prefix cache is a cross-tenant side channel, so salt cache keys per tenant (vLLM's `cache_salt`) and keep the engine patched (v0.30.0 fixed a path that dropped the salt and reopened a prefix-cache membership oracle, and v0.32.0 is the current security floor, v0.33.0 for hosts that load model repositories they did not vet).
 
 **Related prompts to practice** (candidate-reported from Anthropic and OpenAI loops via the prep vendor Aced, formerly Exponent; not confirmed by the companies): a GPU credit or quota accounting system, peer-to-peer distribution of a large file (think model weights) from one bandwidth-limited source to thousands of machines, and a token-generation service at 100,000 requests per second. The same moves apply: clarify the workload, find the binding resource, bound the queue, and measure at an SLO.
 

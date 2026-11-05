@@ -111,19 +111,19 @@ The **Agent-to-Agent (A2A) protocol** (see [Tool Use and MCP](03-tool-use-and-mc
 
 ## The 2026 Framework Landscape for Multi-Agent
 
-Every major AI lab now ships an agent framework. The multi-agent orchestration landscape as of early November 2026 (versions and star counts as of November 2):
+Every major AI lab now ships an agent framework. The multi-agent orchestration landscape as of early November 2026 (versions as of November 6, star counts as of November 2):
 
 | Framework | Provider | Multi-Agent Model | Status |
 |-----------|----------|-------------------|--------|
-| **LangGraph** | LangChain | Graph-based, most flexible | Production; LangGraph 1.2.19 (~44.3k stars) |
+| **LangGraph** | LangChain | Graph-based, most flexible | Production; LangGraph 1.2.20 (~44.3k stars) |
 | **Claude Agent SDK** | Anthropic | Supervisor trees with built-in tools | GA (Python + TypeScript) |
-| **Google ADK** | Google | Graph workflows with A2A native support | Python 2.13.0, TypeScript 2.4.0, Go 2.6.0, Java 1.13.0 |
+| **Google ADK** | Google | Graph workflows with A2A native support | Python 2.13.0, TypeScript 2.4.0, Go 2.7.1, Java 1.14.0 (Go 2.7.0 changed telemetry and call-limit defaults; see [Navigating Framework Churn](../09-frameworks-and-tools/12-navigating-framework-churn.md)) |
 | **Microsoft Agent Framework** | Microsoft | Workflows + group chat patterns, A2A and MCP interop | GA April 2, 2026; Python 1.24.0, .NET 1.27.0; AutoGen is in maintenance mode |
 | **OpenAI Agents SDK** | OpenAI | Handoff-based swarms with guardrails | Python 0.24.0, TypeScript 0.21.0 (~30.4k stars); still pre-1.0 |
-| **CrewAI** | CrewAI Inc. | Role-based crews with Flows | 1.15.34 (~60.4k stars; vendor claims 60%+ of Fortune 500) |
+| **CrewAI** | CrewAI Inc. | Role-based crews with Flows | 1.15.35 (~60.4k stars; vendor claims 60%+ of Fortune 500) |
 | **Smolagents** | HuggingFace | Lightweight, open-source | 1.26.0 (May 29, 2026); no release since |
 
-**Key trend**: No single framework excels at all four multi-agent patterns (supervisor, swarm, pipeline, debate). Teams increasingly combine frameworks, e.g., LangGraph for complex orchestration with CrewAI for business-user-facing automations. The other trend is the managed runtime: OpenAI's Agents API (public beta), Claude Managed Agents (beta), and Amazon Bedrock Managed Agents (public preview) host the harness itself, which moves the build-versus-rent decision up a layer (see [Durable Execution](11-durable-execution.md)). None of the three is GA as of early November 2026, so check beta terms (API stability, data retention, residency) before you rent.
+**Key trend**: No single framework excels at all four multi-agent patterns (supervisor, swarm, pipeline, debate). Teams increasingly combine frameworks, e.g., LangGraph for complex orchestration with CrewAI for business-user-facing automations. The other trend is the managed runtime: OpenAI's Agents API (public beta), Claude Managed Agents (beta), and Amazon Bedrock Managed Agents (public preview) host the harness itself, which moves the build-versus-rent decision up a layer (see [Durable Execution](11-durable-execution.md)). None of the three is GA as of early November 2026, so check beta terms (API stability, data retention, residency) before you rent; AWS's own AgentCore managed harness is the GA exception (since June 17, 2026).
 
 ---
 

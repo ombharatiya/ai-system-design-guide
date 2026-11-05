@@ -17,7 +17,7 @@ The industry has hit the "Data Wall", the exhaustion of high-quality human text 
 
 ## After the "Data Wall": The Synthetic Shift
 
-Disclosed pretraining budgets for open models already reach 15T to 36T+ tokens (Llama 4's mixture was more than 30T), and the supply of high-quality, legally clean human text is not growing at that rate. Closed labs do not disclose their totals.
+Disclosed pretraining budgets for open models already reach 15T to 45T tokens (Llama 4's mixture was more than 30T, and Thinking Machines Lab's Inkling disclosed 45T multimodal tokens in July 2026), and the supply of high-quality, legally clean human text is not growing at that rate. Closed labs do not disclose their totals.
 **The reality:** Post-training sets are now mostly model-generated (reasoning traces, rewrites, verified solutions), and synthetic shares of pretraining are rising: Microsoft's Phi-4 report allocates **40% of pretraining tokens** to synthetic data. Most labs do not publish their mix, so treat any single industry-wide percentage as a guess.
 
 | Source | Human Data | Synthetic Data |

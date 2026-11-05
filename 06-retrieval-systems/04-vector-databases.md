@@ -226,7 +226,7 @@ No approximation, exact search.
 | **Weaviate** | Open source / Cloud | Native hybrid (BM25 + dense + metadata) in a single query, MMR diversity and Boost API (GA in 1.39), multimodal; 1.40 (October 2026) makes namespaces GA as a licensed feature, stops creating an implicit legacy vector index (auto-schema creates a `default` named vector), and defaults the vectorizer to none, so schemas that relied on the old defaults change on upgrade | Per dimension-hour |
 | **Milvus** | Open source / Cloud (Zilliz) | Distributed scale; 3.0 (July 2026) adds External Collections over Parquet, Iceberg, Lance and Vortex in object storage, plus online column backfill | Free (self-host) or Zilliz Cloud |
 | **turbopuffer** | Managed, object-storage-first | Many cold namespaces (per-tenant indexes) at low cost; native embedding GA September 29, 2026 | Usage-based |
-| **Chroma** | Open source | Prototyping, local dev, embedded use | Free |
+| **Chroma** | Open source (Apache 2.0) | Prototyping, local dev, embedded use, self-hosted or embedded only: Chroma's October 23, 2026 notice says Chroma Cloud stops accepting writes on December 7, 2026 and stops serving reads on December 22, 2026 | Free (self-host) |
 
 ### General-Purpose (Plugin/Extension)
 
@@ -243,6 +243,9 @@ Three shifts change how you evaluate an engine:
 1. **Embedding moved into the database.** MongoDB Atlas Automated Embedding (GA), turbopuffer native embedding (GA; turbopuffer cites Readwise cutting median embedding latency 8x by embedding in parallel with query execution), Elasticsearch `semantic_text`, and Milvus 3.0's Hugging Face Inference Providers integration all remove the separate embed-and-sync pipeline. The cost is coupling: the vendor now picks the model version, so ask how a model change triggers re-embedding before you adopt it.
 2. **The index moved toward the lakehouse.** Milvus 3.0 External Collections query Parquet, Iceberg, Lance and Vortex data in place (zero-copy, read-only), and turbopuffer's September 30 "RIP, vector database" post describes a v3 storage design where the ANN index becomes a secondary index rather than the primary data layout (announced; it passes CI but is not in production yet, and the scale figures in the post are the vendor's). The argument shifts from "which vector DB" to "index in place over object storage, or copy into a serving store."
 3. **Low-bit quantization spread across vendors** (see [above](#low-bit-and-rotation-based-quantization)), changing the RAM budget for HNSW sizing.
+4. **The migration path moved inside Postgres.** Pinecone's pg_pinecone (October 27, 2026, Apache 2.0) is a Postgres extension for tables that already have pgvector columns: each table picks a reversible engine (native, which runs in Postgres with no network calls or Pinecone account; pgvector, which uses your existing HNSW or IVFFlat index; or remote, which syncs to a Pinecone serverless index in the background) and runs BM25, vector or hybrid search from SQL. "Start on pgvector, migrate later" becomes a per-table switch with Postgres as the system of record. The price is a superuser extension (PostgreSQL 17 or 18, `shared_preload_libraries` for remote mode), which many managed Postgres plans will not allow, and the published performance figures are Pinecone's own, from one instance type and a 1M-vector dataset.
+
+The same month taught the opposite lesson: a managed store can disappear on short notice. Chroma's October 23, 2026 wind-down notice gave Chroma Cloud users about six weeks until writes stop (December 7) and two more weeks until reads stop (December 22); open-source ChromaDB continues under Apache 2.0, and the notice says Replit will keep contributing to it (Dealroom reports Replit is acquiring Chroma; reported, not vendor-confirmed). Put an export path and the re-embed and re-index cost into the selection criteria, not just features.
 
 ---
 
@@ -476,7 +479,9 @@ class VectorDBMaintenance:
 
 Treat the vector store like any other database on the CVE feed. pgvector 0.8.7 (October 1, 2026) fixes CVE-2026-103484, a buffer overflow during IVFFlat index builds that can lead to code execution for any database role allowed to create an index; earlier 2026 patches fixed a parallel HNSW build overflow (0.8.2) and possible index corruption during HNSW vacuuming (0.8.3). On managed Postgres, confirm the provider has shipped 0.8.7, and do not grant `CREATE INDEX` to application roles in multi-tenant schemas.
 
-For Milvus, the floor is **3.0.3** (October 14, 2026). It rejects malformed sparse vectors in Search and HybridSearch that could cause a heap out-of-bounds write on the query node, and it stops DescribeCollection from showing metadata of collections the caller cannot access (3.0.1 had already fixed unauthenticated access through streaming gRPC calls on the external proxy port). Budget for its breaking changes in the same upgrade: the legacy `/api/v1/*` routes on the metrics port are gone (point health probes at `/healthz` or `/livez`), and binlog imports now need the cluster-level `ImportBinlog` privilege. Qdrant 1.20 changes a security default in the other direction: `service.enforce_internal_auth` is now on whenever an API key is configured, so verify internal cluster traffic carries credentials before you roll it out.
+For Milvus, the floor is **3.0.5** (October 30, 2026). 3.0.5 fixes upserts on CMEK-enabled collections writing the delete part (primary keys and timestamps) to the WAL unencrypted, which quietly breaks an encryption-at-rest claim; 3.0.4 (October 26) upgraded Go and golang.org/x/net for several CVEs and, with authorization on, made client telemetry admin APIs root-only and hid import job details from users without Import permission. 3.0.3 (October 14) rejects malformed sparse vectors in Search and HybridSearch that could cause a heap out-of-bounds write on the query node, and it stops DescribeCollection from showing metadata of collections the caller cannot access (3.0.1 had already fixed unauthenticated access through streaming gRPC calls on the external proxy port). Budget for the 3.0.3 breaking changes in the same upgrade: the legacy `/api/v1/*` routes on the metrics port are gone (point health probes at `/healthz` or `/livez`), and binlog imports now need the cluster-level `ImportBinlog` privilege. Qdrant 1.20 changes a security default in the other direction: `service.enforce_internal_auth` is now on whenever an API key is configured, so verify internal cluster traffic carries credentials before you roll it out.
+
+The trust store is part of the patch surface too. After weak private keys were found on eight eMudhra intermediate CAs in October 2026, Mozilla and Chrome distrusted them and moved to drop the emSign ECC Root CA - G3 root, and Weaviate shipped patch releases on its 1.36 to 1.40 lines between October 22 and 28. Rebuild vector-store and client images on refreshed base images, and expect TLS to fail to any endpoint that chains only to the removed root.
 
 ### Monitoring
 
@@ -526,14 +531,14 @@ def alert_rules():
 
 | Provider | Model | Example: 10M vectors, 1536 dims |
 |----------|-------|--------------------------------|
-| Pinecone | Pod-based or Serverless | ~$70-150/month serverless |
+| Pinecone | Serverless (Node.js SDK v9, Go SDK v7 and Terraform provider v5, September to October 2026, can no longer create pod-based indexes; existing pods keep working, and Pinecone Local, the Docker emulator, reached end of life October 7, so CI tests need a separate project or a mock) | ~$70-150/month serverless |
 | Qdrant Cloud | Per GB | ~$50/month (20GB) |
 | Weaviate Cloud | Per dimensions | ~$100/month |
 | Zilliz (Milvus) | Per CU | ~$75/month |
 
 ### Managed RAG Pipelines (Build vs. Buy)
 
-A newer option skips the vector database decision entirely: a managed pipeline that parses, chunks, embeds, indexes and retrieves, billed by ingested tokens, storage and queries. Cloudflare AI Search went GA on October 1, 2026, with pricing effective November 1, 2026:
+A newer option skips the vector database decision entirely: a managed pipeline that parses, chunks, embeds, indexes and retrieves, billed by ingested tokens, storage and queries. Cloudflare AI Search went GA on October 1, 2026; on November 2 Cloudflare postponed billing to December 1, 2026 (prices unchanged) and raised the default sync interval from 6 to 24 hours, so set it explicitly if new documents must be searchable sooner:
 
 | Meter | Price | Included per month (Workers plans) |
 |---|---|---|
@@ -595,7 +600,7 @@ def estimate_self_hosted_cost(
 ```
 Need < 100K vectors?
 +-- Yes -> pgvector (if already using PostgreSQL)
-|          +-- Chroma (for prototyping)
+|          +-- Chroma (prototyping, self-hosted or embedded)
 |
 +-- No -> Need managed service?
           +-- Yes -> Cloud-first?
@@ -616,7 +621,7 @@ Need < 100K vectors?
 | Ops capacity | High | Can we operate this? |
 | Cost | Medium | Budget constraints? |
 | Features | Medium | Hybrid search? Multimodal? |
-| Lock-in risk | Low-Medium | Open source preferred? |
+| Lock-in and exit risk | Medium | Open source preferred? Is there a bulk export path, and what does a re-embed and re-index cost if the vendor exits? |
 
 ### Proof of Concept Checklist
 
@@ -653,7 +658,7 @@ Decision depends on several factors:
 - Specific compliance requirements
 - Want to avoid vendor lock-in
 
-Two 2026 changes narrow the gap: Pinecone BYOC (GA September 23) runs the data plane in your own cloud account with no inbound access from Pinecone, and Pinecone's BM25 full-text search (GA September 9) removes the "we need a separate keyword engine" argument, though you still fuse lexical and vector results client-side.
+Two 2026 changes narrow the gap: Pinecone BYOC (GA September 23) runs the data plane in your own cloud account with no inbound access from Pinecone, and Pinecone's BM25 full-text search (GA September 9) removes the "we need a separate keyword engine" argument, though you still fuse lexical and vector results client-side. Pinecone's pg_pinecone extension (October 27) adds a third route for Postgres shops: keep pgvector tables and move individual tables to a remote Pinecone engine only when they outgrow Postgres.
 
 For most startups, I would start with Pinecone or Qdrant Cloud for velocity, then evaluate migration if costs become prohibitive at scale. The switching cost is the re-embed and re-index, not the API: query surfaces are similar, but in-database embedding features tie you to the vendor's model choice.
 
@@ -748,7 +753,9 @@ results = index.query(vector=query, namespace=tenant_id)
 - [Milvus 3.0.0 release notes (July 2026)](https://github.com/milvus-io/milvus/releases/tag/v3.0.0)
 - [Qdrant 1.19 release (Aug 2026)](https://qdrant.tech/blog/qdrant-1.19.x/)
 - [Weaviate 1.39 release (Aug 2026)](https://weaviate.io/blog/weaviate-1-39-release)
-- [Qdrant 1.20.0 release notes (Oct 2026)](https://github.com/qdrant/qdrant/releases/tag/v1.20.0), [Weaviate 1.40.0 release notes (Oct 2026)](https://github.com/weaviate/weaviate/releases/tag/v1.40.0), and [Milvus 3.0.3 release notes (Oct 2026)](https://github.com/milvus-io/milvus/releases/tag/v3.0.3)
+- [Qdrant 1.20.0 release notes (Oct 2026)](https://github.com/qdrant/qdrant/releases/tag/v1.20.0), [Weaviate 1.40.0 release notes (Oct 2026)](https://github.com/weaviate/weaviate/releases/tag/v1.40.0), and [Milvus release notes (3.0.3 to 3.0.5, Oct 2026)](https://milvus.io/docs/release_notes.md)
+- [Chroma Cloud wind-down notice (Oct 2026)](https://www.trychroma.com/cloud-wind-down)
+- [pg_pinecone repository (Oct 2026)](https://github.com/pinecone-io/pg_pinecone) and [Pinecone 2026 release notes](https://docs.pinecone.io/release-notes/2026)
 - [Elasticsearch release notes](https://www.elastic.co/docs/release-notes/elasticsearch)
 - [turbopuffer. "RIP, vector database" (Sep 2026)](https://turbopuffer.com/blog/rip-vector-database)
 - [Qdrant-FineWeb-10B benchmark (Sep 2026)](https://qdrant.tech/blog/qdrant-fineweb-10b-release/)

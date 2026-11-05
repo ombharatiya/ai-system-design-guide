@@ -63,7 +63,7 @@ flowchart LR
 2. The sampler pulls stratified samples by task category, with rebalancing to ensure rare categories are represented.
 3. The teacher (frontier model) generates target outputs for each sample, often with chain-of-thought reasoning traces if the task benefits from reasoning distillation.
 4. A 5 percent human spot-check by domain experts catches teacher mistakes; we apply rejection sampling, keeping only pairs where human reviewers agree with the teacher.
-5. The student is fine-tuned for about 1 week on 8x H100 (~$3.9K to $5.4K compute: 1,344 H100-hours at $2.93 to $3.99 per GPU-hour), producing an 8B model.
+5. The student is fine-tuned for about 1 week on 8x H100 (~$3.9K to $5.4K compute: 1,344 H100-hours at $2.93 to $3.99 per GPU-hour; Lambda's 8x H100 on-demand rate is scheduled to rise to $4.59 on November 16, 2026, which takes the top of that range to about $6.2K), producing an 8B model.
 6. The model passes per-task evals, runs in shadow against production for 2 weeks, then gradual rollout: 5 percent, 20 percent, 50 percent, 90 percent over 3 weeks, with auto-rollback wired to live quality metrics.
 
 ## Key Design Decisions

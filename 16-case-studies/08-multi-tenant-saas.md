@@ -64,6 +64,8 @@ flowchart TB
 
 Two details matter in the shared tier. Keyword search scores with corpus statistics, so in a shared collection one tenant's documents shift another tenant's BM25 ranking; Qdrant 1.19 added per-tenant IDF statistics for sparse and BM25 search to fix exactly this. And the customer-cloud option is now a product, not a custom project: Pinecone's BYOC went GA on September 23, 2026 on AWS, Google Cloud and Azure, with vectors, documents and request payloads staying in the customer's account.
 
+Namespace isolation also fails open on encoding bugs, not only on missing filters. LangGraph's Postgres and SQLite stores joined namespace labels with ".", so `("tenant.bob",)` resolved to the same namespace as `("tenant", "bob")`; `put` rejected dotted labels but `get`, `search`, `delete`, `list_namespaces`, and batch operations did not, so a caller who controlled a label could read, overwrite, or delete another namespace's items (CVE-2026-115883, October 21, 2026; fixed in langgraph-checkpoint-postgres 3.1.3, langgraph-checkpoint-sqlite 3.1.2, and Agent Server 0.15.5 and 0.16.2, while existing LangSmith Cloud deployments get the fix only on their next revision). Derive the tenant segment from the authenticated identity, never from a caller-supplied string, and keep RLS underneath.
+
 ### 2. Defense in Depth for Data Isolation
 
 **Answer:** We never trust a single layer. Our isolation stack:
@@ -74,6 +76,7 @@ Two details matter in the shared tier. Keyword search scores with corpus statist
 4. **LLM Layer**: System prompt explicitly states "You are answering for Tenant X only". This frames answers; it is not a control, and isolation must never depend on it
 5. **Output Layer**: Post-generation filter scans for any document IDs not belonging to tenant
 6. **Inference Layer**: If you self-host models, the prefix cache is shared state. vLLM isolates tenants with a per-request `cache_salt`, and in September 2026 one code path that dropped the salt reopened a cross-tenant prefix-cache membership oracle until 0.30.0 (GHSA-935w-9g4m-p28p). Pin vLLM >= 0.32.0 (the current security floor) and test the salt on every endpoint you expose. See [Access Control](../12-security-and-access/02-access-control.md) for the cache-isolation details
+7. **Provider Account Layer**: Every tenant's traffic reaches the model vendor under your one organization, so one abusive tenant can get all 500 restricted. Since October 20, 2026, Anthropic lets platforms register each end customer (`POST /v1/user_profiles`) and send the profile ID with each request (the `anthropic-user-profile-id` header, or a `user_profile_id` body field on Bedrock), so a safety restriction or ban lands on that customer instead of the organization; without one, Anthropic's docs warn, one end customer can trigger enforcement on your whole organization. Attach a profile per tenant at the gateway, and alert on the organization webhooks (beta, on request) that report when a restriction opens or ends. Profiles are created only on Anthropic-run platforms (the Claude API, Claude Platform on AWS, Anthropic-hosted Foundry, and Anthropic-managed Claude on Google Cloud) and are only format-checked on Bedrock and Google-managed Vertex
 
 ### 3. Why Not One Vector DB Per Tenant?
 
@@ -137,7 +140,7 @@ async def delete_tenant_data(tenant_id: str):
 
 ### Data Residency
 
-EU tenants often contract for in-region processing, and model vendors now price it as a line item of about +10% per token: regional Claude endpoints on Bedrock and Google Cloud, OpenAI's data-residency endpoints and Mistral's EU inference all carry roughly that premium, and Anthropic's US-only `inference_geo` setting bills 1.1x. Pin geography per tenant at the gateway and charge it to the tier that needs it, rather than paying 10% on every tenant's traffic.
+EU tenants often contract for in-region processing, and model vendors now price it as a line item of about +10% per token: regional Claude endpoints on Bedrock and Google Cloud, OpenAI's data-residency endpoints and Mistral's EU inference all carry roughly that premium, and Anthropic's US-only `inference_geo` setting bills 1.1x. Check what "regional" means per model and platform: on Google-managed Vertex, regional endpoints serve only Claude Sonnet 4.6 and earlier, so Opus 5.5, Sonnet 5.5, Haiku 5.5, and Fable 5.1 need the global endpoint or the `us` or `eu` multi-region endpoint (geography-level residency, not a single region), at the same 10% premium over global, and provisioned throughput there requires a regional endpoint. Pin geography per tenant at the gateway and charge it to the tier that needs it, rather than paying 10% on every tenant's traffic.
 
 ---
 

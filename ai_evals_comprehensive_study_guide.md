@@ -283,8 +283,10 @@ Langfuse provides tracing, evaluation, datasets, experiments, and prompt managem
 #### Install and Configure
 
 ```bash
-pip install langfuse openai
+pip install "langfuse>=4,<5" openai  # samples here target SDK v4
 ```
+
+Pin the major version. Langfuse shipped Python SDK v5 on October 14, 2026, and a bare `pip install langfuse` now installs it (5.2.0 on November 5, Python 3.11 or later). v5 needs Langfuse Cloud or a self-hosted server at v4.59.0 or newer and removes several v4 calls, including `api.scores_v3.get_many_v3()` (now `api.scores.get_many()`), `api.trace.get/list`, `api.legacy.*` and `set_current_trace_io()`; port with the [v4 to v5 upgrade guide](https://langfuse.com/docs/observability/sdk/upgrade-path/python-v4-to-v5).
 
 ```python
 # Set environment variables (or pass to constructor)
@@ -1784,7 +1786,7 @@ start = end - timedelta(days=7)
 
 # Fetch spans by name with the v2 observations API (SDK v4). The v1 trace
 # endpoints behind langfuse.api.trace.list()/get() are deprecated, and
-# Langfuse Cloud serves them only until November 16, 2026.
+# Langfuse Cloud serves them only until November 16, 2026; SDK v5 removed them.
 for state_name in STATES:
     cursor = None
     while True:
@@ -2470,7 +2472,7 @@ phoenix serve
 
 **Langfuse:**
 ```bash
-pip install langfuse openai
+pip install "langfuse>=4,<5" openai  # samples target v4; v5 removed some APIs
 # Sign up at cloud.langfuse.com or self-host
 ```
 
@@ -2681,7 +2683,7 @@ Use your platform's built-in UI (Phoenix or Langfuse both have dashboards), or b
 
 - **judgy** - Statistical bias correction for LLM judges: [github.com/ai-evals-course/judgy](https://github.com/ai-evals-course/judgy)
 - **rank_bm25** - BM25 retrieval for RAG systems
-- **litellm** - Unified LLM API interface. Never install 1.82.7, 1.82.8 or 1.107.0: all three were compromised (malware advisory GHSA-92x9-889m-jgmw), 1.107.0 with its container images on October 21, 2026. Pin packages by hash and proxy images by digest. If you run the LiteLLM proxy, run 1.100.4, 1.101.3, 1.102.2, 1.103.1 or later on your line (CVE-2026-114612, CVSS 9.9, exploitable in the default configuration from 1.91.0); Enterprise-licensed proxies need 1.103.10, 1.104.8, 1.105.6 or 1.106.5 (GHSA-w4c7-34wj-hqm8, CVSS 10.0). Keep `allow_client_side_credentials=false` so callers cannot redirect stored provider keys through `api_base`. See [Securing the Gateway](11-infrastructure-and-mlops/03-ai-gateways-and-model-routing.md#securing-the-gateway)
+- **litellm** - Unified LLM API interface. Never install 1.82.7, 1.82.8 or 1.107.0: all three were compromised (malware advisory GHSA-92x9-889m-jgmw), 1.107.0 with its container images on October 21, 2026. Take 1.108.0 (November 4) rather than anything on the 1.107 line, and do not treat a passing `cosign verify` as proof: the poisoned 1.107.0 images carry a valid signature from LiteLLM's old, likely exposed signing key (replaced October 23), so re-pin verification policies to the new key and check digests against LiteLLM's compromised-build list. Pin packages by hash and proxy images by digest. If you run the LiteLLM proxy, run 1.100.4, 1.101.3, 1.102.2, 1.103.1 or later on your line (CVE-2026-114612, CVSS 9.9, exploitable in the default configuration from 1.91.0); Enterprise-licensed proxies need 1.103.10, 1.104.8, 1.105.6 or 1.106.5 (GHSA-w4c7-34wj-hqm8, CVSS 10.0). Keep `allow_client_side_credentials=false` so callers cannot redirect stored provider keys through `api_base`. See [Securing the Gateway](11-infrastructure-and-mlops/03-ai-gateways-and-model-routing.md#securing-the-gateway)
 
 ### Key Principles (Revisited)
 
@@ -3219,7 +3221,7 @@ langfuse = get_client()
 end = datetime.now(timezone.utc)
 
 # v2 observations API (SDK v4). The v1 endpoints behind langfuse.api.trace.list()
-# and .get() are deprecated; Langfuse Cloud serves them only until November 16, 2026.
+# and .get() are deprecated (SDK v5 removed them); Langfuse Cloud serves them only until November 16, 2026.
 # Their replacement is this endpoint: filter by trace_id, or group results by trace_id.
 observations = langfuse.api.observations.get_many(
     trace_id="trace_id",

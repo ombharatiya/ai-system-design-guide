@@ -85,7 +85,7 @@ The classic rule was "new embedding model means full re-index." Two 2026 pattern
 - **Model families in one shared space.** The Voyage 4 family and Cohere Embed 5 Pro/Fast are trained so their vectors are interchangeable. Index the corpus once with the large model (best document representations), then serve queries with the small one (lowest query latency and cost), or move query traffic between sizes without touching the index.
 - **Swappable query encoders.** Qdrant's Constella research preview (September 29, 2026) keeps a fixed Stella (400M) document index and swaps query encoders. Constella Nano (34.5M parameters) keeps about 91% of Stella's BEIR-15 nDCG@10 (0.5081 vs 0.5614) at 12x lower CPU latency (3.1 ms vs 39.0 ms); Constella Zero, a token lookup with no transformer, scores 0.4572 at 0.081 ms (vendor-reported research preview).
 
-The constraint: shared spaces are vendor-defined. You cannot mix a Voyage index with a Cohere query encoder, and preview models (pplx-embed-v2-context-9b-preview) explicitly warn that their vectors will not be compatible with later releases.
+The constraint: shared spaces are vendor-defined. You cannot mix a Voyage index with a Cohere query encoder, and preview models warn that their vectors will not be compatible with later releases (Perplexity's September 2026 pplx-embed-v2-context-9b-preview did; the non-preview 9B and 0.6B models that replaced it in October share one space with each other, so anything indexed on the preview must be re-embedded).
 
 ---
 

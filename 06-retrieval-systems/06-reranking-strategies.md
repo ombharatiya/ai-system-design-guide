@@ -134,6 +134,8 @@ Voyage reports rerank-3 beating rerank-2.5 by 0.96% overall and 3.35% on long do
 
 **Calibrated scores change how you cut the list.** Cohere reports expected calibration error of about 0.06 for Rerank 5 against 0.38 for Rerank 4 Pro and 0.23 for Voyage rerank-3 (vendor-reported), and suggests 0.50 (Pro) and 0.45 (Fast) as the "useful" cutoffs. If that holds on your data, a score threshold can replace a fixed top-k, so easy queries send two chunks and hard ones send ten. Two cautions: thresholds tuned on Rerank 4 do not carry over, because the score scale changed, and calibration on Cohere's test sets is not calibration on yours, so re-fit the cutoff on your golden set. Context Focus pushes the same idea inside the document by returning scored spans; Cohere reports keeping 96% of answer quality with half the context removed. Treat span trimming as a context-budget lever and measure faithfulness after it, since a dropped qualifier can flip an answer.
 
+**If you fine-tune your own, train a reranker, not a yes/no judge.** arXiv 2610.32318 ("System One models Are Not Better Rerankers", October 23, 2026) fine-tuned six Qwen backbones from 0.6B to 27B either as rerankers or as decision models and tested them on ten TREC DL and BEIR collections. From 0.6B to 9B, reranker fine-tuning beat decision fine-tuning on every backbone by 5 to 29 nDCG@10 points, zero-shot collections included, and decision fine-tuning added nothing over asking the untuned model; only at 27B did the two tie. The decision models' calibration advantage (at 4B and up) disappeared when the question used a looser definition of relevance, the same lesson as the Cohere cutoffs: calibration belongs to one question on one data distribution, so re-fit thresholds whenever either changes.
+
 **The "Lost in the Middle" Fix**: Rerankers are trained to prioritize relevant information regardless of its position in the chunk, ensuring that "middle" data is scored correctly before being sent to the final LLM.
 
 ### Using Cross-Encoders
@@ -641,6 +643,7 @@ Classic BERT-size cross-encoders (MiniLM, bge-reranker-base) cap at 512 tokens, 
 - Cohere Rerank: https://docs.cohere.com/docs/rerank
 - [Voyage AI. "rerank-3" (Sep 2026)](https://blog.voyageai.com/2026/09/30/rerank-3/)
 - [Cohere. "Rerank 5" (Oct 2026)](https://cohere.com/blog/rerank-5)
+- [Dinzinger, Ghosh Dastidar, Granitzer. "System One models Are Not Better Rerankers" (arXiv 2610.32318, Oct 2026)](https://arxiv.org/abs/2610.32318)
 - ["The Embedder's Dilemma" (arXiv 2608.12875, Aug 2026)](https://arxiv.org/abs/2608.12875)
 - Sun et al. "Is ChatGPT Good at Search? Investigating Large Language Models as Re-Ranking Agents" (2023)
 

@@ -164,6 +164,8 @@ The named systems differ less on "what they store" and more on *write discipline
 
 **Keep state you own separate from the orchestration API.** OpenAI shut down the Assistants API on August 26, 2026: threads, runs, and run steps now error, and the migration maps Threads to the Conversations API, Runs to Responses, and Run steps to Items. Vector stores were not part of the shutdown and keep working through the Responses `file_search` tool, so teams on hosted RAG kept their indexes and rewrote only the conversation-state code. Store memory and session state behind your own interface, and treat a vendor's hosted thread object as a cache of that state, not its system of record.
 
+Anthropic's message threads beta (November 2, 2026, header `message-threads-2026-08-12`) makes the same point from the other direction. A create request stores the conversation, system prompt, and tools server-side, and later requests send only new messages naming `previous_message_id`. But a thread expires 5 minutes after its last request, is deleted no more than an hour after last use, is not ZDR eligible, and a continue can return 404 `thread_not_found`, after which the client must resend the full conversation. System and tools may be sent only on the create request, and fixed fields such as `model`, `tool_choice`, `thinking`, and `mcp_servers` must match every turn or the API returns 400 `thread_fingerprint_mismatch`. Threads do not change pricing or cache the prompt by themselves (you still need `cache_control`), and they do not run on Bedrock or Google-managed Vertex. The harness design follows: keep the transcript yourself, use the thread as a bandwidth optimization, and implement 404 replay from day one.
+
 **Emerging frameworks worth tracking**: [Supermemory](https://supermemory.ai), [Recallr](https://recallrai.com), AWS [Bedrock AgentCore](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/memory-integrate-lang.html), [Oracle AI Agent Memory](https://blogs.oracle.com/developers/oracle-ai-agent-memory-a-governed-unified-memory-core-for-enterprise-ai-agents).
 
 ---
@@ -334,7 +336,7 @@ I take it seriously rather than assuming a bug, because MemTrapBench (August 202
 
 The architecture has five isolation layers:
 
-1. **Physical separation at the store layer**: per-tenant collections or shards, not metadata-filtered shared indexes. The shared-index-with-tenant-id pattern fails open under bugs.
+1. **Physical separation at the store layer**: per-tenant collections or shards, not metadata-filtered shared indexes. The shared-index-with-tenant-id pattern fails open under bugs, including encoding bugs: LangGraph's Postgres and SQLite stores joined namespace labels with "." so `("tenant.bob",)` and `("tenant", "bob")` collided, letting a caller who controlled a label read or delete another namespace's items (CVE-2026-115883, October 21, 2026; see [LangGraph persistence](../09-frameworks-and-tools/02-langgraph-orchestration.md#persistence-and-checkpointing)). Derive the tenant key from verified identity, never from a label the caller supplies.
 2. **Enforcement via service-account scoping**: the application code cannot opt out of tenant scope; the database role does not have visibility to other tenants.
 3. **Separate KV-cache prefix per tenant**: prevents cached prompts from leaking between tenants.
 4. **Per-tenant encryption keys**: cross-namespace bytes are unreadable even if returned by a bug.

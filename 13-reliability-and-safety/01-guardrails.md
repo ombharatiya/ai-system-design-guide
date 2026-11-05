@@ -46,7 +46,7 @@ LLMs are probabilistic and can produce:
 
 ### Guardrails Are Becoming Legal Requirements
 
-Some guardrails are no longer a product choice. Each row below names a control a regulator can ask you to demonstrate (status as of November 2, 2026; see [AI Governance and Compliance](04-ai-governance-and-compliance.md) for the full picture):
+Some guardrails are no longer a product choice. Each row below names a control a regulator can ask you to demonstrate (status as of November 6, 2026; see [AI Governance and Compliance](04-ai-governance-and-compliance.md) for the full picture):
 
 | Requirement | Status | Guardrail it implies |
 |-------------|--------|----------------------|
@@ -54,6 +54,7 @@ Some guardrails are no longer a product choice. Each row below names a control a
 | EU AI Act Article 5 ban on generating non-consensual intimate imagery and CSAM (Regulation (EU) 2026/1744) | Applies from December 2, 2026 | Output safeguards on image and video generators wherever such output is reasonably foreseeable, plus red-team evidence that they work |
 | California SB 1119, companion chatbots used by children | Signed September 10, 2026 | Crisis protocols for suicidal ideation, parental controls, independent child-safety audits |
 | Companion-chatbot laws in nine more states (Colorado, Connecticut, Georgia, Hawaii, Idaho, Iowa, Nebraska, Oregon, Washington) | Hawaii in effect since July 2026; the rest in 2027 | AI disclosure and self-harm and sexual-content protections for minors; Oregon adds a private right of action |
+| New York S9051-B/A10379-C, AI companions and minors | Signed October 28, 2026; effective January 1, 2027 per the NY Senate bill page (scheduled) | Unsafe companion features off for any user not verified as an adult, at least one age-verification method that does not rely solely on government ID, and age data deleted after use |
 | California SB 947, workplace AI | Signed September 30, 2026 | No sole reliance on AI for discipline or termination: a human makes the final call |
 | FCC 26-67 consent-revocation rules, reaching AI voice calls through the FCC's 2024 "artificial voice" ruling | Effective November 25, 2026 | Outbound voice agents recognize a revocation of consent during the call and record it where the dialer checks before the next call |
 

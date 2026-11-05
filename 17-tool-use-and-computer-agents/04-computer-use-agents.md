@@ -58,11 +58,11 @@ Most major labs and platforms now ship computer use, and the product has split i
 
 | Provider | Offering | Approach | Key Strength |
 |----------|----------|----------|--------------|
-| Anthropic | `computer_toolset_20260801` (GA on the Claude API since Aug 19, 2026) and `browser_toolset_20260801` | Client toolsets you host: pixels for desktops, accessibility-tree element refs for browsers | Desktop and browser in one API; batch actions |
+| Anthropic | `computer_toolset_20260801` (GA on the Claude API since Aug 19, 2026) and `browser_toolset_20260801`; Claude Duet (research preview Oct 21, 2026) | Client toolsets you host: pixels for desktops, accessibility-tree element refs for browsers; Duet is a persistent agent on its own cloud computer and browser | Desktop and browser in one API; batch actions; Duet's ask-versus-block action policy |
 | OpenAI | Agents API computer use (hosted browser added Sep 29, 2026, public beta), `computer_use` in the Responses API (GPT-6.1 Terra, Oct 26, 2026, $1/$5 per 1M), ChatGPT agent, dots | OpenAI-hosted browser on the managed Codex harness; a client-hosted tool on the Responses API; persistent agents on their own cloud computer | Per-origin approvals; credentials kept out of model input |
 | Google | Gemini API computer use (GA Oct 30, 2026; `gemini-3.8-flash` recommended, `gemini-4-argon` the most capable option); Gemini Enterprise Computer Use sandboxes (GA Sep 9, 2026) | Browser, Android, and desktop actions on a normalized 0-999 grid | Built-in `require_confirmation` safety service; VPC-isolated managed sandboxes |
 | Microsoft | GitHub Copilot computer use (public preview Oct 1, 2026), Copilot Autopilot (private preview), the UFO research framework | Accessible app content plus vision across desktop apps | Per-app approval grants; agent identity inside the customer tenant |
-| Amazon | Nova Act | Purpose-built browser model | E-commerce workflows |
+| Amazon | Nova Act; Amazon WorkSpaces for AI agents (Linux and Windows 11 desktops added Nov 3, 2026, alongside Windows Server) | Purpose-built browser model; managed cloud desktops driven through a managed MCP server whose tools click, type, scroll, and screenshot, enabled per stack | E-commerce workflows; desktop-as-a-service with human observers who can watch and stop sessions live, plus WorkSpaces network isolation and IAM access (Linux agents get full root, so isolate accordingly) |
 | Meta | Muse (Sep 8, 2026) | Consumer agent that runs a browser in a dedicated cloud VM | Retail and connector partnerships |
 
 ### What Differs Between Vendor APIs
@@ -416,7 +416,7 @@ Plan capacity on binary completion: a workflow that hits 80% of its checkpoints 
 | QA and visual testing | Navigates app as a user, verifies visual rendering, reports issues in natural language | Goes beyond pixel-diff: understands layout and UX |
 | Visual proof for code changes | Coding agents run the app, screenshot the change, and attach it to the pull request | Reviewers see the UI without checking out the branch (see PixelLeak below for how this goes wrong) |
 | Competitive intelligence | Navigates product pages, captures pricing data from JS-rendered widgets | Works on sites that block traditional scrapers |
-| Persistent personal and workplace agents | An always-on agent with its own cloud computer works across apps between requests (OpenAI dots, Meta Muse, Copilot Autopilot) | Most of the apps it touches have no agent API; see [Use Cases and Case Studies](06-use-cases-and-case-studies.md) |
+| Persistent personal and workplace agents | An always-on agent with its own cloud computer works across apps between requests (OpenAI dots, Meta Muse, Copilot Autopilot, Claude Duet) | Most of the apps it touches have no agent API; see [Use Cases and Case Studies](06-use-cases-and-case-studies.md) |
 
 ---
 

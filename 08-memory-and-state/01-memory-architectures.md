@@ -28,7 +28,7 @@ LLM memory has evolved from "history buffers" to a **Three-Tiered Cognitive Arch
 ## Tier 1: Working Memory (L1)
 
 L1 is the **active focus** of the model.
-- **Context Window**: about 1M tokens on current frontier models (Claude Opus 5.5 and Sonnet 5.5 at 1M, GPT-6.1 Sol at 1.05M, Gemini 3.8 Flash at 1,048,576); 128K to 1M on open-weight models.
+- **Context Window**: about 1M tokens on current frontier models (Claude Opus 5.5 and Sonnet 5.5 at 1M, GPT-6.1 Sol at 1.05M, Gemini 4 Argon at 1M shared with output); fast tiers match it (Gemini 3.8 Flash at 1,048,576, GPT-6 Luna at 1.05M); 128K to 1M on open-weight models.
 - **KV Cache**: The GPU "RAM" that stores pre-computed keys and values.
 - **Management Strategy**: **Sliding Windows**, **Compaction**, and **Prefix Caching** (vLLM/PagedAttention, SGLang RadixAttention).
 - **Redundancy Note**: We only keep the most recent turns and critical system instructions in L1.
@@ -84,6 +84,8 @@ The design axis interviewers now probe is **when** consolidation runs:
 
 More memory is not automatically better: on MemTrapBench (arXiv 2608.20202) tasks built to trigger memory traps, every memory strategy it tested underperformed the no-memory setting because correct, relevant memories still caused reasoning fixation. Gate memory injection, and evaluate task success with and without it.
 
+The baseline to beat is plain retrieval over raw history. arXiv 2610.30755 ("Is Complex Agentic Memory Always Needed?", October 22, 2026) ran Raw-RAG (dense retrieval plus reranking over the raw conversation log) against 12 memory systems, including Mem0, A-MEM, MemoryOS and MemMachine, on LoCoMo, LongMemEval, MEME and MemoryAgentBench. Raw-RAG ranked first in 6 of 7 benchmark-model settings, by 0.13 to 5.53 points (LoCoMo with GPT-4o-mini: 89.07 vs MemMachine's 88.12), and readers given full access to the transformed memory stores still trailed the raw evidence. The margins are small; the point is that extraction, summarization and graphs often buy nothing, so ship a Raw-RAG baseline first and make every memory layer prove it beats that.
+
 ---
 
 ## Interview Questions
@@ -100,7 +102,7 @@ A staff-level architecture uses **Strategic Retrieval** to keep the context wind
 ### Q: How do you handle "Privacy Leakage" in Tier 3 (Global Semantic Memory)?
 
 **Strong answer:**
-Tier 3 (Semantic Memory) must be **Sharded by Namespace**. Each user or organization gets a unique `namespace_id` in the vector DB and Knowledge Graph. We implement **RLS (Row Level Security)** at the database layer. Additionally, we use a **PII-Scrubbing Layer** during the Consolidation step to ensure that sensitive data (passwords, PII) never moves from the transient L1 context into the persistent L3 knowledge store. If the requirement is that even the operator cannot read the memory, the reference design is client-held keys plus processing in a hardware enclave: Google described (September 23, 2026, as a plan with no product dates) server-side memory for its Private AI Compute platform where storage keys live only on the user's devices, an attested enclave decrypts per request and re-encrypts, and the server software is published to a tamper-proof public record so devices can verify it before sending data. That is the same pattern as Apple's Private Cloud Compute.
+Tier 3 (Semantic Memory) must be **Sharded by Namespace**. Each user or organization gets a unique `namespace_id` in the vector DB and Knowledge Graph, derived from the authenticated identity, never from a caller-supplied label. LangGraph's Postgres and SQLite stores showed why: they joined namespace labels with ".", so `("tenant.bob",)` resolved to the same namespace as `("tenant", "bob")`, and only `put` rejected dotted labels (CVE-2026-115883, October 21, 2026; see [LangGraph Orchestration](../09-frameworks-and-tools/02-langgraph-orchestration.md) for fixed versions). We implement **RLS (Row Level Security)** at the database layer underneath, so a key-construction bug cannot become a cross-tenant read. Additionally, we use a **PII-Scrubbing Layer** during the Consolidation step to ensure that sensitive data (passwords, PII) never moves from the transient L1 context into the persistent L3 knowledge store. If the requirement is that even the operator cannot read the memory, the reference design is client-held keys plus processing in a hardware enclave: Google described (September 23, 2026, as a plan with no product dates) server-side memory for its Private AI Compute platform where storage keys live only on the user's devices, an attested enclave decrypts per request and re-encrypts, and the server software is published to a tamper-proof public record so devices can verify it before sending data. That is the same pattern as Apple's Private Cloud Compute.
 
 ### Q: When would you store agent memory as files instead of in a vector database?
 
@@ -113,9 +115,10 @@ Files when the memory is **small, curated, and needs human oversight**: project 
 - Park et al. "Generative Agents: Interactive Simulacra of Human Behavior" (2023)
 - Packer et al. "MemGPT: Towards LLMs as Operating Systems" (2023)
 - [Mem0 v2.0.0 release notes](https://github.com/mem0ai/mem0/releases/tag/v2.0.0)
-- [Letta repository (MemFS; MemGPT-era server archived August 16, 2026)](https://github.com/letta-ai/letta)
+- [Letta Code repository (MemFS, git-tracked memory)](https://github.com/letta-ai/letta-code); the retired V1 server lives on the archive branch of [letta-ai/letta](https://github.com/letta-ai/letta).
 - [Just-in-Time Memory (arXiv 2609.27334)](https://arxiv.org/abs/2609.27334)
 - [MemTrapBench (arXiv 2608.20202)](https://arxiv.org/abs/2608.20202)
+- [Is Complex Agentic Memory Always Needed? Naive RAG Is Stronger Than We Thought (arXiv 2610.30755)](https://arxiv.org/abs/2610.30755)
 - [Google DeepMind. "Advancing Private AI Compute with secure server-side memory" (September 2026)](https://deepmind.google/blog/advancing-private-ai-compute-with-secure-server-side-memory/)
 
 ---

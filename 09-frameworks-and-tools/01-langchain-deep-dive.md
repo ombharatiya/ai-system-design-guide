@@ -2,7 +2,7 @@
 
 LangChain is no longer just a "prompting library." It has matured into a **Modular Ecosystem** for building production-grade LLM applications. LangGraph (which graduated to v1.0 in October 2025 and is the default runtime for all LangChain agents) handles the stateful orchestration. **LCEL (LangChain Expression Language)** remains the fastest way to build composable chains.
 
-Version snapshot, with release dates because these numbers move monthly: `langchain` 1.4.7 (Oct 21, 2026), `langchain-core` 1.7.3 (Oct 29, 2026), `langgraph` 1.2.19 (Oct 30, 2026). On the JS side, `langchain` 1.6.0 (Oct 28), `@langchain/core` 1.3.2 (Oct 29) and `@langchain/langgraph` 1.6.0 (Oct 30).
+Version snapshot, with release dates because these numbers move monthly: `langchain` 1.4.9 (Nov 4, 2026), `langchain-core` 1.7.6 (Nov 5, 2026; 1.7.5 standardized model refusal content blocks), `langgraph` 1.2.20 (Nov 5, 2026). On the JS side, `langchain` 1.6.1 and `@langchain/core` 1.3.4 (Nov 3) and `@langchain/langgraph` 1.7.0 (Nov 5). Plan the Python bump now: `langchain` 1.4.8 and `langchain-core` 1.7.4 (Nov 2) warn that Python 3.10 support ends in `langchain-core` 1.8.0 and `langchain` 1.5.0, since Python 3.10 reached end of life on October 1, 2026.
 
 ## Table of Contents
 

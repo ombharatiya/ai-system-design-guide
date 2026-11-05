@@ -61,7 +61,7 @@ Every score needs six labels before it means anything: **benchmark version, harn
 | "Opus 5.5 81.8% on OSWorld 2.1" | Partial-credit metric, vendor run. On the official leaderboard's v2.1 full set (September 17), Opus 5 at max effort scores 44.33% binary and 77.67% partial; that update predates Opus 5.5 |
 | HLE with tools: Astra ahead, or Opus 5.5 ahead? | Both. HLE-Diamond (1,000 cleaned questions): Astra 82.9%, Opus 5.5 73.9%. Anthropic's full-HLE table: Opus 5.5 67.7%, Astra 57.2%. Dataset and runner flip the order |
 | "Three models tie at 74% on DeepSWE v1.1" | Same pass rate at $2.36 per task (Gemini 3.8 Flash, high), $4.43 (GPT-6 Astra, xhigh) and $11.84 (Claude Opus 5, max) |
-| "Opus 5.5 scores 58 on the AA Intelligence Index" | Index v5.0 (announced October 27), max effort, with safeguard fallback. It is second to Gemini 4 Carbon (59), which developers cannot call. v4.x scores are on a different scale and cannot be compared, even when a number happens to match |
+| "Opus 5.5 scores 58 on the AA Intelligence Index" vs "59" | 58 is Index v5.0 (announced October 27), max effort, with safeguard fallback; 59 is v5.0.1 (November 3), which regraded every model on CritPt v2 and put Gemini 4 Carbon, which developers cannot call, at 60. v4.x scores are on a different scale and cannot be compared, even when a number happens to match |
 | "Sonnet 5.5 scores 54" vs "Sonnet 5.5 scores 41" | Both AA v5.0: 54 at max effort, 41 at high. One effort setting moved it 13 points; GPT-6.1 Terra moves from 51 at max to 38 at its default `medium` |
 | "Haiku 5.5 scores 72.4% on OSWorld 2.1" | Anthropic's offline subset with partial credit, vendor-reported. Not the leaderboard's binary metric, and not comparable with full-set scores |
 

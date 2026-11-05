@@ -441,7 +441,7 @@ Late Chunking requires a long-context embedding model (e.g., Jina v3) and avoids
 The same idea now ships as a hosted embedding API, which cuts the ingestion cost in the table above by one to two orders of magnitude against a Claude contextualizer:
 
 - **voyage-context-4** (Voyage AI, GA June 29, 2026): one vector per chunk that encodes the full document's context, built-in auto-chunking (`enable_auto_chunking=True`), native overlapping chunks, and transparent handling of documents longer than its 32K-token window. $0.12 per 1M tokens, down from $0.18 for voyage-context-3. Voyage reports gains of 2.08% at chunk level and 1.4% at document level over context-3 across 39 datasets (vendor-reported). Also served through MongoDB Atlas.
-- **pplx-embed-v2-context-9b-preview** (Perplexity, Hugging Face, September 25, 2026): encodes a document's chunks together, 2,048 dimensions (Matryoshka to 1,024), native int8 output, and separate `encode_queries` and `encode` paths. It is explicitly a preview, and its embeddings must not be mixed with later releases, so treat it as an evaluation candidate, not a production index.
+- **pplx-embed-v2-context** (Perplexity, Hugging Face, 9B and 0.6B, MIT, technical report October 28, 2026): encodes a document's chunks together, and the two sizes share a 1024-dimension space, so you can index with 9B and query with 0.6B. It replaced the September 25 preview (2,048 dimensions, Matryoshka to 1,024, native int8), whose card says its vectors should not be mixed with later releases, so re-embed anything you built on the preview.
 
 | | LLM contextualization | Contextual chunk embeddings |
 |---|---|---|
@@ -547,7 +547,7 @@ They solve different sides of the same problem. Contextual Retrieval enriches **
 - Jina AI. "Late Chunking: Contextual Chunk Embeddings Using Long-Context Embedding Models" (2024)
 - Voyage AI. "voyage-context-3: Contextualized Chunk Embeddings" (2025)
 - Voyage AI. "voyage-context-4" (June 2026)
-- Perplexity. "pplx-embed-v2-context-9b-preview" model card (Hugging Face, September 2026)
+- Perplexity. "pplx-embed-v2-context-9b" model card (Hugging Face, October 2026) and technical report (arXiv 2610.38854, October 28, 2026)
 - NirDiamant. "RAG Techniques: Contextual Chunk Headers" (GitHub, 2024)
 
 ---

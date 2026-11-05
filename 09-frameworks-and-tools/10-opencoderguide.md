@@ -1,6 +1,6 @@
 # OpenCoder: AI Coding Agents Landscape
 
-The AI coding agent landscape has exploded and then consolidated. By November 2026 it has three clear shapes: terminal agents backed by labs or large communities (Claude Code, Codex CLI, OpenCode, Antigravity CLI), IDE agents owned by companies that also build models (Cursor has been part of SpaceX since August 2026; Cognition bought Windsurf in July 2025 and renamed it Devin Desktop in June 2026), and a split architecture where the vendor runs the control plane while your infrastructure runs the code. This guide covers open-weight coding models, agentic IDEs, open-source agents, and how to choose the right tool for your engineering workflow.
+The AI coding agent landscape has exploded and then consolidated. By November 2026 it has three clear shapes: terminal agents backed by labs or large communities (Claude Code, Codex CLI, OpenCode, Antigravity CLI, Kiro CLI), IDE agents owned by companies that also build models (Cursor has been part of SpaceX since August 2026; Cognition bought Windsurf in July 2025 and renamed it Devin Desktop in June 2026), and a split architecture where the vendor runs the control plane while your infrastructure runs the code. This guide covers open-weight coding models, agentic IDEs, open-source agents, and how to choose the right tool for your engineering workflow.
 
 ## Table of Contents
 
@@ -161,7 +161,9 @@ Windsurf was built by Codeium, bought by **Cognition**, the maker of Devin, in J
 |---------|---------------------|
 | Completions | Still the market leader by install base |
 | Coding agent | Assign an issue, get a PR (Copilot Workspace's preview ended in 2025) |
-| Code review approvals | Copilot reviews can count toward required approvals (public preview, off by default, Sep 1, 2026); admins choose which paths it may approve; its approval is dismissed on new commits |
+| Code review approvals | GA Oct 28, 2026: when an admin turns them on, Copilot approvals count toward required approvals (off by default); repository admins choose which paths it may approve; its approval is dismissed on new commits. The same post added a **Max** review effort (public preview) that runs several independent review agents on models from different providers plus an aggregation agent, at more AI credits than Lite or Balanced |
+| Agentic Workflows | GA Oct 28, 2026 on github.com (Free, Team, Enterprise): natural-language Markdown automations (issue triage, CI failure analysis, docs, tests) compile to Actions YAML and run on the Copilot CLI engine or another coding agent, read-only by default, in a sandboxed container behind the Agent Workflow Firewall, with "safe outputs" and a separate threat-detection job before changes apply |
+| Assisted permissions | GA Oct 26, 2026 in Copilot CLI, the Copilot app and VS Code: an LLM auto-approves clearly safe command, file-path and URL requests and asks for the rest; admins can block Allow All while keeping Assisted |
 | Computer use and dynamic workflows | Public preview Oct 1, 2026 in the Copilot CLI and app; workflows are code-defined stages with checkpoints for human review |
 | Copilot Fusion | GA Oct 28, 2026, on all plans. Routes each task across models with Standard, High and Max effort and Single, Cascade (a cheap model drafts, a quality gate escalates) or Critique (cross-family review) workflows, the modes first previewed as HydraFusion (Sep 30) |
 | Local sandboxing | Per-project filesystem, network and credential limits in the Copilot app (public preview, Sep 23, 2026, off by default) |
@@ -170,7 +172,7 @@ Windsurf was built by Codeium, bought by **Cognition**, the maker of Devin, in J
 
 **Best for**: Enterprise teams already on Microsoft/GitHub ecosystem.
 
-**2026 reality**: Many developers prefer Cursor or Claude Code for agentic work, but Copilot's enterprise controls and GitHub integration keep it dominant in large orgs. Two governance notes: Copilot was unpatched for Plugin4Shell at disclosure (Sep 17, 2026), and from Oct 1, 2026 credit-card and PayPal customers pay upfront for assigned seats.
+**2026 reality**: Many developers prefer Cursor or Claude Code for agentic work, but Copilot's enterprise controls and GitHub integration keep it dominant in large orgs. Two governance notes: Copilot was unpatched for Plugin4Shell at disclosure (Sep 17, 2026), and from Oct 1, 2026 credit-card and PayPal customers pay upfront for assigned seats. Since Oct 28, GitHub Enterprise Cloud customers working with a GitHub or Microsoft account team can get Copilot included for every licensed user, with Enterprise features and models but no monthly AI credits per seat: usage draws from a pooled enterprise budget, completions and next edit suggestions work without budget while chat, code review and Copilot in the cloud need it, and an exhausted budget never removes access. Non-licensed users can buy Copilot Standalone at $10 per user per month; self-serve customers cannot get the bundle yet. Cost governance for coding agents moves from counting seats to designing budgets.
 
 ### Google Antigravity
 
@@ -189,6 +191,10 @@ Google positions the Antigravity CLI as the successor to Gemini CLI; it replaced
 
 **Best for**: Developers who want to operate at the "task" level (delegate a goal, review the plan and result) rather than the "edit" level, and Google Cloud shops that want one licensed harness across IDE, CLI and SDK.
 
+### Kiro (AWS)
+
+Kiro is AWS's agentic IDE and CLI. **Kiro CLI 3.0.0** (Nov 3, 2026) is a cautionary upgrade: the V3 harness became the default for interactive sessions, for scripts using `--trust-all-tools`, and for new ACP clients (other headless scripts stay on V2); the CLI became a single standalone `kiro-cli` binary; and Classic (V1), the desktop app and inline autocomplete were retired with no standalone replacement, along with the `autocomplete`, `inline`, `translate`, `theme` and `dashboard` commands. V3 adds `/autonomous on`, which runs tasks without per-command approval inside a sandbox, and CLI 2.37.0 (Oct 30) auto-upgrades V2 agent files when V3 starts unless `chat.enableAutoAgentUpgrade` is false. The lesson: an unattended `--trust-all-tools` script silently switched harness on upgrade, so pin both the CLI version and the harness in CI.
+
 ---
 
 ## Open-Source Coding Agents
@@ -197,7 +203,9 @@ Google positions the Antigravity CLI as the successor to Gemini CLI; it replaced
 
 **GitHub:** github.com/anomalyco/opencode | **License:** MIT
 
-The most-starred open-source coding agent (about 224K stars on Nov 2, 2026; v1.19.5 on Oct 28; about 12.4M npm downloads of `opencode-ai` in October). A terminal agent with a TUI that works with any provider, including local models, and supports MCP. It is the default answer to "open-source Claude Code with model choice."
+The most-starred open-source coding agent (about 224K stars on Nov 2, 2026; about 13.7M npm downloads of `opencode-ai` and 1.6M of `@opencode/cli` across October). A terminal agent with a TUI that works with any provider, including local models, and supports MCP. It is the default answer to "open-source Claude Code with model choice."
+
+OpenCode now ships **two lines**. V1 (`opencode-ai`, 1.19.5 on Oct 28) is the legacy line; since Oct 18 the README points new installs at V2 (`curl -fsSL https://opencode.ai/v2/install | bash` or `npm i -g @opencode/cli@latest`; 2.2.5 on Oct 30). V2.2.0 (Oct 27) removed the OpenCode GitHub Action ("no longer published. Remove it from your workflows"), made the `@opencode/ai` package root the Promise API with the Effect API moved to `@opencode/ai/effect`, and requires OpenTUI 0.7 for TUI plugins. CI built on the GitHub Action loses its upstream under V2, so migrate to calling the CLI directly.
 
 ### Codex CLI (OpenAI)
 
@@ -507,7 +515,7 @@ I also track **regression rate**: if an agent fix introduces a new failing test,
 ### Q: GitHub now lets Copilot code review approvals count toward required reviews. Would you turn it on?
 
 **Strong answer:**
-Only narrowly. The feature (public preview since Sep 1, 2026, off by default) lets admins choose which paths Copilot may approve, and its approval is dismissed on new commits like a human's. I would allow it for low-risk paths (docs, generated clients, test-only changes) where it removes real review toil, and exclude infrastructure, auth, payments, CI configuration and the agent instruction files themselves. The hard rule is separation of duties: an agent-authored PR must not be approved by an agent alone, because the same blind spots that produced a bug tend to approve it. I would also log every agent approval for audit and sample them for human re-review, and treat any increase in post-merge incidents on approved paths as a signal to narrow the scope.
+Only narrowly. The feature (GA since Oct 28, 2026, off by default) lets repository admins choose which paths Copilot may approve, and its approval is dismissed on new commits like a human's. I would allow it for low-risk paths (docs, generated clients, test-only changes) where it removes real review toil, and exclude infrastructure, auth, payments, CI configuration and the agent instruction files themselves. The hard rule is separation of duties: an agent-authored PR must not be approved by an agent alone, because the same blind spots that produced a bug tend to approve it. I would also log every agent approval for audit and sample them for human re-review, and treat any increase in post-merge incidents on approved paths as a signal to narrow the scope.
 
 ---
 
@@ -522,7 +530,11 @@ Only narrowly. The feature (public preview since Sep 1, 2026, off by default) le
 - Google. "Introducing Google Antigravity CLI": https://antigravity.google/blog/introducing-google-antigravity-cli
 - Cursor. "Joining SpaceX" (Aug 2026): https://cursor.com/blog/joining-spacex
 - OpenAI. "Our decision on Cursor following its acquisition by SpaceX" (Aug 28, 2026): https://openai.com/index/our-decision-on-cursor-following-its-acquisition-by-spacex/
-- GitHub. "Copilot code review can now approve pull requests" (Sep 1, 2026): https://github.blog/changelog/2026-09-01-copilot-code-review-can-now-approve-pull-requests/
+- GitHub. "Copilot code review: merge with confidence with Max and approvals" (Oct 28, 2026): https://github.blog/changelog/2026-10-28-copilot-code-review-merge-with-confidence-with-max-and-approvals
+- GitHub. "GitHub Agentic Workflows generally available" (Oct 28, 2026): https://github.blog/changelog/2026-10-28-github-agentic-workflows-generally-available
+- GitHub. "GitHub Enterprise now includes access to GitHub Copilot" (Oct 28, 2026): https://github.blog/changelog/2026-10-28-github-enterprise-now-includes-access-to-github-copilot
+- OpenCode v2.2.0 release notes (Oct 27, 2026): https://github.com/anomalyco/opencode/releases/tag/v2.2.0
+- Kiro CLI 3.0 changelog (Nov 3, 2026): https://kiro.dev/changelog/cli/3-0/
 - Cognition blog: https://cognition.com/blog
 - Qwen2.5-Coder: https://qwenlm.github.io/blog/qwen2.5-coder/
 - DeepSeek-Coder-V2: https://github.com/deepseek-ai/DeepSeek-Coder-V2

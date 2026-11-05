@@ -1,6 +1,6 @@
 # Microsoft Agent Framework, CrewAI, and the Agent SDK Landscape
 
-The multi-agent framework landscape consolidated over the past year. Microsoft folded AutoGen and Semantic Kernel into the **Microsoft Agent Framework**, which went GA (1.0) on April 2, 2026; AutoGen is now in maintenance mode and community-managed. CrewAI reached 1.15.34 (Nov 1, 2026) and added checkpointing and declarative Flows; it reports use by 60%+ of Fortune 500 companies (vendor claim). Every major lab ships its own agent SDK: Anthropic's Claude Agent SDK, OpenAI's Agents SDK, Google's ADK, and AWS's Strands Agents. In 2026 the labs also started renting the loop itself as a managed service: Claude Managed Agents, the OpenAI Agents API (public beta Sep 10, 2026), and Bedrock Managed Agents (preview Sep 29, 2026). As of November 2026 none of the three has reached general availability.
+The multi-agent framework landscape consolidated over the past year. Microsoft folded AutoGen and Semantic Kernel into the **Microsoft Agent Framework**, which went GA (1.0) on April 2, 2026; AutoGen is now in maintenance mode and community-managed. CrewAI reached 1.15.35 (Nov 3, 2026) and added checkpointing and declarative Flows; it reports use by 60%+ of Fortune 500 companies (vendor claim). Every major lab ships its own agent SDK: Anthropic's Claude Agent SDK, OpenAI's Agents SDK, Google's ADK, and AWS's Strands Agents. In 2026 the labs also started renting the loop itself as a managed service: Claude Managed Agents, the OpenAI Agents API (public beta Sep 10, 2026), and Bedrock Managed Agents (preview Sep 29, 2026). As of November 2026 none of the three has reached general availability, though AWS's own Bedrock AgentCore managed harness has been GA since June 17, 2026 (see [Managed Agent Runtimes](#managed-agent-runtimes)).
 
 Version numbers in this chapter carry release dates because these SDKs ship every week or two. Pin them.
 
@@ -55,7 +55,7 @@ class ContentFlow(Flow):
 | 1.14.0 | Apr 7, 2026 | Runtime state **checkpointing** (`CheckpointConfig`, `SqliteProvider`), an event system and executor refactor, SSRF protections and path/URL validation in RAG tools. **Breaking**: `CodeInterpreterTool` removed |
 | 1.15.0 | Jun 25, 2026 | **Declarative Flow loading** (`FlowDefinition` with crew actions), DMN mode, token-usage aggregation across all LLM calls |
 | 1.15.22 / 1.15.23 | Sep 16 / Sep 28, 2026 | Human-feedback and pause events in tracing, connection aliases, OpenRouter embeddings, native Gemini 3.8 Flash support |
-| 1.15.24 to 1.15.34 | Oct 7 to Nov 1, 2026 | Eleven patch releases on the same line in under four weeks; there is no 1.16 or 2.0. Pin exact versions and read each changelog |
+| 1.15.24 to 1.15.35 | Oct 7 to Nov 3, 2026 | Twelve patch releases on the same line in under four weeks; there is no 1.16 or 2.0. Pin exact versions and read each changelog |
 
 The 1.13 line (spring 2026) added the enterprise pieces that still matter: documented SSO, an RBAC permissions matrix, A2A task delegation, and fixes for OpenAI models that dropped the `stop` parameter.
 
@@ -130,17 +130,20 @@ Every major AI lab now ships its own agent framework. The pattern across them in
 
 ### Claude Agent SDK (Anthropic)
 
-The Claude Agent SDK (renamed from the Claude Code SDK) provides the same tools, agent loop, and context management that power Claude Code, available as a library in Python (`claude-agent-sdk` 0.2.176) and TypeScript (`@anthropic-ai/claude-agent-sdk` 0.3.316), both released Oct 31, 2026.
+The Claude Agent SDK (renamed from the Claude Code SDK) provides the same tools, agent loop, and context management that power Claude Code, available as a library in Python (`claude-agent-sdk` 0.2.178, Nov 4, 2026) and TypeScript (`@anthropic-ai/claude-agent-sdk` 0.3.318, Nov 3, 2026).
 
 - **Built-in tools**: File reading, command execution, code editing, so agents work without custom tool implementation
 - **Subagents**: Named subagent definitions with their own context and tool allowlists
 - **Controls**: `max_turns`, `max_budget_usd`, `effort`, and permission modes including classifier-based `auto` and `dontAsk`
 - **Deployment**: Claude API, Amazon Bedrock, Google Cloud (Vertex AI), and Microsoft Foundry
 - **Gotcha**: The SDK bundles the Claude Code CLI, so a CLI release can change defaults under you. When Claude Code made Opus 5.5 (2.1.280, Sep 22) and Sonnet 5.5 (2.1.284, Sep 28) the defaults, the SDK's own CI broke and had to pin models. Since 2.1.302 (Oct 16), SDK sessions with no permission mode start in `default` on third-party providers, with telemetry off, or on a fresh install. Always pass `model=` and `permission_mode=` explicitly.
+- **Hooks fail open by default**: a hook callback that raises, returns `None`, or returns a rejected value is treated as no decision, and the action runs. Claude Code 2.1.317 (Nov 2, 2026) added `onFailure: "block"`, exposed in Python `claude-agent-sdk` 0.2.177 (Nov 3) as `on_failure` on `HookMatcher`; the default stays `"continue"`, and passing `on_failure="block"` to an older bundled CLI raises `CLIConnectionError`. Set it on every security hook and pin a CLI that supports it.
 
 ### OpenAI Agents SDK
 
 OpenAI's lightweight framework for multi-agent workflows using native Python/TypeScript constructs. Python `openai-agents` is at 0.24.0 (Oct 15, 2026); 0.23.0 never reached PyPI, so 0.23.1 (Oct 2) carried its changes. JS `@openai/agents` is at 0.21.0 (Oct 20).
+
+A reworked SDK is in preview. On November 3, 2026 OpenAI published `openai-agents-python` v0.24.0-alpha.6, distributed only through GitHub Releases (not PyPI) as wheels that "include the native runtime", and `openai-agents-js` v0.22.0-alpha.1, which "introduces the embedded Codex harness". The Python preview replaces `Runner` with `Agent.run()` / `Agent.run_sync()` (the `Runner` aliases are removed), makes agent declarations immutable, adds `Session` and `Turn` objects (`Turn.get_result()`, `Turn.cancel()`), forbids sessions from widening their opening permissions, adds a `NetworkPolicy` for native commands, and offers an optional MCP Tasks adapter. The direction is the same as Anthropic's: the vendor's production harness becomes the SDK. Runner-based code will need migration if this goes stable, so keep agent construction behind one factory.
 
 - **Handoff-based**: Agents delegate to each other with handoffs, no central supervisor needed
 - **Guardrails**: Input and output guardrails; 0.22.1 (Sep 8) added MCP server-wide guardrails
@@ -167,8 +170,9 @@ The Apps SDK extends the **Model Context Protocol** so an MCP server can ship a 
 
 Google's framework optimized for the Google ecosystem but model-agnostic:
 
-- **Versions**: Python 2.0 went GA May 19, 2026 and is now 2.13.0 (Oct 23); Go 2.0 shipped Jun 30 (`google.golang.org/adk/v2`) and is now v2.6.0 (Oct 13); TypeScript 2.0.0 went GA Aug 21 and is now 2.4.0 (Oct 28); Java remains on 1.x (1.13.0, Oct 21). The Python 1.x line is still patched.
+- **Versions**: Python 2.0 went GA May 19, 2026 and is now 2.13.0 (Oct 23); Go 2.0 shipped Jun 30 (`google.golang.org/adk/v2`) and is now v2.7.1 (Nov 4); TypeScript 2.0.0 went GA Aug 21 and is now 2.4.0 (Oct 28); Java remains on 1.x (1.14.0, Nov 2). The Python 1.x line is still patched.
 - **Telemetry break in 2.13.0**: Python 2.13.0 defaults to the OpenTelemetry GenAI semconv 1.44 schema and drops the `call_llm` span, so dashboards built on it go quiet without an error; `ADK_TELEMETRY_SCHEMA_VERSION_OPT_IN=otel_semconv_1_36` keeps the old schema while you migrate.
+- **Two default changes in Go v2.7.0 (Nov 2)**: traces now follow OpenTelemetry GenAI semantic conventions v2 (one `gen_ai.client.inference.operation.details` event per model call replaces legacy log events, and an LLM-agent root gets a new `invoke_workflow` parent span; the same `otel_semconv_1_36` opt-in restores the old format until at least March 31, 2027), and each invocation is capped at 500 model calls by default, ending with `agent.ErrLLMCallsLimitExceeded`. Raise it with `RunConfig.MaxLLMCalls` or `ADK_MAX_LLM_CALLS` (-1 for no limit; unlike adk-python, 0 means the default). It also requires Go 1.26.10 and adds experimental Claude models and search-gated tool discovery for large MCP catalogs.
 - **Graph workflows (2.0)**: Static and dynamic graphs, fan-out and fan-in (`JoinNode`), per-node retries and timeouts, schema validation, and human-in-the-loop pause and resume. ADK-TS 2.0 deprecates `SequentialAgent`, `ParallelAgent` and `LoopAgent` (they still run, with a warning).
 - **A2A native**: Built-in Agent-to-Agent protocol support for cross-vendor orchestration
 - **Vertex AI integration**: Deploy to Agent Engine Runtime for managed hosting
@@ -198,6 +202,7 @@ flowchart LR
 | **Claude Managed Agents** | Beta (`managed-agents-2026-04-01` header) on the Claude API, Claude Platform on AWS and, since Oct 22, Claude on Google Cloud | Sessions; Anthropic-hosted or self-hosted sandboxes; memory stores; cron deployments (Jun 9); server-evaluated `auto` permission policy (Sep 10); agents-as-code via `ant apply` and a committed `claude-lock.json` (ant CLI 1.30.0, Sep 3) | Tokens plus $0.08 per session-hour of running time (idle is free); hard session budgets stop with `budget_reached` (Aug 7); no Batch discount | Claude models only |
 | **OpenAI Agents API** | Public beta since Sep 10, 2026 | The Codex harness: durable sessions, compaction, recovery, subagents (`max_concurrent_subagents` defaults to 6); OpenAI-hosted or self-hosted sandboxes; hosted-browser computer use (Sep 29) | No API fee; model, tool and container rates (sandboxes $0.03, $0.12 or $0.48 per 20-minute session for 1, 4 or 16 GB); since Oct 9, hosted sandbox compute bills only during active turns | US data residency only and no Zero Data Retention during the beta |
 | **Bedrock Managed Agents** (powered by OpenAI) | Public preview since Sep 29, 2026 | A customized Agents API running inside AWS, with a per-agent IAM role, CloudTrail logging and approval before consequential actions | No extra charge in preview | us-east-1, us-east-2 and us-west-2 only |
+| **Bedrock AgentCore managed harness** | GA since Jun 17, 2026 in all commercial AgentCore regions; AgentCore CLI 1.0 (`@aws/agentcore` 1.0.0) GA Oct 28 | The orchestration loop, tool execution, context management, and persisted state, with any model and provider switching mid-session | AgentCore rates (not covered here) | Exports to Strands-based code (Claude Agent SDK export "coming soon"); `agentcore migrate` for existing projects |
 | **Foundry Agent Service** | Routines GA Sep 24, 2026 | Hosted agents with recurring, timer and event triggers | Azure consumption | Network egress controls still in preview |
 
 Managed runtimes add a **second cost meter** (session or sandbox time) on top of tokens, so a cost-per-task model has to include runtime and idle behavior. The meters are converging on active time: Claude bills session-hours of running time only, and since October 9 OpenAI bills hosted sandbox compute only during active turns, so an agent parked on a human approval no longer burns sandbox time on either. They also concentrate risk: OpenAI's Sep 29 incident degraded the Agents API together with Responses, ChatGPT and Codex for about 5 hours 20 minutes, so a fallback has to cross vendors, not just models.
@@ -219,7 +224,7 @@ Both frameworks (and the broader SDK landscape) have adopted **Swarm Patterns**.
 
 | Feature | CrewAI | MS Agent Framework | LangGraph | Claude Agent SDK | OpenAI Agents SDK | Google ADK |
 |---------|--------|-------------------|-----------|-----------------|-------------------|------------|
-| **Current release** | 1.15.34 (Nov 1) | py 1.24.0, .NET 1.27.0 (Oct 30) | 1.2.19 (Oct 30) | py 0.2.176, TS 0.3.316 (Oct 31) | py 0.24.0 (Oct 15), JS 0.21.0 (Oct 20) | py 2.13.0 (Oct 23), TS 2.4.0 (Oct 28), Go 2.6.0 (Oct 13), Java 1.13.0 (Oct 21) |
+| **Current release** | 1.15.35 (Nov 3) | py 1.24.0, .NET 1.27.0 (Oct 30) | 1.2.20 (Nov 5) | py 0.2.178 (Nov 4), TS 0.3.318 (Nov 3) | py 0.24.0 (Oct 15), JS 0.21.0 (Oct 20) | py 2.13.0 (Oct 23), TS 2.4.0 (Oct 28), Go 2.7.1 (Nov 4), Java 1.14.0 (Nov 2) |
 | **Core Abstraction** | Task/Process/Flow | Workflow/Agent | State/Graph | Agent loop + subagents | Handoff/Agent | Agent + graph workflow |
 | **Architecture** | Declarative + State Machine | Graph Workflows | Cyclic state graph | Hierarchical Tree | Swarm Handoffs | Directed Graph |
 | **Ease of Use** | High | Medium | Low | Medium | High | Medium |

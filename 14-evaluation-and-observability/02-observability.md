@@ -174,7 +174,7 @@ async def rag_query(query: str) -> str:
         return response
 ```
 
-For attribute names, follow the OpenTelemetry GenAI semantic conventions (`gen_ai.*`) rather than inventing your own; LLM-specific backends key their views on them, and Langfuse's v4 SDK exports only Langfuse, `gen_ai.*`, and known LLM-instrumentation spans by default.
+For attribute names, follow the OpenTelemetry GenAI semantic conventions (`gen_ai.*`) rather than inventing your own; LLM-specific backends key their views on them, and Langfuse's v4 and v5 SDKs export only Langfuse, `gen_ai.*`, and known LLM-instrumentation spans by default (v5's filter requires the `gen_ai.` prefix including the dot).
 
 ### When Instrumentation Goes Silent
 
@@ -481,7 +481,7 @@ Plan the critical tier around vendor-wide outages, not single-model failures. Be
 | Tool | Focus | Best For | Watch |
 |------|-------|----------|-------|
 | LangSmith | Tracing and evals; trace-to-fine-tune in public beta since September 24, 2026 | LangChain and LangGraph apps | Usage-based pricing in LangChain Standard Units (1 LSU = $1) replaced per-run and uptime pricing on October 1, 2026, so re-forecast trace volume; SaaS traces with extended retention are kept at most 180 days from September 14, 2026 (self-hosted and BYOC unchanged) |
-| Langfuse | Open-source, OpenTelemetry-based tracing and evals | Self-hosted, privacy | Part of ClickHouse since January 2026; Python SDK v4 changed the API and filters exported spans to LLM scopes by default |
+| Langfuse | Open-source, OpenTelemetry-based tracing and evals; AI Gateway in public beta since November 4, 2026 | Self-hosted, privacy | Part of ClickHouse since January 2026; Python SDK v5 (October 14, 2026) is now what `pip install langfuse` installs and breaks v4 code paths (see below). The gateway forwards native OpenAI and Anthropic requests with provider keys stored in Langfuse and traces every call: simpler cost attribution, but key custody and every prompt now sit with your tracing vendor |
 | Weights & Biases | Experiment tracking; Weave for LLM tracing and evals | ML teams that also track training and fine-tuning runs | Part of CoreWeave since 2025 |
 | Arize Phoenix | LLM tracing and evals | Production monitoring | Elastic-2.0 license (source-available, not OSI open source); Dynatrace completed its $915M acquisition of Arize on October 1, 2026 and says Phoenix remains available |
 | Helicone | API proxy logging | Simple integration | Acquired by Mintlify (announced March 2026); confirm the roadmap before adopting |
@@ -490,9 +490,10 @@ Plan the critical tier around vendor-wide outages, not single-model failures. Be
 
 ### Integration Example: Langfuse (Python SDK v4)
 
-The Langfuse Python SDK has been OpenTelemetry-based since the v3 rewrite (June 2025) and was at 4.16.0 at the end of September 2026. The v2 pattern in older tutorials (`langfuse.trace()`, `trace.span()`, `trace.generation()`, `span.end()`) is obsolete; use the `@observe()` decorator and `start_as_current_observation()`:
+The Langfuse Python SDK has been OpenTelemetry-based since the v3 rewrite (June 2025). The example below is v4 code, so pin `langfuse>=4,<5` to run it as written: v5 shipped October 14, 2026, and `pip install langfuse` now resolves to v5 (5.2.0 on November 5) on Python 3.11 or later. v5 needs Langfuse Cloud or a self-hosted server at v4.59.0 or newer (self-hosted v3 is unsupported), removes `api.scores_v3.get_many_v3()` with no alias (use `api.scores.get_many()`) along with `api.trace.get/list`, `api.sessions`, `api.legacy.*`, `api.ingestion.batch`, `set_current_trace_io()` and `span.set_trace_io()`, JSON-encodes metadata values on span attributes, and gzip-compresses span batches. Read the [v4 to v5 upgrade guide](https://langfuse.com/docs/observability/sdk/upgrade-path/python-v4-to-v5) before porting. The v2 pattern in older tutorials (`langfuse.trace()`, `trace.span()`, `trace.generation()`, `span.end()`) is obsolete; use the `@observe()` decorator and `start_as_current_observation()`:
 
 ```python
+# pip install "langfuse>=4,<5"  (v4 API; see the v5 notes above)
 from langfuse import get_client, observe, propagate_attributes
 
 langfuse = get_client()  # credentials from the LANGFUSE_* environment variables
@@ -604,6 +605,8 @@ The general lesson is that observability needs its own tests. A dashboard with n
 - OpenTelemetry GenAI semantic conventions: https://opentelemetry.io/docs/specs/semconv/gen-ai/
 - Langfuse: https://langfuse.com/docs
 - Langfuse Python SDK v3 to v4 upgrade guide: https://langfuse.com/docs/observability/sdk/upgrade-path/python-v3-to-v4
+- Langfuse Python SDK v4 to v5 upgrade guide: https://langfuse.com/docs/observability/sdk/upgrade-path/python-v4-to-v5
+- Langfuse. "AI Gateway public beta" (November 4, 2026): https://langfuse.com/changelog/2026-11-04-ai-gateway-public-beta
 - LangSmith: https://docs.smith.langchain.com/
 - OpenAI Python SDK `httpx2` notes: https://github.com/openai/openai-python/blob/main/httpx2.md
 

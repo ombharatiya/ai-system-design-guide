@@ -315,7 +315,7 @@ Result: if the target accepts 4, it adds 1 of its own: 5 tokens for one
 | DFlash 2 | Block-diffusion drafter that proposes a whole block in parallel | Inco AI, August 18, 2026; 2.7x to 3.4x on Qwen3.8-27B (vendor-reported); merged into SGLang, vLLM and llama.cpp August 19-27 |
 | N-gram, prompt lookup, suffix decoding | Substrings of the prompt or prior output | No extra model; strong for RAG, code edits and agent loops that repeat text |
 
-Medusa heads, the 2024 favorite, are no longer documented in vLLM (the `medusa` method value is still accepted); prefer EAGLE-3 or the model's own MTP heads.
+Medusa heads, the 2024 favorite, are gone from vLLM: v0.33.0 (November 2, 2026) removed Medusa and the MLP speculator, so a config that still sets `medusa` fails on upgrade. Move to EAGLE-3 or the model's own MTP heads.
 
 **The batch-size catch.** Speculation spends extra compute to save bandwidth-bound decode steps. At low concurrency that compute is free; at high concurrency the GPU is already busy and every rejected draft token is waste, which is why the classic advice was "turn it off at large batch." vLLM's **adaptive verification** (August 14, 2026; extended in v0.30 to MTP, EAGLE-3 and DFlash drafters) scores each draft position's survival probability and admits only a global top-B set of draft slots per step. On DeepSeek-V4-Pro-0813 the first of 7 draft tokens survives over 70% of the time and the last under 10%; vLLM reports speculation staying beneficial up to concurrency 256.
 
@@ -536,7 +536,7 @@ Unlike static batching, continuous batching injects new requests as soon as any 
 Caches the KV tensors of common prefixes (system prompts, tool definitions, few-shot examples, prior agent turns).
 - **TTFT reduction**: Prefill for the shared prefix is skipped, so savings scale with the shared fraction of the prompt. Agent loops with long, stable prefixes benefit most.
 - **Mechanism**: vLLM hashes fixed-size KV blocks into a chain keyed by everything before them; SGLang stores prefixes in a radix tree. Evicted blocks can spill down a tier chain: GPU HBM, then host DRAM, then disk, object storage or peer nodes.
-- **Security**: A shared prefix cache is a cross-tenant timing side channel, because a hit returns faster than a miss. Salt cache keys per tenant (vLLM `cache_salt`) and keep the engine patched: vLLM advisory GHSA-935w-9g4m-p28p, fixed in 0.30.0, found tool-continuation turns on one API path dropping the salt. Treat vLLM 0.32.0 as the floor; the August-September 2026 advisory wave also included a single-request engine kill and a model-load RCE (both fixed in 0.28.0), and October's fixes in 0.31.0 and 0.32.0 closed a generation hang behind a healthy `/health` and an image-decoding path to Ghostscript.
+- **Security**: A shared prefix cache is a cross-tenant timing side channel, because a hit returns faster than a miss. Salt cache keys per tenant (vLLM `cache_salt`) and keep the engine patched: vLLM advisory GHSA-935w-9g4m-p28p, fixed in 0.30.0, found tool-continuation turns on one API path dropping the salt. Treat vLLM 0.32.0 as the floor (0.33.0 on hosts that load third-party repositories); the August-September 2026 advisory wave also included a single-request engine kill and a model-load RCE (both fixed in 0.28.0), and October's fixes in 0.31.0 and 0.32.0 closed a generation hang behind a healthy `/health` and an image-decoding path to Ghostscript.
 
 ### Multi-LoRA Serving
 
