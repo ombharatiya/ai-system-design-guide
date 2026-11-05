@@ -835,7 +835,7 @@ async def track_usage(tenant_id: str, operation: Usage):
 
 **Residency as a priced tier:**
 
-Enterprise tenants that need in-region processing cost more to serve. Anthropic charges 1.1x for US-only inference (`inference_geo`) on Claude 4.6 and later models, OpenAI adds 10% on its data-residency endpoints for models released since March 5, 2026, and regional Claude endpoints on Bedrock and Google Cloud carry about a 10% premium over global ones. Route only residency-bound tenants to pinned regions, record the route in every usage row, and price it into the tier instead of paying the premium on all traffic.
+Enterprise tenants that need in-region processing cost more to serve. Anthropic charges 1.1x for US-only inference (`inference_geo`) on Claude 4.6 and later models, OpenAI adds 10% on its data-residency endpoints for models released since March 5, 2026, and regional Claude endpoints on Bedrock and Google Cloud carry about a 10% premium over global ones (on Google-managed Vertex, current models such as Opus 5.5 and Sonnet 5.5 get only `us` or `eu` multi-region residency at that premium, not a single region; see [Pricing and Costs](../02-model-landscape/03-pricing-and-costs.md)). Route only residency-bound tenants to pinned regions, record the route in every usage row, and price it into the tier instead of paying the premium on all traffic.
 
 ---
 

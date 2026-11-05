@@ -244,7 +244,7 @@ Everything above still applies to self-hosted engines: vLLM, SGLang and llama.cp
 
 | Provider | What changed |
 |----------|--------------|
-| Anthropic | Since API version `2026-10-21` (October 21, 2026), any `temperature`, `top_p` or `top_k` returns 400 on every Claude model, even at its default value; the new SDK majors (Python 2.0.0, TypeScript 1.0.0, Go 2.0.0) send that version by default. Before it, the 400 applied to non-default values on Claude 4.7 and later models, and Python SDK 1.0 (August 20, 2026) had already removed the parameters from the Messages method signatures. On Bedrock the new version works only for Claude 4.7 and later. |
+| Anthropic | Since API version `2026-10-21` (October 21, 2026), any `temperature`, `top_p` or `top_k` returns 400 on every Claude model, even at its default value; all eight new SDK and CLI majors (Python, TypeScript, Go, Java, C#, PHP, Ruby and the ant CLI) send that version by default. Before it, the 400 applied to non-default values on Claude 4.7 and later models, and Python SDK 1.0 (August 20, 2026) had already removed the parameters from the Messages method signatures. On Bedrock the new version works only for Claude 4.7 and later. |
 | Google | Deprecated `temperature`, `top_p` and `top_k` in the Gemini API on July 21, 2026. Gemini 3.8 Flash replaces `thinking_budget` with `thinking_level` (`low`, `medium` default, `high`). |
 | OpenAI | GPT-6 Astra (September 3, 2026) accepts no custom `temperature` or `top_p` and returns no logprobs. |
 
@@ -536,7 +536,7 @@ Unlike static batching, continuous batching injects new requests as soon as any 
 Caches the KV tensors of common prefixes (system prompts, tool definitions, few-shot examples, prior agent turns).
 - **TTFT reduction**: Prefill for the shared prefix is skipped, so savings scale with the shared fraction of the prompt. Agent loops with long, stable prefixes benefit most.
 - **Mechanism**: vLLM hashes fixed-size KV blocks into a chain keyed by everything before them; SGLang stores prefixes in a radix tree. Evicted blocks can spill down a tier chain: GPU HBM, then host DRAM, then disk, object storage or peer nodes.
-- **Security**: A shared prefix cache is a cross-tenant timing side channel, because a hit returns faster than a miss. Salt cache keys per tenant (vLLM `cache_salt`) and keep the engine patched: vLLM advisory GHSA-935w-9g4m-p28p, fixed in 0.30.0, found tool-continuation turns on one API path dropping the salt. Treat vLLM 0.32.0 as the floor (0.33.0 on hosts that load third-party repositories); the August-September 2026 advisory wave also included a single-request engine kill and a model-load RCE (both fixed in 0.28.0), and October's fixes in 0.31.0 and 0.32.0 closed a generation hang behind a healthy `/health` and an image-decoding path to Ghostscript.
+- **Security**: A shared prefix cache is a cross-tenant timing side channel, because a hit returns faster than a miss. Salt cache keys per tenant (vLLM `cache_salt`) and keep the engine patched: vLLM advisory GHSA-935w-9g4m-p28p, fixed in 0.30.0, found tool-continuation turns on one API path dropping the salt. Treat vLLM 0.32.0 as the floor (0.33.0 on hosts that load third-party repositories); the full advisory list and current floors live in [Serving Infrastructure](../04-inference-optimization/06-serving-infrastructure.md#operational-posture).
 
 ### Multi-LoRA Serving
 

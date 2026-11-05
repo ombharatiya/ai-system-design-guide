@@ -342,7 +342,7 @@ Exact match: FAIL (but clearly correct)
 
 **Problem:** Running each test once ignores model randomness.
 
-**Solution:** Run each case at least three times at the production effort setting and report confidence intervals. Temperature is no longer a lever on most frontier models: Claude API version `2026-10-21`, which Anthropic's new SDK majors (Python 2.0.0, TypeScript 1.0.0) send by default, returns 400 on any `temperature`, `top_p`, or `top_k` on every model (earlier versions reject non-default values on Claude 4.7 and later); Google deprecated temperature in the Gemini API; and GPT-6 Astra does not accept it. Variance is something you measure, not something you tune away.
+**Solution:** Run each case at least three times at the production effort setting and report confidence intervals. Temperature is no longer a lever on most frontier models: Claude API version `2026-10-21`, which all eight of Anthropic's new SDK and CLI majors send by default, returns 400 on any `temperature`, `top_p`, or `top_k` on every model (earlier versions reject non-default values on Claude 4.7 and later); Google deprecated temperature in the Gemini API; and GPT-6 Astra does not accept it. Variance is something you measure, not something you tune away.
 
 ### Pitfall 5: Cost Blindness
 

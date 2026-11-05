@@ -104,7 +104,7 @@ The RAG Triad is the foundational framework for evaluating RAG systems. It decom
 
 RAGAS (Retrieval Augmented Generation Assessment) is the most widely adopted open-source evaluation framework for RAG, providing reference-free metrics that do not require ground-truth answers.
 
-**Maintenance caveat (as of November 2026):** the repository (now vibrantlabsai/ragas) has had no commits since February 24, 2026, and its latest release is v0.4.3 (January 13, 2026). It is not archived, and the metric definitions below still hold, but pin the version, vendor the prompts you depend on, and keep a maintained alternative ready (DeepEval, or your tracing platform's native evaluators) in case a model-SDK change breaks it.
+**Maintenance caveat:** as of November 2026, the repository (now vibrantlabsai/ragas) has had no commits since February 24, 2026, and its latest release is v0.4.3 (January 13, 2026). It is not archived, and the metric definitions below still hold, but pin the version, vendor the prompts you depend on, and keep a maintained alternative ready (DeepEval, or your tracing platform's native evaluators) in case a model-SDK change breaks it.
 
 ### Core RAGAS Metrics
 

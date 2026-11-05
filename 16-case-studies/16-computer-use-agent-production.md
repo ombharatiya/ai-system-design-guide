@@ -211,7 +211,7 @@ We track these as SLOs:
 - Cost per task, target under $0.30
 - Audit-log integrity check pass rate, target 100 percent (daily replay sample)
 
-Observability stack: traces in [Langfuse](https://langfuse.com/) ([self-hosted v3+ docs](https://langfuse.com/docs/self-hosting)), screen recordings in S3 with object-lock, metric aggregation in Prometheus.
+Observability stack: traces in [Langfuse](https://langfuse.com/) ([self-hosted docs](https://langfuse.com/docs/self-hosting); the current Python SDK v5 needs Langfuse Cloud or a self-hosted server v4.59.0 or newer, so pin `langfuse<5` until the server is upgraded), screen recordings in S3 with object-lock, metric aggregation in Prometheus.
 
 ### Cost model
 

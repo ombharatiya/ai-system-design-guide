@@ -137,7 +137,7 @@ The Claude Agent SDK (renamed from the Claude Code SDK) provides the same tools,
 - **Controls**: `max_turns`, `max_budget_usd`, `effort`, and permission modes including classifier-based `auto` and `dontAsk`
 - **Deployment**: Claude API, Amazon Bedrock, Google Cloud (Vertex AI), and Microsoft Foundry
 - **Gotcha**: The SDK bundles the Claude Code CLI, so a CLI release can change defaults under you. When Claude Code made Opus 5.5 (2.1.280, Sep 22) and Sonnet 5.5 (2.1.284, Sep 28) the defaults, the SDK's own CI broke and had to pin models. Since 2.1.302 (Oct 16), SDK sessions with no permission mode start in `default` on third-party providers, with telemetry off, or on a fresh install. Always pass `model=` and `permission_mode=` explicitly.
-- **Hooks fail open by default**: a hook callback that raises, returns `None`, or returns a rejected value is treated as no decision, and the action runs. Claude Code 2.1.317 (Nov 2, 2026) added `onFailure: "block"`, exposed in Python `claude-agent-sdk` 0.2.177 (Nov 3) as `on_failure` on `HookMatcher`; the default stays `"continue"`, and passing `on_failure="block"` to an older bundled CLI raises `CLIConnectionError`. Set it on every security hook and pin a CLI that supports it.
+- **Hooks fail open by default**: a hook callback that raises or returns `None` lets the action run; set `on_failure="block"` on every security hook (Python `claude-agent-sdk` 0.2.177 or later, Claude Code 2.1.317 or later). Details in [Claude Code](09-claude-code.md).
 
 ### OpenAI Agents SDK
 

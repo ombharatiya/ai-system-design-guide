@@ -381,7 +381,7 @@ jobs:
           GIT_CONFIG_KEY_1: core.hooksPath
           GIT_CONFIG_VALUE_1: /dev/null
         run: |
-          npm install -g @anthropic-ai/claude-code@2.1.311   # pin the CLI version (stable channel)
+          npm install -g @anthropic-ai/claude-code@2.1.318   # pin the CLI version (at or above the 2.1.314 floor)
 
           printf '%s' "$ISSUE_BODY" | claude -p "Fix the bug described in the issue text on stdin.
           Rules:
@@ -402,7 +402,7 @@ jobs:
           branch: "ai-fix/${{ github.event.issue.number }}"
 ```
 
-Three details carry the security weight. The issue body is attacker-controlled, so it reaches the shell only through an environment variable (direct `${{ }}` interpolation into `run:` is a classic Actions injection) and reaches the model as data with a narrow tool allowlist. The checkout does not leave the job's write token in `.git/config`, so only the separate PR step can push. And the job pins the CLI, the model and the permission mode, so a Claude Code release cannot silently change any of them. Anthropic's `anthropics/claude-code-action` packages the same pattern if you prefer not to maintain the script. GitHub's own version of this architecture went GA on Oct 28, 2026: **GitHub Agentic Workflows** (an open source GitHub Next project, on Free, Team and Enterprise) defines automations such as issue triage, CI failure analysis and test writing in natural-language Markdown that compiles to standard Actions YAML, run by default on the Copilot CLI engine (Copilot license required) or another coding agent. Agents get read-only permissions by default and run in a sandboxed container behind the Agent Workflow Firewall, outputs pass through "safe outputs", and a separate threat-detection job scans proposed changes before they are applied. That output gate plus threat scan is the piece most hand-built pipelines skip.
+Three details carry the security weight. The issue body is attacker-controlled, so it reaches the shell only through an environment variable (direct `${{ }}` interpolation into `run:` is a classic Actions injection) and reaches the model as data with a narrow tool allowlist. The checkout does not leave the job's write token in `.git/config`, so only the separate PR step can push. And the job pins the CLI, the model and the permission mode, so a Claude Code release cannot silently change any of them. Anthropic's `anthropics/claude-code-action` packages the same pattern if you prefer not to maintain the script. GitHub's own version of this architecture went GA on Oct 28, 2026 as **GitHub Agentic Workflows** (details in the [coding agents guide](10-opencoderguide.md#github-copilot-microsoftopenai)). Its "safe outputs" gate, plus a separate threat-detection job that scans proposed changes before they are applied, is the piece most hand-built pipelines skip.
 
 ### Cost Model for CI
 

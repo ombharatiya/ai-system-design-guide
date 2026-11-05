@@ -658,7 +658,7 @@ Decision depends on several factors:
 - Specific compliance requirements
 - Want to avoid vendor lock-in
 
-Two 2026 changes narrow the gap: Pinecone BYOC (GA September 23) runs the data plane in your own cloud account with no inbound access from Pinecone, and Pinecone's BM25 full-text search (GA September 9) removes the "we need a separate keyword engine" argument, though you still fuse lexical and vector results client-side. Pinecone's pg_pinecone extension (October 27) adds a third route for Postgres shops: keep pgvector tables and move individual tables to a remote Pinecone engine only when they outgrow Postgres.
+Three 2026 changes narrow the gap: Pinecone BYOC (GA September 23) runs the data plane in your own cloud account with no inbound access from Pinecone, and Pinecone's BM25 full-text search (GA September 9) removes the "we need a separate keyword engine" argument, though you still fuse lexical and vector results client-side. And Pinecone's pg_pinecone extension (October 27) adds a route for Postgres shops: keep pgvector tables and move individual tables to a remote Pinecone engine only when they outgrow Postgres.
 
 For most startups, I would start with Pinecone or Qdrant Cloud for velocity, then evaluate migration if costs become prohibitive at scale. The switching cost is the re-embed and re-index, not the API: query surfaces are similar, but in-database embedding features tie you to the vendor's model choice.
 

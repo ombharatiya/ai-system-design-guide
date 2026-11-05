@@ -39,7 +39,7 @@ flowchart TB
         C1["Claude Opus 5.5, Sonnet 5.5, Haiku 5.5, Fable 5.1"]
         C2["GPT-6 Astra, GPT-6.1 Sol, GPT-6.1 Terra"]
         C3["Gemini 4 Argon, Gemini 3.8 Flash, Grok 4.7"]
-        C4["Open weights: MiMo-V2.6, GLM-5.3, Kimi K3, DeepSeek V4.1-Flash, Mistral Large 4"]
+        C4["Open weights: MiMo-V2.6, GLM-5.3, Kimi K3 and K3.1 Pro, DeepSeek V4.1-Flash, Mistral Large 4"]
     end
     L3 --> L1
     L2 --> L1
@@ -61,6 +61,7 @@ These models can be self-hosted, fine-tuned, and deployed without any API depend
 | Mistral Large 4 | Open weights Oct 29, 2026 | About 1T / 49B (52B with embeddings) | Mistral Ecosystem Open-Weight License: **any** MaaS business needs a separate commercial license, with no revenue threshold | API $0.70/$2.10 per 1M |
 | Meta Muse Spark Open | Oct 15, 2026 | 816B / 42B | Muse Model License, with a MaaS gate above US$20M revenue | Check the gate before building a hosted coding product on it |
 | Z.ai GLM-5.3 | Weights Aug 28, 2026 | 744B / 40B | MIT, plus a security review for MaaS providers above US$10B revenue in 12 months | API $1.40/$4.40 per 1M; 211/272 on the SWE-Bench Pro v2 private set |
+| Moonshot Kimi K3.1 Pro | Weights Nov 4, 2026 (API Oct 23) | 2.8T / 104B active | Kimi K3.1-Pro License: a custom MIT-like grant, not MIT; separate agreement for a MaaS business above US$20M revenue in 12 months; UI credit above 100M MAU or US$20M monthly revenue | About 1.56 TB of MXFP4 weights, 1M context; 46 on AA Index v5.0.1, the top open-weight score |
 | Moonshot Kimi K3 | July 2026 | 2.8T / 104B active | Custom: a separate agreement for companies that run any MaaS business and whose total revenue (with affiliates) exceeds US$20M over 12 months | 214/272 on SWE-Bench Pro v2 private; base for Cognition SWE-2 and Fireworks Ember-1 |
 | Z.ai GLM-5.3-Flash | Aug 26, 2026 | 320B / 18B | MIT | API $0.15/$0.50 per 1M |
 | DeepSeek V4.1-Flash | Sep 10, 2026; refreshed as V4.1-Flash-1017 (Oct 17), which now serves `deepseek-flash` | 552B backbone; 8B active in prefill, 16B in decode | MIT | Vendor-reported DeepSWE v1.1 74.2 at max effort (original release) |
@@ -71,7 +72,7 @@ These models can be self-hosted, fine-tuned, and deployed without any API depend
 
 **The license trap**: under the Qwen Community License 1.0, a startup building a coding agent on Qwen3.8-Flash-Next needs Alibaba's permission from day one, which is stricter than the license on Qwen's own 2.4T flagship (gate above US$50M revenue). Mistral Large 4 does the same for anyone selling it as a service, at any revenue, and Mistral Medium 3.5's Modified MIT license grants no rights above US$20M monthly revenue (Mistral deprecated Medium 3.5 and Large 3 on October 31; they retire April 30, 2027). Put license review in the model-selection checklist, next to evals.
 
-**Reading the general-intelligence gap**: on Artificial Analysis Intelligence Index v5.0 (October 27, 2026; 60% private or held-out sets, scores not comparable with v4.x), the top open-weight models score about 32 against 58 for Claude Opus 5.5 and 54 for Sonnet 5.5. On Scale's clean SWE-Bench Pro v2 private set, Kimi K3 and GLM-5.3 sit within about 3 to 4 points of Opus 5. Both can be true: open weights are close on well-scoped repository tasks and much further behind on broad, held-out evaluation, so test on your own task mix before assuming either number transfers.
+**Reading the general-intelligence gap**: on Artificial Analysis Intelligence Index v5.0.1 (November 3, 2026; 60% private or held-out sets, scores not comparable with v4.x), Kimi K3.1 Pro (weights published November 4) scores 46 and the best model AA labels open, DeepSeek V4.1 Flash 1017, scores 33 at max effort, against 59 for Claude Opus 5.5 at max, so the gap is 13 or 26 points depending on whether K3.1 Pro counts as open. Sonnet 5.5 scored 54 on v5.0 (October 27). On Scale's clean SWE-Bench Pro v2 private set, Kimi K3 and GLM-5.3 sit within about 3 to 4 points of Opus 5. Both can be true: open weights are close on well-scoped repository tasks and much further behind on broad, held-out evaluation, so test on your own task mix before assuming either number transfers.
 
 ### Older Small Models Still Used for Completions
 
@@ -110,7 +111,7 @@ Agentic coding on one 8-GPU node?
   → GLM-5.3-Flash or MiMo-V2.6-Flash (MIT); DeepSeek V4.1-Flash needs H200/B200-class memory
 
 Best self-hosted quality, multi-node budget?
-  → MiMo-V2.6-Pro, GLM-5.3 or Kimi K3 (check each license gate)
+  → MiMo-V2.6-Pro, GLM-5.3, Kimi K3.1 Pro or Kimi K3 (check each license gate)
 
 Building a coding-assistant product to sell?
   → Read the license first: Qwen Community License 1.0 requires a separate license
@@ -346,7 +347,7 @@ Both are retired as frontier signals: HumanEval is saturated, and Artificial Ana
 | Claude Opus 5.5 (API) | ~$0.56 | ~$16,800 | 58 | Every rate is exactly 2x Sonnet's, so 2x on any mix |
 | GPT-6.1 Sol (API) | ~$0.28 | ~$8,400 | 55 | Cache read $0.10 per 1M (0.05x); now level with Sonnet 5.5 on this workload |
 | GPT-6 Astra (API) | ~$1.74 | ~$52,000 | 57 | Cache read $1 per 1M; reserve for the hardest tasks |
-| DeepSeek V4.1-Flash (API, peak list, no cache discount assumed) | ~$0.23 | ~$6,900 | About 32 or lower (the top open-weight score) | Off-peak hours are half price; check the provider's cache-hit rate |
+| DeepSeek V4.1-Flash (API, peak list, no cache discount assumed) | ~$0.23 | ~$6,900 | 32 at max (v5.0; 33 on v5.0.1); Kimi K3.1 Pro, open weights since November 4, scores 46 | Off-peak hours are half price; check the provider's cache-hit rate |
 | Self-hosted GLM-5.3-Flash (one 8×H100 node, 24/7) | Depends on utilization | ~$16,900 infra | 28 | $2.93/GPU-hr (Silicon Data H100 index, Nov 1, 2026), before engineering and on-call time |
 
 **Key insights**:
@@ -375,7 +376,7 @@ What is your primary need?
 │  └─ VS Code embedded, MCP-native? → Cline
 │
 ├─ Self-hosted model for custom deployment?
-│  ├─ Best quality? → MiMo-V2.6-Pro, GLM-5.3 or Kimi K3 (check licenses)
+│  ├─ Best quality? → MiMo-V2.6-Pro, GLM-5.3, Kimi K3.1 Pro or Kimi K3 (check licenses)
 │  ├─ One node? → GLM-5.3-Flash or MiMo-V2.6-Flash
 │  ├─ Single GPU, Apache 2.0? → Qwen3.8-27B or Granite 4.2 30B
 │  └─ Fast completions / edge? → Qwen2.5-Coder-1.5B/7B or StarCoder2-3B
@@ -452,7 +453,7 @@ Here's how to build an internal AI coding platform. The 2026 shape is a **split 
 
 | Decision | Options | Recommendation |
 |----------|---------|----------------|
-| Model for agent | Claude Opus 5.5 / Sonnet 5.5, GPT-6.1 Sol, GPT-6 Astra, open-weight (GLM-5.3, Kimi K3, MiMo-V2.6) | Pin a model per task class (for example Sonnet 5.5 or GPT-6.1 Sol by default, a frontier model for hard tasks) and re-run your eval set on every release |
+| Model for agent | Claude Opus 5.5 / Sonnet 5.5, GPT-6.1 Sol, GPT-6 Astra, open-weight (GLM-5.3, Kimi K3.1 Pro, Kimi K3, MiMo-V2.6) | Pin a model per task class (for example Sonnet 5.5 or GPT-6.1 Sol by default, a frontier model for hard tasks) and re-run your eval set on every release |
 | Task intake | Manual, Jira webhook, GitHub label | GitHub label triggers Actions workflow |
 | Code execution | Local, Docker, microVM, self-hosted runner | Container or microVM inside your perimeter with an egress allowlist |
 | Human review | PR, Slack approval, automated | Required human PR review, never auto-merge; agent approvals do not count toward required reviews |
@@ -487,7 +488,7 @@ Three reasons:
 
 3. **Independence**: No silent model swaps on someone else's release schedule, and no per-platform retirement calendar.
 
-The quality gap has narrowed sharply on repository tasks: on Scale's clean SWE-Bench Pro v2 private set, Kimi K3 (78.7%) and GLM-5.3 (77.6%) sit within about 3 to 4 points of Claude Opus 5 (81.6%). It is still wide on broad held-out evaluation (top open-weight models score about 32 on Artificial Analysis Intelligence Index v5.0, against 58 for Claude Opus 5.5), so I would validate on our own task mix before moving hard work in-house. The cost argument is weaker than it used to be, because cache-heavy agent workloads are cheap on APIs, and the licenses need reading: Qwen3.8-Flash-Next cannot back a commercial coding assistant without a separate license.
+The quality gap has narrowed sharply on repository tasks: on Scale's clean SWE-Bench Pro v2 private set, Kimi K3 (78.7%) and GLM-5.3 (77.6%) sit within about 3 to 4 points of Claude Opus 5 (81.6%). It is still wide on broad held-out evaluation (Kimi K3.1 Pro, whose weights went public November 4, scores 46 on Artificial Analysis Intelligence Index v5.0.1 against 59 for Claude Opus 5.5 at max, and DeepSeek V4.1 Flash 1017, the best model AA labels open, scores 33 at max effort), so I would validate on our own task mix before moving hard work in-house. The cost argument is weaker than it used to be, because cache-heavy agent workloads are cheap on APIs, and the licenses need reading: Qwen3.8-Flash-Next cannot back a commercial coding assistant without a separate license.
 
 ### Q: How would you design the testing strategy for an AI coding agent in CI?
 
