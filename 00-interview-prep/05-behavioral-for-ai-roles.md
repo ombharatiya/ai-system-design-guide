@@ -135,7 +135,7 @@ Forward deployed engineer (FDE) loops add rounds that are behavioral in form and
 
 ### Theme 7: How You Use AI, and How You Verify It
 
-Candidates now report this as a screened competency rather than small talk. In candidate reports from September and October 2026, a Decagon behavioral round asked how you use AI tools and for a time one gave a wrong answer that looked right, a Microsoft MLE project deep dive probed whether AI-built prototypes were real and which judgment was the candidate's own, a Harvey PM round asked for concrete personal AI habits and their limits, and an NVIDIA director round asked when to trust AI output. Sierra's published onsite ends with a Review stage that covers how you used AI. In a project deep dive, expect the interviewer to separate your work from the tool's.
+Candidates now report this as a screened competency rather than small talk. In candidate reports from September and October 2026, a Decagon behavioral round asked how you use AI tools (a prep site's write-up adds a follow-up on a time one gave a wrong answer that looked right), a Microsoft MLE project deep dive probed whether AI-built prototypes were real and which judgment was the candidate's own, a Harvey PM round asked for concrete personal AI habits and their limits, and an NVIDIA director round asked when to trust AI output. Sierra's published onsite ends with a Review stage that covers how you used AI. In a project deep dive, expect the interviewer to separate your work from the tool's.
 
 **Questions to expect:**
 - How do you use AI tools day to day, and how do you check what they produce?
@@ -155,21 +155,21 @@ Prepare a one-sentence provenance line for each deep-dive project, such as: "I d
 
 ### Theme 8: Safety and Mission Screens at Frontier Labs
 
-At frontier labs the values check can come first, and it is not only a final-round formality. Candidates report Anthropic recruiter screens of 20 to 30 minutes weighted toward AI safety (July to October 2026): what safety means to you, how your work relates to it, a conflict between your work and your own ethics, your view of the company's recent decisions, and the most important safety risk in a product you might build. Onsite culture rounds reportedly ask where you disagree with the company's direction and how you weigh shipping speed against safety. OpenAI candidates report mission questions in onsite rounds: why OpenAI, and how to trade speed, quality, and safety (August and October 2026). These are candidate reports, not published rubrics.
+At frontier labs the values check can come first, and it is not only a final-round formality. Candidates report Anthropic recruiter screens of 20 to 30 minutes weighted toward AI safety (July to October 2026): what safety means to you, how your work relates to it, a conflict between your work and your own ethics, your view of the company's recent decisions, and the most important AI safety risk you see. Onsite culture rounds reportedly ask where you disagree with the company's direction and how you weigh shipping speed against safety. OpenAI candidates report mission questions in onsite rounds: why OpenAI, and how to trade speed, quality, and safety (August and October 2026). These are candidate reports, not published rubrics.
 
 **Questions to expect:**
 - What does AI safety mean to you, and how does your own work connect to it?
-- What is the most important safety risk in an AI product you would build, and how would you measure it?
+- What is the most important AI safety risk you see? How would it show up in a product you would build, and how would you measure it?
 - Where do you disagree with this company's direction?
 - Tell me about a time shipping speed and safety pulled in different directions.
 
 **What they look for:**
 - A view in your own words, not a recited mission statement. Read the company's recent safety publications and form an opinion on at least one
-- A risk named concretely, with a mechanism, a signal, and a control. For an over-agreeable assistant that tells users what they want to hear: the mechanism (optimizing for user approval), a signal (how often it agrees with prompts built on a known false premise), and a control (a release gate on that rate, plus product choices that do not reward compulsive use)
+- A risk named concretely, with a mechanism, a signal, and a control. One example of that shape, applied to a product you might build, is an over-agreeable assistant that tells users what they want to hear: the mechanism (optimizing for user approval), a signal (how often it agrees with prompts built on a known false premise), and a control (a release gate on that rate, plus product choices that do not reward compulsive use)
 - Specific, respectful disagreement. Agreeing with everything reads as unprepared, and contrarianism for effect reads worse
 - A speed-versus-safety story where you paid a real cost and set the exit criterion that let work resume ([Theme 5](#theme-5-responsible-ai) and [Example 6](#example-6-raising-a-concern-that-was-dismissed) show the shape)
 
-Worked spoken answers for both themes, and for the other rounds candidates reported between June and November 2026, are in the question bank's [Questions From Recent Interview Reports](01-question-bank.md#questions-from-recent-interview-reports). For the per-company loop shapes and AI-tool rules, see [What candidates reported](06-job-market-trends-2026.md#what-candidates-reported-june-to-november-2026).
+Worked spoken answers for both themes, and for the other rounds candidates reported, mostly between June and November 2026, are in the question bank's [Questions From Recent Interview Reports](01-question-bank.md#questions-from-recent-interview-reports). For the per-company loop shapes and AI-tool rules, see [What candidates reported](06-job-market-trends-2026.md#what-candidates-reported-june-to-november-2026).
 
 ---
 

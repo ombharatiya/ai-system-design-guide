@@ -1,6 +1,6 @@
 # AI System Design Interview Question Bank
 
-A topic-organized bank of 173 AI system design interview questions (Q1-Q173, continuously numbered) with model answers, follow-ups, and signals strong candidates show, plus five unnumbered deep-dive scenarios. Updated through October 2026, with a dedicated Voice AI section and a set built from recent candidate interview reports.
+A topic-organized bank of 173 AI system design interview questions (Q1-Q173, continuously numbered) with model answers, follow-ups, and signals strong candidates show, plus five unnumbered deep-dive scenarios. Updated through November 2026, with a dedicated Voice AI section and a set built from recent candidate interview reports.
 
 This chapter provides a comprehensive collection of interview questions organized by topic. Each question includes the depth of answer expected and key points that strong candidates cover. Pair this with the [Answer Frameworks](02-answer-frameworks.md) (the meta-skill that turns memorized answers into fluent ones), the [FAQ](07-faq.md) (short answers to the most-asked AI engineering questions), and the [Job Market Trends](06-job-market-trends-2026.md) (the hiring context that shapes what gets asked right now).
 
@@ -6326,11 +6326,11 @@ The economics reward narrow questions. A request of about 3,000 input tokens, co
 
 ## Questions From Recent Interview Reports
 
-*Built from what candidates reported being asked in AI engineering loops between June and November 2026, on public forums and interview-prep sites (PracHub, Aced, Hello Interview, Blind, Hacker News, and candidates' own write-ups). Every prompt is candidate-reported and paraphrased: companies do not confirm interview content, prep sites sometimes add their own follow-ups, and the same prompt can be retold across sites, so treat the attribution line under each question as "where candidates say this came up", not as a company's question list. The set covers round types the earlier sections only touch: design-doc review, model distribution and GPU scheduling, provider-side chat serving, implementing LLM pieces from scratch, building agents without a framework, AI-assisted coding and PR-review rounds, launch-readiness calls, safety and mission screens, and forward deployed decomposition. Rehearse them in the format they were reported in: timed, out loud, and for the coding rounds, with code that runs. The [job market chapter](06-job-market-trends-2026.md#what-candidates-reported-june-to-november-2026) summarizes the reported loop formats by company.*
+*Built from what candidates reported being asked in AI engineering loops, in reports posted mostly between June and November 2026 on public forums and interview-prep sites (PracHub, Aced, Hello Interview, Blind, Hacker News, and candidates' own write-ups). Every prompt is candidate-reported and paraphrased: companies do not confirm interview content, prep sites sometimes add their own follow-ups, and the same prompt can be retold across sites, so treat the attribution line under each question as "where candidates say this came up", not as a company's question list. The set covers round types the earlier sections only touch: design-doc review, model distribution and GPU scheduling, provider-side chat serving, implementing LLM pieces from scratch, building agents without a framework, AI-assisted coding and PR-review rounds, launch-readiness calls, safety and mission screens, and forward deployed decomposition. Rehearse them in the format they were reported in: timed, out loud, and for the coding rounds, with code that runs. The [job market chapter](06-job-market-trends-2026.md#what-candidates-reported-june-to-november-2026) summarizes the reported loop formats by company.*
 
 ### Q156: Your team wants a shared prompt playground: people co-edit prompts, save versions, run any version against several models, compare runs side by side, and share work with teammates. Some prompts run to hundreds of thousands of tokens and change a few characters at a time. Design it, including what happens when someone loses access while their run is still going.
 
-*Candidate-reported (July to October 2026): Anthropic SWE onsites; a similar "design the Playground" prompt from an OpenAI full-stack phone screen and SWE loops (undated). Round: system design.*
+*Candidate-reported (July to October 2026): Anthropic SWE onsites; a similar "design the Playground" prompt from an OpenAI full-stack phone screen and SWE loops (undated). Round: system design. The revocation and large-prompt follow-ups come from prep-site question pages.*
 
 **What interviewers look for:**
 - Runs that freeze their exact inputs (prompt version, resolved model, parameters, tools) so any result can be traced and rerun
@@ -6345,7 +6345,7 @@ The economics reward narrow questions. A request of about 3,000 input tokens, co
 
 1. **Draft:** one mutable document per prompt, co-edited through a CRDT such as Yjs, so concurrent edits merge without locks.
 2. **Version:** an immutable snapshot of template blocks, variable schema, tool definitions, model, and parameters, identified by a hash of that content. Editing never changes a version; it creates a new one.
-3. **Run:** one version plus its inputs, and a record of what was actually resolved at execution: the model snapshot the provider reports serving rather than the alias requested, the API version, and the parameters sent. Aliases move; in October Google began routing one Flash model ID to its successor. Pressing Run on a draft snapshots it into a version first, so no run ever points at mutable text.
+3. **Run:** one version plus its inputs, and a record of what was actually resolved at execution: the model snapshot the provider reports serving rather than the alias requested, the API version, and the parameters sent. Aliases move; in October Google began routing two Flash model IDs to newer models. Pressing Run on a draft snapshots it into a version first, so no run ever points at mutable text.
 
 **Comparison:** runs are grouped by dataset row, so the view shows version A against version B on the same inputs, with a text diff of the two versions above the outputs. One sample per side misleads, because the same version gives different outputs on reruns (Q131 covers why temperature 0 never prevented that), so comparisons default to several samples per row and show the spread.
 
@@ -6357,14 +6357,16 @@ The economics reward narrow questions. A request of about 3,000 input tokens, co
 
 **Follow-up to expect:** Two people are editing a draft and one presses Run mid-keystroke. What runs? (Exactly what that person saw. The Run request carries the hash of the clicking client's local snapshot, the server stores that snapshot as the version after the client uploads any chunks it lacks, and the other person's later edits land in the draft and the next version. The run page names the version that ran.)
 
-### Q157: In a design-review round you get a teammate's doc for a batched GPU inference API. An L4 load balancer spreads requests across GPU servers, each server keeps its own queue and runs batches of up to 100 requests in a 100 ms forward pass, an exact-match response cache sits in front, clients retry on timeout without request IDs, and there are no rate limits. Peak is 20,000 requests per second. Rank the flaws, size the fleet, explain why achieved throughput will miss the theoretical number, and say how one pool of 8-GPU nodes can serve both a model that needs all eight GPUs and one that needs a single GPU.
+### Q157: In a design-review round you get a teammate's doc for a batched GPU inference API that must handle 20,000 requests per second at peak. Rank the flaws, size the fleet, explain why achieved throughput will miss the theoretical number, and say how one pool of 8-GPU nodes can serve both a model that needs all eight GPUs and one that needs a single GPU.
 
-*Candidate-reported (July to November 2026): Anthropic SWE and EM onsites that replace a whiteboard design with a written doc review, plus a related phone screen on GPU inference; the doc above is reconstructed from several accounts, and details vary. Round: system design (design-doc review).*
+*Candidate-reported (July to November 2026, plus an EM report from February): Anthropic SWE and EM onsites that replace a whiteboard design with a written doc review, plus a related phone screen on GPU inference. No candidate published the actual doc; the version below is illustrative, built from the components candidates and a prep site describe. Round: system design (design-doc review).*
+
+**The doc:** an L4 load balancer spreads requests across GPU servers. Each server keeps its own queue and runs batches of up to 100 requests in a 100 ms forward pass. An exact-match response cache sits in front, clients retry on timeout without request IDs, and there are no rate limits.
 
 **What interviewers look for:**
 - Running it like a real review: read the whole doc, restate its goal, then rank issues by blast radius instead of commenting in document order
 - Capacity math from batch size and pass time, with named reasons achieved throughput falls short
-- The topics candidates say were probed: batching behind the load balancer, load shedding, cache hit rate, and idempotency (in a related phone screen, one candidate said round-robin balancing did not satisfy the interviewer)
+- The topics one candidate's account says get probed: batching behind the load balancer, load shedding, cache hit rate, and idempotency (in a related phone screen, one candidate said round-robin balancing did not satisfy the interviewer)
 
 **Strong answer:**
 
@@ -6372,12 +6374,12 @@ The economics reward narrow questions. A request of about 3,000 input tokens, co
 
 **Ranked flaws:**
 
-1. **Retries without request IDs, no rate limits, unbounded queues.** This is one failure, not three. A slow minute pushes latency past the client timeout, clients retry while the originals still run, load doubles, and the fleet stays overloaded after the trigger is gone. Fix: request IDs so a retry attaches to the in-flight request, per-tenant rate limits, bounded queues that return 429 with Retry-After, a client retry budget, and deadlines carried with each request so servers drop work whose caller has given up.
+1. **Retries without request IDs, no rate limits, unbounded queues.** This is one failure, not three. A slow minute pushes latency past the client timeout, clients retry while the originals still run, load doubles, and the fleet stays overloaded after the trigger is gone. Fix: request IDs so a retry attaches to the in-flight request, per-tenant rate limits, bounded queues that return 429 with Retry-After, a client retry budget, and deadlines carried with each request so servers drop work whose caller has given up. [Whiteboard Exercise 10](04-whiteboard-exercises.md#exercise-10-inference-batching-service-on-a-single-gpu) builds that admission path on a single GPU.
 2. **L4 balancing in front of per-server queues.** It balances connections, not work, can't see queue depth, and keeps feeding a slow server. Splitting traffic across N queues also fills batches more slowly than one shared queue. Fix: GPU workers pull batches from a shared queue, or an L7 router routes on queue depth. Pulling also stops work going to a dead server.
 3. **Exact-match cache.** On unique prompts the hit rate is often near zero, and for sampled outputs a cached answer changes semantics. If the key lacks tenant, model version, and parameters, it leaks across tenants and becomes blocking. Measure the hit rate before building it; prefix caching on the GPU usually pays more (Q70).
 4. **A crashed server loses its queue.** Leased work from the shared queue fixes this too.
 
-**Sizing:** in theory a GPU does 100 requests per 0.1 s, 1,000 per second, so 20 GPUs. Achieved is lower. If tokenizing, copying, and serializing add 25 ms per batch without overlapping the GPU, the cycle is 125 ms and the ceiling is 800 per second. Running at that ceiling means any burst grows the queue without bound, so I plan at 75% of it, 600 per second. 20,000 / 600 = 33.3, so 34 GPUs. Five 8-GPU hosts give 40, but losing one leaves 32, below 34, so I need six: 48 GPUs, 2.4 times the naive answer. The cache gets no credit until its hit rate is measured.
+**Sizing:** I'll assume each GPU runs its own batch and queue; if a 'server' is an 8-GPU host running one batch at a time, the 34 below means 34 hosts, eight times the GPUs. In theory a GPU does 100 requests per 0.1 s, 1,000 per second, so 20 GPUs. Achieved is lower. If tokenizing, copying, and serializing add 25 ms per batch without overlapping the GPU, the cycle is 125 ms and the ceiling is 800 per second. Running at that ceiling means any burst grows the queue without bound, so I plan at 75% of it, 600 per second. 20,000 / 600 = 33.3, so 34 GPUs. Five 8-GPU hosts give 40, but losing one leaves 32, below 34, so I need six: 48 GPUs, 2.4 times the naive answer. The cache gets no credit until its hit rate is measured.
 
 **Two models, one pool:** the 8-GPU model needs a whole node at once. If 1-GPU replicas spread one per node, no node is ever free and the big model starves. I pack 1-GPU replicas onto as few nodes as possible and reserve whole nodes for the big model, sizing each from its own batch math. With 100 ms passes, moving that boundary as demand shifts is cheap: stop admitting 1-GPU batches on a node and it's empty within one pass, plus a weight load. Q159 covers jobs that run for minutes.
 
@@ -6385,9 +6387,9 @@ The economics reward narrow questions. A request of about 3,000 input tokens, co
 
 **Follow-up to expect:** The author pushes back that request IDs need client changes they can't ship this quarter. What do you accept instead? (Server-side protection that needs no client change: bounded queues with fast 429s, per-tenant rate limits, and dropping requests older than the client timeout. Retries then fail fast instead of piling up, and request IDs follow as soon as clients can ship them.)
 
-### Q158: You need to push a new 500 GB model checkpoint to 1,000 GPU workers, and each host is capped at 10 Gbps up and 10 Gbps down. Give the lower bound on rollout time first, then design the distribution, make it resumable, make sure only replicas that fully loaded the right version get traffic, and explain how you'd debug a rollout stuck at 97%.
+### Q158: You need to push a new 500 GB model checkpoint to 1,000 GPU workers, and each host has a 10 Gbps NIC. Give the lower bound on rollout time first, then design the distribution, make it resumable, make sure only replicas that fully loaded the right version get traffic, and explain how you'd debug a rollout stuck at 97%.
 
-*Candidate-reported (July to October 2026): Anthropic SWE and MLE technical screens, plus a related prompt for a parallel, resumable model downloader. Round: system design.*
+*Candidate-reported (July to October 2026): Anthropic SWE and MLE technical screens and onsites, plus a related prompt for a parallel, resumable model downloader. Round: system design.*
 
 **What interviewers look for:**
 - A lower bound derived from first principles before any architecture, with the design measured against it
@@ -6396,11 +6398,11 @@ The economics reward narrow questions. A request of about 3,000 input tokens, co
 
 **Strong answer:**
 
-"Two clarifications change the numbers: is the source one host, or a blob store that can serve the whole fleet at once, and does each worker need the whole file? If the 1,000 workers are GPUs in 125 eight-GPU hosts, each host holding one tensor-parallel replica, only 125 hosts download. I'll take the hard version: one seed and 1,000 hosts that each need all 500 GB.
+"Three clarifications change the numbers: is the 10 Gbps per direction or shared between upload and download, is the source one host or a blob store that can serve the whole fleet at once, and does each worker need the whole file? If the 1,000 workers are GPUs in 125 eight-GPU hosts, each host holding one tensor-parallel replica, only 125 hosts download. I'll take the hard version: one seed and 1,000 hosts that each need all 500 GB.
 
-**Lower bound.** 10 Gbps is 1.25 GB/s. Every host must receive 500 GB, so nothing beats 500 / 1.25 = 400 seconds, about 6.7 minutes. Upload agrees: 1,000 copies is 500 TB, and 1,001 hosts uploading at 1.25 GB/s supply about 1,251 GB/s, again about 400 seconds. Serving traffic shares the NIC, so if distribution gets 70% of it, the bound becomes 500 / 0.875, about 571 seconds.
+**Lower bound.** 10 Gbps is 1.25 GB/s. If the NIC is full duplex, every host must receive 500 GB, so nothing beats 500 / 1.25 = 400 seconds, about 6.7 minutes. Upload agrees: 1,000 copies is 500 TB, and 1,001 hosts uploading at 1.25 GB/s supply about 1,251 GB/s, again about 400 seconds. If the 10 Gbps is shared between directions, every byte a worker receives is also sent by some host, so the fleet pushes 1,000 TB of sends plus receives through about 1,251 GB/s: each host moves about 1 TB, and the bound doubles to about 800 seconds, 13.3 minutes. Serving traffic shares the NIC too, so if distribution gets 70% of it, the bounds become 500 / 0.875, about 571 seconds, or about 1,140 seconds on a shared NIC. Ethernet NICs run full duplex, so I'll design for that and confirm it, because the shared reading doubles the target.
 
-**Why obvious designs miss it.** One seed sending to everyone pushes 500 TB through 1.25 GB/s: 400,000 seconds, about 4.6 days. A binary tree needs 9 levels below the seed (2 + 4 + ... + 512 covers 1,022 hosts); each parent splits its upload between two children, so if every host waits for the whole file before forwarding, each level takes 800 seconds and the rollout takes 2 hours. Forwarding chunks as they arrive cuts the tree to about 800 seconds, still twice the bound, because the leaves, half the hosts, upload nothing. A pipelined chain of 64 MB chunks (51.2 ms each at 1.25 GB/s) finishes after 7,813 + 999 chunk times, about 451 seconds. But one slow host stalls everyone behind it.
+**Why obvious designs miss it.** One seed sending to everyone pushes 500 TB through 1.25 GB/s: 400,000 seconds, about 4.6 days. A binary tree needs 9 levels below the seed (2 + 4 + ... + 512 covers 1,022 hosts); each parent splits its upload between two children, so if every host waits for the whole file before forwarding, each level takes 800 seconds and the rollout takes 2 hours. Forwarding chunks as they arrive cuts the tree to about 800 seconds, still twice the bound, because the leaves, half the hosts, upload nothing. A pipelined chain of 64 MB chunks (51.2 ms each at 1.25 GB/s) finishes after 7,813 + 999 chunk times, about 451 seconds. On a shared NIC each relay splits 1.25 GB/s between receiving and sending, so the same chain takes about 900 seconds against the 800-second bound. But one slow host stalls everyone behind it.
 
 **Design:**
 
@@ -6416,7 +6418,7 @@ The economics reward narrow questions. A request of about 3,000 input tokens, co
 
 ### Q159: You run a video-generation service where each job holds one GPU for several minutes. Free, paid, and enterprise users share the fleet, users cancel jobs they no longer want, some newer models need a full 8-GPU node, and some customers have deadlines. Design the scheduler: fair queueing, cancellation that actually frees the GPU, mixing 8-GPU and 1-GPU jobs, deadlines, and cold starts.
 
-*Candidate-reported (June to October 2026): OpenAI SWE phone screen and onsite (a Sora-style service, one GPU per task); Anthropic MLE technical screen (8-GPU and 1-GPU work on one pool); Cohere senior SWE final round (a GPU fleet with cold starts). Round: system design.*
+*Candidate-reported (June to October 2026): OpenAI SWE onsite design rounds (a Sora-style service, one GPU per task); Anthropic MLE technical screen (8-GPU and 1-GPU work on one pool); Cohere senior SWE final round (a GPU fleet with cold starts). Round: system design.*
 
 **What interviewers look for:**
 - Fairness across tiers and across users within a tier, with numbers for what happens when demand exceeds the fleet
@@ -6467,7 +6469,7 @@ Heartbeat leases requeue jobs from dead workers at their last checkpoint, and a 
 
 ### Q161: A legal team gives you a 60-page contract and a playbook of 40 rules, such as a liability cap of at most 12 months of fees, no unilateral termination, and payment within 45 days. Design an agent that revises the contract until every rule is satisfied: how you decompose the work, merge edits that overlap, handle an edit to a defined term that changes meaning throughout the document, verify each rule, and evaluate each stage.
 
-*Candidate-reported (August to October 2026): Harvey SWE and AI agent role onsites, in three separate accounts; one describes a chain of follow-ups on evaluating each component. Round: LLM system design.*
+*Candidate-reported (August to October 2026): Harvey SWE and AI agent role onsites, in two candidate reports and a prep-site question page; the defined-term follow-up comes from that page, and one report describes a chain of follow-ups on evaluating each component. Round: LLM system design.*
 
 **What interviewers look for:**
 - Decomposing per rule while recognizing that rules interact through shared clauses and defined terms
@@ -6481,7 +6483,7 @@ Heartbeat leases requeue jobs from dead workers at their last checkpoint, and a 
 **Pipeline:**
 
 1. **Parse into structure.** Clauses with stable IDs, a defined-terms table mapping each term to its definition and every use, and a cross-reference graph. The document's own structure and deterministic parsing do most of this; the model only labels clause types.
-2. **Assess per rule.** One call per rule returns compliant, non-compliant, not applicable, or needs a human, with cited clause IDs. A non-compliant result proposes an edit as an operation on a clause ID (replace this span, insert after that clause), never a rewritten document. Each rule sees the whole contract rather than retrieved clauses: 60 pages is about 40K tokens, so 40 rules cost 1.6M input tokens per pass. With the contract as a cached prefix (Q70) that's affordable, and a definition missed on page 50 is exactly the error lawyers punish.
+2. **Assess per rule.** One call per rule returns compliant, non-compliant, not applicable, or needs a human, with cited clause IDs. A non-compliant result proposes an edit as an operation on a clause ID (replace this span, insert after that clause), never a rewritten document. Each rule sees the whole contract rather than retrieved clauses: 60 pages is about 40K tokens, so 40 rules cost 1.6M input tokens per pass. With the contract as a cached prefix (Q70) that's affordable, if one assessor call goes first to write the cache and the other 39 fan out after it: a cache entry is usable only once the response that wrote it has started, so 40 calls fired at once all pay full price. And a definition missed on page 50 is exactly the error lawyers punish.
 3. **Merge with a single writer.** Workers only propose; a coordinator owns the document. Edits to different clauses apply directly. Overlapping edits go to a merge call that sees both rules and both proposals and writes one edit satisfying both, or escalates a true conflict (30 days' notice against 60) to a human, with playbook priority as the tie-breaker. Each proposal records the clause version it was based on; if that clause has changed, the proposal is regenerated, not applied.
 4. **Defined terms.** An edit to a definition changes every clause that uses the term, so the terms table turns it into a dependency set: every rule whose cited clauses use the term is reassessed. Renames are applied deterministically to every use. The merge step prefers editing the operative clause over the definition, because narrowing 'Confidential Information' to fix one rule silently changes a dozen obligations.
 5. **Verify everything.** After merging, all 40 assessors rerun on the revised contract, not just the edited rules, because fixing rule 12 can break rule 7. Deterministic checks confirm cross-references resolve and every term used is defined. At most three rounds; anything still failing goes to the lawyer with the reason.
@@ -6510,7 +6512,7 @@ Heartbeat leases requeue jobs from dead workers at their last checkpoint, and a 
 
 **Strong answer:**
 
-"Scale is out of scope, so I'll spend the time on the model. Two assumptions to confirm: rules belong to one agent, and the renderer is a black box that must never see a draft.
+"Q63 covers versioning prompts behind a pointer; this round is the data model and concurrency rules underneath it. Scale is out of scope, so I'll spend the time on the model. Two assumptions to confirm: rules belong to one agent, and the renderer is a black box that must never see a draft.
 
 **Entities:**
 
@@ -6524,7 +6526,7 @@ Heartbeat leases requeue jobs from dead workers at their last checkpoint, and a 
 - `POST /agents/{id}/drafts` branches from the live deployment.
 - `PUT` and `DELETE /drafts/{id}/rules/{rule_id}`, with the draft's revision in `If-Match` so two editors of one draft don't clobber each other.
 - `POST /drafts/{id}/publish` validates, freezes the draft into a deployment, and moves the pointer only if the live deployment is still the draft's base. Otherwise it returns 409 and the author rebases. Without that check, publishing a week-old draft quietly reverts whatever shipped since.
-- `POST /agents/{id}/rollback` with `{to, expected}` creates a *new* deployment that copies the old snapshot. History stays append-only, so 'what was live at 14:02' always has an answer.
+- `POST /agents/{id}/rollback` with `{to, expected}` creates a *new* deployment that copies one of that agent's earlier snapshots. History stays append-only, so 'what was live at 14:02' always has an answer.
 - `GET /agents/{id}/config` is the renderer's only read: resolved rules plus the deployment ID as an ETag. The renderer caches by ETag and stamps the deployment ID on every conversation, so a complaint traces to an exact rule set.
 
 **Publish-time validation** is where the value is: schema checks, a conflict lint ('under three sentences' against a rule requiring the full refund policy), and a replay of saved conversations under the new rules before the pointer moves.
@@ -6538,7 +6540,7 @@ Heartbeat leases requeue jobs from dead workers at their last checkpoint, and a 
 
 **The judgment call:** the baseline moves. When the base model upgrades, every skill reruns its comparison, and skills whose lift falls to zero retire automatically. A procedure last quarter's model needed can be dead weight in this quarter's context."
 
-**Reference sketch:** in memory, to pin down the semantics. In SQL the pointer swap is a conditional `UPDATE ... WHERE deployment_id = :expected`, and a zero row count is the 409.
+**Reference sketch:** in memory, to pin down the semantics. In SQL the pointer swap is a conditional `UPDATE ... WHERE deployment_id = :expected`, and a zero row count is the 409. That never matches before an agent's first publish, when no pointer row exists, so the first publish is an `INSERT ... ON CONFLICT DO NOTHING`, and there too a zero row count is the 409.
 
 ```python
 import itertools
@@ -6573,6 +6575,8 @@ class RuleStore:
         return dep
 
     def rollback(self, agent, to_id, expected):    # a new deployment that copies an old one
+        if self.deps[to_id].agent != agent:        # never copy another agent's rules
+            raise ValueError(f"deployment {to_id} belongs to {self.deps[to_id].agent!r}")
         return self._deploy(agent, self.deps[to_id].rules, expected, f"rollback to {to_id}")
 
     def _deploy(self, agent, rules, expected, reason):
@@ -6660,7 +6664,8 @@ def step(new, cache):                         # prefill (many tokens) or decode 
 
 toks = rng.integers(0, V, T)
 cache = {"k": np.zeros((KVH, 0, Dh)), "v": np.zeros((KVH, 0, Dh))}
-logits = [step(toks[:5], cache)] + [step(toks[i:i + 1], cache) for i in range(5, T)]
+logits = [step(toks[:5], cache), step(toks[5:8], cache)]   # prefill, then a chunk after a cached prefix
+logits += [step(toks[i:i + 1], cache) for i in range(8, T)]  # then decode one token at a time
 assert np.allclose(np.vstack(logits), forward_full(toks), atol=1e-9)  # cached == full pass
 alt = toks.copy(); alt[-1] = (alt[-1] + 1) % V                     # change only the last token
 assert np.allclose(forward_full(alt)[:-1], forward_full(toks)[:-1])  # earlier logits must not move
@@ -6684,7 +6689,7 @@ assert np.allclose(forward_full(alt)[:-1], forward_full(toks)[:-1])  # earlier l
 **Training:**
 
 1. Split into words and count them, so the loop works on distinct words with frequencies, not the raw text.
-2. Count adjacent symbol pairs, weighted by word frequency.
+2. Count adjacent symbol pairs, weighted by word frequency. Like most implementations, this counts overlapping pairs, so a lone 'aaa' counts ('a', 'a') twice and clears a threshold of 2 even though only one merge fits there. I'd say so when pinning down the threshold.
 3. Take the most frequent pair, breaking ties by the pair itself so the same corpus always gives the same merges. If its count is below the threshold, stop.
 4. Merge it everywhere, non-overlapping and left to right, so 'aaa' becomes 'aa' plus 'a'. Record its rank.
 
@@ -6824,7 +6829,7 @@ print("Dawid-Skene:  ", (dawid_skene(L, K).argmax(1) == truth).mean())   # about
 
 ### Q166: You get a notebook with a model SDK and starter code that answers a question with a single tool call (a stock-price lookup). With no agent framework, turn it into a multi-step, multi-tool agent loop, then cut the number of model turns it needs. Cover stopping conditions and error handling.
 
-*Candidate-reported (January to November 2026): Anthropic SWE screens (undated reports of about 55 minutes in a notebook with a Messages API wrapper); Cresta SWE AI-assisted coding (September); Sierra AI engineer live coding (January); Basis MLE round debugging an existing agent loop (September). Round: coding.*
+*Candidate-reported (January to October 2026, plus undated Anthropic reports): Anthropic SWE screens (about 55 minutes in a notebook with a Messages API wrapper); Cresta SWE AI-assisted coding (September); Sierra AI engineer live coding (January); Basis MLE round debugging an existing agent loop (September). Round: coding.*
 
 **What interviewers look for:**
 - A correct loop: the assistant message appended with its tool calls, one result per call ID, repeated until the model stops calling tools
@@ -6842,7 +6847,7 @@ print("Dawid-Skene:  ", (dawid_skene(L, K).argmax(1) == truth).mean())   # about
 3. If there are no tool calls, return the text.
 4. Otherwise run each call, append one message with a result per call ID, and go around again.
 
-**Error handling.** Tool failures are data, not exceptions. An unknown tool, bad arguments, a timeout, or a downstream 500 goes back as an error result with a message the model can act on ('unknown symbol ZZZZ'), and it usually recovers next turn. API-level 429s and 5xx responses are retried with backoff at the client layer and don't count as turns. A reply cut off at the token limit is never executed: a half-written tool call is not a tool call.
+**Error handling.** Tool failures are data, not exceptions. An unknown tool, bad arguments, a timeout, or a downstream 500 goes back as an error result with a message the model can act on ('unknown symbol ZZZZ'), and it usually recovers next turn. API-level 429s and 5xx responses are retried with backoff at the client layer and don't count as turns. A reply cut off at the token limit is never executed: a half-written tool call is not a tool call. Any other unexpected stop reason, such as a refusal, ends the run with an error instead of passing empty text off as an answer.
 
 **Stopping conditions:** a turn cap, a total tool-call cap, a token or cost budget, and a repeat detector that stops when the same call with the same arguments comes back a third time. Each limit raises a distinct error, so the caller knows whether the task was too big or the agent was stuck. Q87 covers the production version of these guards.
 
@@ -6859,13 +6864,19 @@ I measure turns per task and accuracy on a fixed set of about 20 tasks before an
 
 **The judgment call:** no framework here. The loop is about 30 lines, and owning it is how you know where every turn and token goes."
 
-**Reference sketch:** written against the Anthropic Messages API shapes (`tool_use` blocks out, `tool_result` blocks back). With OpenAI Chat Completions the calls arrive in `message.tool_calls` and results go back as `tool` role messages; the loop is otherwise the same.
+**Reference sketch:** written against the Anthropic Messages API shapes (`tool_use` blocks out, `tool_result` blocks back). With OpenAI Chat Completions the calls arrive in `message.tool_calls`, results go back as `tool` role messages, and the stop field is `finish_reason`; the loop is otherwise the same.
 
 ```python
 import json
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 
-class AgentStopped(Exception): pass
+class AgentStopped(Exception): pass          # one subclass per limit, so the caller knows which
+class Truncated(AgentStopped): pass
+class TurnLimit(AgentStopped): pass
+class CallBudget(AgentStopped): pass
+class TokenBudget(AgentStopped): pass
+class AgentStuck(AgentStopped): pass
 
 def run_tool(use, impls):            # errors go back to the model as data, never crash the loop
     result = {"type": "tool_result", "tool_use_id": use.id}
@@ -6876,26 +6887,38 @@ def run_tool(use, impls):            # errors go back to the model as data, neve
     except Exception as e:
         return {**result, "content": f"{type(e).__name__}: {e}", "is_error": True}
 
-def run_agent(client, model, tools, impls, task, max_turns=8, max_calls=20):
+def run_agent(client, model, tools, impls, task, max_turns=8, max_calls=20,
+              max_tokens_total=200_000, max_repeats=3):
     """client: an Anthropic SDK client (messages.create); tools: JSON-schema specs;
     impls: tool name -> Python function. Returns the final text answer."""
-    messages, calls = [{"role": "user", "content": task}], 0
+    messages, calls, spent = [{"role": "user", "content": task}], 0, 0
+    repeats = Counter()                                # (tool, arguments) -> times requested
     for _ in range(max_turns):
         resp = client.messages.create(model=model, max_tokens=2048,
                                       tools=tools, messages=messages)
+        spent += resp.usage.input_tokens + resp.usage.output_tokens
         if resp.stop_reason == "max_tokens":           # a cut-off tool call is not safe to run
-            raise AgentStopped("reply truncated; raise max_tokens or shrink the task")
+            raise Truncated("reply truncated; raise max_tokens or shrink the task")
+        if resp.stop_reason not in ("end_turn", "tool_use", "stop_sequence"):
+            raise AgentStopped(f"model stopped with {resp.stop_reason!r}")   # e.g. a refusal
         messages.append({"role": "assistant", "content": resp.content})
         uses = [b for b in resp.content if b.type == "tool_use"]
         if not uses:                                   # no tool calls: the model is done
             return "".join(b.text for b in resp.content if b.type == "text")
+        if spent > max_tokens_total:
+            raise TokenBudget(f"{spent} tokens spent; the budget is {max_tokens_total}")
         calls += len(uses)
         if calls > max_calls:
-            raise AgentStopped(f"tool-call budget of {max_calls} exceeded")
+            raise CallBudget(f"tool-call budget of {max_calls} exceeded")
+        for u in uses:                                 # same call, same arguments: stuck
+            key = (u.name, json.dumps(u.input, sort_keys=True))
+            repeats[key] += 1
+            if repeats[key] >= max_repeats:
+                raise AgentStuck(f"{u.name} requested {max_repeats} times with {u.input}")
         with ThreadPoolExecutor(max_workers=8) as pool:   # one turn's calls run together
             results = list(pool.map(lambda u: run_tool(u, impls), uses))
         messages.append({"role": "user", "content": results})  # all results, one message
-    raise AgentStopped(f"no answer after {max_turns} turns")
+    raise TurnLimit(f"no answer after {max_turns} turns")
 ```
 
 **Follow-up to expect:** A tool sends an email, and the call times out. Do you retry? (Not blindly, because the send may have succeeded. Side-effecting tools take an idempotency key derived from the task and the call, so a retry returns the original result instead of sending twice; read-only tools can retry freely.)
@@ -6906,44 +6929,54 @@ def run_agent(client, model, tools, impls, task, max_turns=8, max_calls=20):
 
 **What interviewers look for:**
 - Model output treated as untrusted input: validated against the allowed set, retried with the error, and flagged rather than invented
-- Concurrency sized from the rate limit, with per-request backoff that honors retry-after and never stalls the other requests
+- Requests paced to the rate limit and concurrency sized from it, with per-request backoff that honors retry-after and never stalls the other requests
 - Order, resumability, and testability designed in: results keyed by row, checkpointed as they finish, and a fake model and fake sleep in the tests
 
 **Strong answer:**
 
 "Four questions first: how big are the files, is the category list fixed, what are the provider's request and token limits, and does the caller wait for the answer? For a few thousand rows the endpoint can be synchronous. Past that it's a job: `POST /jobs` returns an ID, `GET /jobs/{id}` returns progress and then the result. The core function serves both.
 
-**Parsing.** The `csv` module, never `split(',')`, because quoted fields contain commas and newlines. Handle a byte-order mark, blank lines, and a missing header with a 400 that names the problem.
+**Parsing.** The `csv` module, never `split(',')`, because quoted fields contain commas and newlines. Strip a byte-order mark, skip blank lines, keep a ragged row's extra fields instead of crashing on them, and answer a missing header with a 400 that names the problem.
 
-**The LLM call.** The prompt lists the allowed categories and marks the row as data, since a row that says 'ignore previous instructions' is still just a row. Where the provider supports structured output with an enum, I use it. Either way I validate: normalize case and whitespace, map to the canonical spelling, and if the answer isn't allowed, retry with the error in the prompt. After a few attempts the row gets `null` and a review flag. The model never gets to invent a category.
+**The LLM call.** The prompt lists the allowed categories and marks the row as data, since a row that says 'ignore previous instructions' is still just a row. Where the provider supports structured output with an enum, I use it. Either way I validate: normalize case, whitespace, a trailing period, and surrounding quotes, map to the canonical spelling, and if the answer isn't allowed, retry with the error in the prompt. After a few attempts the row gets `null` and a review flag. The model never gets to invent a category.
 
-**Concurrency.** A semaphore bounds in-flight calls, sized with Little's law: at 600 requests per minute and 2 seconds per call, 10 per second times 2 seconds is 20 in flight, which saturates the limit. More concurrency only buys 429s. Token limits get the same arithmetic using average row size.
+**Concurrency.** Two controls, because a semaphore alone doesn't enforce a rate: it caps calls in flight, so when calls get faster (short rows, fast errors) the request rate climbs past the limit. A token bucket enforces the limit itself: at 600 requests per minute, calls start at most 10 per second, and a second bucket does the same for tokens per minute, charged with each row's estimated size. A semaphore caps calls in flight, sized with Little's law so it doesn't hold throughput below the limit: 10 per second times 2 seconds per call is 20 in flight, plus headroom if latency varies. Q32 covers rate limits and quotas more broadly.
 
-**Retries.** On a 429, a 5xx, or a timeout, that request alone sleeps for the server's retry-after, or for jittered exponential backoff if there isn't one. It waits outside the semaphore so a sleeping request doesn't hold a slot. No global sleep, no busy-wait, deadlines on a monotonic clock. If many requests hit 429 together, the limit is shared, so I also lower concurrency for a while instead of letting everyone retry in lockstep. A timed-out call may have succeeded; here that only costs money, but a call with side effects would need an idempotency key.
+**Retries.** On a 429, a 5xx, a dropped connection, or a timeout, that request alone sleeps for the server's retry-after (zero means retry now, not 'no header'), or for jittered exponential backoff if there isn't one. It waits outside the semaphore so a sleeping request doesn't hold a slot. No global sleep, no busy-wait, deadlines on a monotonic clock. If many requests hit 429 together, the limit is shared, so I also lower the bucket's rate for a while instead of letting everyone retry in lockstep. A timed-out call may have succeeded; here that only costs money, but a call with side effects would need an idempotency key.
 
 **Order.** Results are keyed by row and assembled at the end. For streaming output, a small reorder buffer releases row N only after every earlier row is done.
 
 **Resumability.** Each finished row goes to a durable store keyed by a hash of the row, the prompt version, and the model, so a rerun skips it and a prompt change correctly invalidates everything. Failed rows aren't checkpointed, so a rerun retries them.
 
-**Tests.** A fake model that returns off-list categories, raises 429s with and without retry-after, and hangs past the timeout, plus an injected sleep so retry tests take milliseconds. I assert order, validity, peak concurrency, and that a rerun calls the model only for unfinished rows.
+**Tests.** A fake model that returns off-list categories, raises 429s with and without retry-after, and hangs past the timeout, plus an injected sleep so retry tests take milliseconds. I assert order, validity, peak concurrency, starts per second, and that a rerun calls the model only for unfinished rows.
 
 **The judgment call:** for a large file nobody is waiting on, I'd skip most of this and send it through the provider's discounted batch API, keeping the same validation and checkpointing. The concurrent path is for when a user is watching a spinner."
 
-**Reference sketch:** the core the HTTP handler calls. `llm` is a stub for the provider SDK call, and `done` stands in for the durable checkpoint store.
+**Reference sketch:** the core the HTTP handler calls. `llm` is a stub for the provider SDK call, and `done` stands in for the durable checkpoint store. It paces requests only; a tokens-per-minute bucket and the shared slowdown after a burst of 429s follow the same pattern.
 
 ```python
 import asyncio, csv, io, json, random
 
-class RateLimited(Exception):         # raised by the client wrapper on HTTP 429
+class Retryable(Exception):   # raised by the client wrapper on 429, any 5xx, or a dropped connection
     def __init__(self, retry_after=None): self.retry_after = retry_after
 
-async def classify_csv(csv_text, categories, llm, done, concurrency=8, attempts=5,
+def norm(s): return " ".join(s.lower().split()).strip(" .'\"")   # " Billing. " -> "billing"
+
+async def classify_csv(csv_text, categories, llm, done, rate=10, concurrency=20, attempts=5,
                        timeout=30, sleep=asyncio.sleep):
     """llm(prompt) -> str is the provider call (stub). done maps row key -> category and
     stands in for a durable store, so a rerun skips finished rows. Tests inject a fake sleep."""
-    rows = list(csv.DictReader(io.StringIO(csv_text)))   # quoted commas and newlines handled
-    allowed = {c.strip().lower(): c for c in categories}
-    gate = asyncio.Semaphore(concurrency)
+    text = io.StringIO(csv_text.lstrip("\ufeff"))          # drop a byte-order mark
+    rows = list(csv.DictReader(text, restkey="_extra"))    # quoted commas, newlines, ragged rows
+    allowed = {norm(c): c for c in categories}
+    gate = asyncio.Semaphore(concurrency)                  # caps calls in flight
+    loop, next_start = asyncio.get_running_loop(), 0.0
+
+    async def pace():                                      # caps call starts at `rate` per second
+        nonlocal next_start
+        now = loop.time()                                  # monotonic clock
+        next_start = max(now, next_start) + 1 / rate
+        await sleep(next_start - 1 / rate - now)
 
     async def one(row):
         key = json.dumps(row, sort_keys=True)   # in production: hash of row, prompt version, model
@@ -6953,10 +6986,12 @@ async def classify_csv(csv_text, categories, llm, done, concurrency=8, attempts=
                   f"<row>{json.dumps(row)}</row>")
         for attempt in range(attempts):
             try:
-                async with gate:                         # bounds in-flight calls, not total rows
-                    answer = (await asyncio.wait_for(llm(prompt), timeout)).strip().lower()
-            except (RateLimited, asyncio.TimeoutError) as e:   # wait outside the gate
-                delay = getattr(e, "retry_after", None) or min(2 ** attempt, 30) * random.random()
+                async with gate:
+                    await pace()                         # retries count against the rate too
+                    answer = norm(await asyncio.wait_for(llm(prompt), timeout))
+            except (Retryable, asyncio.TimeoutError) as e:   # wait outside the gate
+                delay = getattr(e, "retry_after", None)      # 0 means retry now, not "no header"
+                if delay is None: delay = min(2 ** attempt, 30) * random.random()
                 await sleep(delay)
                 continue
             if answer in allowed:
@@ -6995,16 +7030,16 @@ async def classify_csv(csv_text, categories, llm, done, concurrency=8, attempts=
 **Compacting after every message.** The naive version recounts the whole history on each message and drops one message at a time, which is quadratic over a long conversation. Instead:
 
 - Count each message once with the target model's tokenizer and keep a running total.
-- Group messages into units. An assistant message that makes tool calls and the results that answer it form one unit, because APIs reject a tool result whose call is missing, and a call without its result invites the model to make it again.
+- Group messages into units. An assistant message that makes tool calls and the results that answer it form one unit, because OpenAI and Anthropic both reject either half on its own with a 400: a tool result whose call is missing, or a tool call with no result after it.
 - On each add, while the total exceeds the budget, pop units off the front of a deque and subtract their size. The newest unit is never dropped.
-- The budget is the context limit minus room for output and for the summary. Dropped units go to a background job that maintains a rolling summary: the new summary covers the old summary plus what was just dropped, so its cost stays flat as the conversation grows.
-- The summary goes first, as a user turn, which also keeps the window from opening on an assistant message or an orphaned result. Until the job finishes, a placeholder holds the spot.
+- The budget is the context limit minus room for output, the summary, and pinned messages (see the judgment call). Dropped units go to a background job that maintains a rolling summary: the new summary covers the old summary plus what was just dropped, so its cost stays flat as the conversation grows.
+- The summary goes right after the pinned messages, as a user turn, which also keeps the window from opening on an assistant message or an orphaned result. Until the job finishes, a placeholder holds the spot.
 
-**Oversized messages.** One 40,000-token tool result would evict everything else. Anything over a quarter of the available budget becomes a stub recording its size and ID, and the agent can fetch it again with a tool if it needs it (Q112's just-in-time loading).
+**Oversized messages.** One 40,000-token tool result would evict everything else. Anything over a quarter of the available budget becomes a stub recording its size and ID, and the agent can fetch it again with a tool if it needs it (Q112's just-in-time loading). So does a result that would push its unit past the budget, because one call with many parallel results can overflow it even when each result is under the cap. Stubs still cost a few tokens each, so the one remaining way over budget is a newest unit with more parallel results than even their stubs can fit.
 
 **Edge cases I'd test:** empty history; a page repeating an earlier message; a cursor cycle; a failure on the last page; parallel tool calls whose results arrive as separate messages; a message bigger than the whole budget.
 
-**The judgment call:** I pin the original task statement and any constraints the user stated outside the eviction queue. Oldest-first is right for chatter and wrong for the one message that says what the agent is for."
+**The judgment call:** I pin the original task statement and any constraints the user stated outside the eviction queue (`pinned` in the sketch). Oldest-first is right for chatter and wrong for the one message that says what the agent is for."
 
 **Reference sketch:** messages use OpenAI's shape, where results have role `tool`. In Anthropic's shape results arrive in a user message as `tool_result` blocks, so the grouping test checks for those instead.
 
@@ -7031,16 +7066,19 @@ def load_history(fetch_page, max_pages=1000, retries=4):   # fetch_page(cursor) 
     raise RuntimeError("page limit reached")
 
 class History:      # newest messages within budget; a tool call and its results leave together
-    def __init__(self, budget, summary_reserve, count_tokens, max_share=0.25):
-        self.limit, self.count = budget - summary_reserve, count_tokens
+    def __init__(self, budget, summary_reserve, count_tokens, pinned=(), max_share=0.25):
+        self.count, self.pinned = count_tokens, list(pinned)   # e.g. the task: never evicted
+        self.limit = budget - summary_reserve - sum(map(count_tokens, self.pinned))
         self.cap = int(self.limit * max_share)           # no single message may crowd out the rest
         self.units, self.total, self.dropped, self.summary = deque(), 0, [], None
 
     def add(self, msg):
-        if (n := self.count(msg)) > self.cap:            # keep a stub; the agent can refetch by id
+        joins = msg["role"] == "tool" and bool(self.units)   # a result joins the call it answers
+        room = self.limit - (self.units[-1][1] if joins else 0)
+        if (n := self.count(msg)) > min(self.cap, room): # keep a stub; the agent can refetch by id
             msg = {**msg, "content": f"[{n} tokens omitted; refetch message {msg['id']}]"}
             n = self.count(msg)
-        if msg["role"] == "tool" and self.units:         # a result joins the call it answers
+        if joins:
             self.units[-1][0].append(msg); self.units[-1][1] += n
         else:
             self.units.append([[msg], n])
@@ -7050,8 +7088,9 @@ class History:      # newest messages within budget; a tool call and its results
             self.total -= size; self.dropped += unit     # a background job summarizes these
             self.summary = self.summary or {"role": "user", "content": "[earlier turns omitted]"}
 
-    def window(self):                                    # summary first, as a user turn
-        return ([self.summary] if self.summary else []) + [m for u, _ in self.units for m in u]
+    def window(self):                                    # pinned, then the summary as a user turn
+        summary = [self.summary] if self.summary else []
+        return self.pinned + summary + [m for u, _ in self.units for m in u]
 ```
 
 **Follow-up to expect:** Your provider caches prompt prefixes. Does evicting one unit per message hurt? (Yes: once the conversation is at the budget, every eviction changes the prompt right after the system prompt, so the cache misses on nearly everything, every turn. Evict in chunks with hysteresis, for example down to 70% of the budget whenever it crosses 100%, so the prefix stays stable for many turns between evictions; Q70 covers designing for cache hits.)
@@ -7116,11 +7155,11 @@ class History:      # newest messages within budget; a tool call and its results
 
 ### Q171: In a behavioral round or project deep dive, the interviewer asks how you use AI in your work and for a time it was confidently wrong, then probes the project you're presenting: which parts were yours and which were the tool's, how you verified them, and who chose the metric.
 
-*Candidate-reported (July to October 2026): Decagon SWE behavioral; Harvey PM behavioral; Microsoft MLE project deep dive; NVIDIA SWE director round on trusting AI output; an Anthropic project deep dive that asked who decided the business metric; a Ramp recruiter screen built around AI use (undated). Round: behavioral and project deep dive.*
+*Candidate-reported (July to October 2026): Decagon SWE behavioral; Harvey PM behavioral; Microsoft MLE project deep dive; NVIDIA SWE director round on trusting AI output; an Anthropic project deep dive that asked who decided the business metric; a Ramp recruiter screen built around AI use (undated). Round: behavioral and project deep dive. The confidently-wrong follow-up comes from a prep-site write-up.*
 
 **What interviewers look for:**
 - Specific habits with boundaries (what you delegate, what you never delegate, and the check you run) instead of "I always review it"
-- A confidently-wrong story where the error looked right, something other than the model caught it, and a habit changed; weak answers pick a trivial error, blame the tool, or name no check
+- A confidently-wrong story where the error looked right, something other than the model caught it, it nearly drove a real decision, and a habit changed; weak answers pick an error a compiler would catch, blame the tool, or name no check
 - Clear provenance in the deep dive: your decisions, the tool's drafts, and who owned the metric and the eval, offered before you're asked
 
 **Strong answer:**
@@ -7135,15 +7174,13 @@ Two habits came out of it. For any query that feeds a decision, I state the grai
 
 **The project split.** I'll mark it on the architecture slide. The support lead and I chose the metric, resolved with no reopen within seven days, because the old 'closed' metric rewarded closing tickets early. I designed the eval split and labeled 200 tickets against a written guideline. The assistant wrote most of the pipeline glue and the first drafts of the tests; I rewrote the tests for the edge cases and wrote the triage prompt, taking some of its suggestions. The prototype I'll demo ran on real exported tickets, not a mock. Point at any file and I'll tell you whose first draft it was.
 
-**What I can show you.** The reconciliation query, the before-and-after numbers, the commit that added the grain check, and the labeling guideline. If I can't show the check, I don't claim it.
-
-**Why this story:** the model wasn't wrong about syntax a compiler would catch. It was wrong in a way that looked right, the check that caught it wasn't the model, it nearly drove a real decision, and it changed how I work. A story that's missing any of those four tells you less about how I'll work with these tools on your team."
+**What I can show you.** The reconciliation query, the before-and-after numbers, the commit that added the grain check, and the labeling guideline. If I can't show the check, I don't claim it."
 
 **Follow-up to expect:** Would you have caught it without the support team's dashboard? (Honestly, not then, which is why the fix is a habit and not luck: today the grain check, counting rows per ticket ID before aggregating, flags any ticket that appears twice without needing a second source to exist.)
 
-### Q172: A recruiter screen or culture round asks you to name the most important safety risk in an AI product you would build, for example a consumer assistant people talk to every day, explain how you would measure it, and then say how you trade shipping speed against safety and where you disagree with the company's direction.
+### Q172: A recruiter screen or culture round asks you to name the most important AI safety risk you see, explain how you would measure it, and then say how you trade shipping speed against safety and where you disagree with the company's direction.
 
-*Candidate-reported (July to October 2026): Anthropic recruiter screens and onsite culture rounds (SWE, including Senior+); OpenAI onsite mission rounds (Senior+ SWE, full-stack). Round: recruiter screen and culture.*
+*Candidate-reported (July to October 2026): Anthropic recruiter screens and onsite culture rounds (SWE, including Senior+, and MLE); OpenAI onsite mission rounds (Senior+ SWE, full-stack). Round: recruiter screen and culture. The consumer-assistant framing in the answer below is this bank's example, not part of a reported prompt.*
 
 **What interviewers look for:**
 - A specific risk tied to a product mechanism, with a plan to measure it, instead of a general statement that safety matters
@@ -7152,7 +7189,7 @@ Two habits came out of it. For any query that feeds a decision, I state the grai
 
 **Strong answer:**
 
-"For a daily consumer assistant, the risk I'd rank first is sycophancy that the product's own metrics reward: an assistant that agrees with users when they're wrong, validates bad decisions, and becomes something people lean on more than is good for them. It's first because it's the default outcome, not an edge case. Preference feedback rewards agreement, engagement metrics reward dependence, and memory teaches the model what each person wants to hear. And it hides in satisfaction scores, because people rate agreement highly.
+"The question is broad, so I'll make it concrete with a product I could build: a consumer assistant people talk to every day. There, the risk I'd rank first is sycophancy that the product's own metrics reward: an assistant that agrees with users when they're wrong, validates bad decisions, and becomes something people lean on more than is good for them. It's first because it's the default outcome, not an edge case. Preference feedback rewards agreement, engagement metrics reward dependence, and memory teaches the model what each person wants to hear. And it hides in satisfaction scores, because people rate agreement highly.
 
 **How I'd measure it:**
 

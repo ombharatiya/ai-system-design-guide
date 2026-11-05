@@ -99,7 +99,7 @@ flowchart TD
 | November 2026 models (Claude Opus 5.5, Sonnet 5.5, Haiku 5.5, Fable 5.1, GPT-6 Astra/Sol/Luna, GPT-6.1 Sol/Terra, Gemini 4 Argon, Gemini 3.8 Flash, Grok 4.7, Muse Wonder, Muse Spark 1.3, DeepSeek V4.1-Flash, Mistral Large 4, MiMo-V2.6, GLM-5.3, Kimi K3, Qwen3.8) | Stuck on GPT-4 |
 | MCP spec 2026-07-28, A2A v1.0.1, OpenClaw, Computer Use, full-duplex voice agents, Agentic RAG, ColBERT, latent reasoning, MoE serving | Does not exist |
 | Real pricing with November 2026 verification dates | Already wrong |
-| Staff-level interview Q&A (173 questions through October 2026, including Voice AI and rounds from recent candidate reports) + Job Market Trends | Generic questions |
+| Staff-level interview Q&A (173 questions through November 2026, including Voice AI and rounds from recent candidate reports) + Job Market Trends | Generic questions |
 
 **Quick model picker (November 2026):**
 
@@ -119,7 +119,7 @@ Full breakdown in [Model Taxonomy](02-model-landscape/01-model-taxonomy.md) and 
 
 **This guide IS:**
 - A staff-level reference for designing production AI systems (RAG, agents, MCP, eval pipelines, multi-tenant isolation).
-- An interview-prep companion with 173 real questions (including a Voice AI set and a set built from recent candidate interview reports), answer frameworks with a worked mock transcript, and ten whiteboard exercises through October 2026.
+- An interview-prep companion with 173 real questions (including a Voice AI set and a set built from recent candidate interview reports), answer frameworks with a worked mock transcript, and ten whiteboard exercises through November 2026.
 - A living document tracking new model releases, protocol changes, and emerging patterns as they ship.
 - Opinionated about tradeoffs: latency vs cost, accuracy vs faithfulness, single-agent vs multi-agent.
 - Free, MIT-licensed, and open to PRs from practitioners.
@@ -271,7 +271,7 @@ This guide gives you **concrete patterns**, **real tradeoffs**, and **production
 AI system design is the discipline of architecting production-grade systems built around LLMs, retrieval, agents, and evaluation. It covers model selection, RAG pipelines, agent orchestration, memory, observability, and safety. See [LLM Internals](01-foundations/01-llm-internals.md) and [AI Design Patterns](15-ai-design-patterns/) to get oriented.
 
 ### How do I prepare for an AI engineering interview?
-Start with the [Question Bank](00-interview-prep/01-question-bank.md) (173 questions through October 2026), then practice with [Answer Frameworks](00-interview-prep/02-answer-frameworks.md) and [Whiteboard Exercises](00-interview-prep/04-whiteboard-exercises.md). Most senior interviews test RAG design, agent debugging, multi-tenant isolation, and cost/latency tradeoffs, all covered in the [Case Studies](16-case-studies/). Before a real loop, do at least one timed mock with someone who will interrupt and push back; you can book one with Om on [EngineBogie](https://enginebogie.com/u/ombharatiya) or [Topmate](https://topmate.io/ombharatiya).
+Start with the [Question Bank](00-interview-prep/01-question-bank.md) (173 questions through November 2026), then practice with [Answer Frameworks](00-interview-prep/02-answer-frameworks.md) and [Whiteboard Exercises](00-interview-prep/04-whiteboard-exercises.md). Most senior interviews test RAG design, agent debugging, multi-tenant isolation, and cost/latency tradeoffs, all covered in the [Case Studies](16-case-studies/). Before a real loop, do at least one timed mock with someone who will interrupt and push back; you can book one with Om on [EngineBogie](https://enginebogie.com/u/ombharatiya) or [Topmate](https://topmate.io/ombharatiya).
 
 ### What is RAG (Retrieval-Augmented Generation)?
 RAG is a pattern where an LLM retrieves relevant context from an external knowledge source (vector DB, search index, graph) before generating an answer, reducing hallucinations and grounding responses in your data. The full pipeline is covered in [RAG Fundamentals](06-retrieval-systems/01-rag-fundamentals.md) and scaled in [Production RAG at Scale](06-retrieval-systems/14-production-rag-at-scale.md).
