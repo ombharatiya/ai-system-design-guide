@@ -45,7 +45,7 @@ Function calling is structured generation where the LLM "picks" a function and p
 
 **Nuance**: **Parallel Function Calling** is now standard. A model can decide to call 5 different tools simultaneously (e.g., check account balance, check credit score, check loan rates) and aggregate the results.
 
-**The forced-tool trick is retired on the newest Claude models.** For two years the standard way to get JSON from Claude was to define a tool with the target schema and force it with `tool_choice`. Claude Fable 5.1 (September 1, 2026), Opus 5.5 (September 22), and Sonnet 5.5 (September 28) return a 400 for `tool_choice` types `any` and `tool`; `auto` and `none` still work. Assistant prefill (starting the reply with `{`) already returns a 400 on Claude 4.6 and later models. The replacements:
+**The forced-tool trick is retired on the newest Claude models.** For two years the standard way to get JSON from Claude was to define a tool with the target schema and force it with `tool_choice`. Claude Fable 5.1 (September 1, 2026), Opus 5.5 (September 22), and Sonnet 5.5 (September 28) return a 400 for `tool_choice` types `any` and `tool`; `auto` and `none` still work. Haiku 5.5 (October 7) still accepts a forced tool choice, but the response then starts with the tool call and has no thinking block, so structured outputs are the better path there too. Assistant prefill (starting the reply with `{`) already returns a 400 on Claude 4.6 and later models. The replacements:
 
 | Old pattern | Replacement |
 |-------------|-------------|
@@ -86,7 +86,7 @@ For complex data extraction (e.g., 50 fields from a medical record), don't do it
 - **Stage 1 (Text-to-Text)**: Extract a "messy" but complete set of facts in natural language.
 - **Stage 2 (Text-to-JSON)**: Use a smaller, cheaper model to convert those natural language facts into a strict JSON schema.
 - **Benefit**: Reduces "hallucination under pressure": large models struggle when forced to reason AND follow strict syntax simultaneously. On reasoning models this matters less, because the thinking phase is unconstrained and only the final answer is schema-bound.
-- **Drop the `reasoning` field on the newest Claude models.** A common trick was to put a `reasoning` string first in the schema so the model "thinks" before filling the answer fields. On Claude Fable 5.1, Opus 5.5, and Sonnet 5.5, a `reasoning`, `thinking`, or `trace` field in JSON output or a tool input is a listed trigger for `reasoning_extraction` refusals. Let native thinking do that work, and if you need a rationale for audit, use a short `explanation` or `evidence` field.
+- **Drop the `reasoning` field on the newest Claude models.** A common trick was to put a `reasoning` string first in the schema so the model "thinks" before filling the answer fields. On Claude Fable 5.1, Opus 5.5, Sonnet 5.5, and Haiku 5.5, a `reasoning`, `thinking`, or `trace` field in JSON output or a tool input is a listed trigger for `reasoning_extraction` refusals. Let native thinking do that work, and if you need a rationale for audit, use a short `explanation` or `evidence` field.
 
 ---
 

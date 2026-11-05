@@ -283,8 +283,10 @@ Langfuse provides tracing, evaluation, datasets, experiments, and prompt managem
 #### Install and Configure
 
 ```bash
-pip install langfuse openai
+pip install "langfuse>=4,<5" openai  # samples here target SDK v4
 ```
+
+Pin the major version. Langfuse shipped Python SDK v5 on October 14, 2026, and a bare `pip install langfuse` now installs it (5.2.0 on November 5, Python 3.11 or later). v5 needs Langfuse Cloud or a self-hosted server at v4.59.0 or newer and removes several v4 calls, including `api.scores_v3.get_many_v3()` (now `api.scores.get_many()`), `api.trace.get/list`, `api.legacy.*` and `set_current_trace_io()`; port with the [v4 to v5 upgrade guide](https://langfuse.com/docs/observability/sdk/upgrade-path/python-v4-to-v5).
 
 ```python
 # Set environment variables (or pass to constructor)
@@ -1183,7 +1185,7 @@ with ThreadPoolExecutor(max_workers=20) as executor:
     results = list(executor.map(run_judge, all_traces))
 ```
 
-**Pin the judge, not just the prompt.** These examples use `gpt-4o`, and the plain OpenAI version sets `temperature=0`, because that model still accepts sampling parameters. Newer models increasingly do not: since Anthropic API version `2026-10-21`, which its Python 2.0.0 and TypeScript 1.0.0 SDKs send by default, any `temperature`, `top_p`, or `top_k` returns a 400 on every Claude model, even at the default value (under earlier versions Claude 4.7 and later models already rejected non-default values); Google deprecated the same parameters in the Gemini API (July 21, 2026); and GPT-6 Astra accepts no custom `temperature`, `top_p` or logprobs. On these models, reproducibility comes from pinning the exact model ID and reasoning effort, logging both with every judge run, and re-measuring TPR/TNR on your test set whenever either changes. Judge models also retire on a schedule. `claude-sonnet-4-5-20250929` leaves the Claude API on November 30, 2026, and Microsoft Foundry lists November 15 for Claude Haiku 4.5. The `gpt-4o` in these examples has a date too: OpenAI shuts down the remaining dated GPT-4o and GPT-4o mini snapshots (`gpt-4o-2024-08-06`, `gpt-4o-2024-11-20`, `gpt-4o-mini-2024-07-18`) and fine-tunes of them on January 14, 2027, naming `gpt-6-luna` as the replacement. A judge validated on any of these needs re-validation on its replacement before its date.
+**Pin the judge, not just the prompt.** These examples use `gpt-4o`, and the plain OpenAI version sets `temperature=0`, because that model still accepts sampling parameters. Newer models increasingly do not: since Anthropic API version `2026-10-21`, which all eight of its new SDK and CLI majors (Python and TypeScript included) send by default, any `temperature`, `top_p`, or `top_k` returns a 400 on every Claude model, even at the default value (under earlier versions Claude 4.7 and later models already rejected non-default values); Google deprecated the same parameters in the Gemini API (July 21, 2026); and GPT-6 Astra accepts no custom `temperature`, `top_p` or logprobs. On these models, reproducibility comes from pinning the exact model ID and reasoning effort, logging both with every judge run, and re-measuring TPR/TNR on your test set whenever either changes. Judge models also retire on a schedule. `claude-sonnet-4-5-20250929` leaves the Claude API on November 30, 2026, and Microsoft Foundry lists November 15 for Claude Haiku 4.5. The `gpt-4o` in these examples has a date too: OpenAI shuts down the remaining dated GPT-4o and GPT-4o mini snapshots (`gpt-4o-2024-08-06`, `gpt-4o-2024-11-20`, `gpt-4o-mini-2024-07-18`) and fine-tunes of them on January 14, 2027, naming `gpt-6-luna` as the replacement. A judge validated on any of these needs re-validation on its replacement before its date.
 
 **Example result:** Raw pass rate on 1000 traces = 84.4%
 
@@ -1784,7 +1786,7 @@ start = end - timedelta(days=7)
 
 # Fetch spans by name with the v2 observations API (SDK v4). The v1 trace
 # endpoints behind langfuse.api.trace.list()/get() are deprecated, and
-# Langfuse Cloud serves them only until November 16, 2026.
+# Langfuse Cloud serves them only until November 16, 2026; SDK v5 removed them.
 for state_name in STATES:
     cursor = None
     while True:
@@ -2470,7 +2472,7 @@ phoenix serve
 
 **Langfuse:**
 ```bash
-pip install langfuse openai
+pip install "langfuse>=4,<5" openai  # samples target v4; v5 removed some APIs
 # Sign up at cloud.langfuse.com or self-host
 ```
 
@@ -2681,7 +2683,7 @@ Use your platform's built-in UI (Phoenix or Langfuse both have dashboards), or b
 
 - **judgy** - Statistical bias correction for LLM judges: [github.com/ai-evals-course/judgy](https://github.com/ai-evals-course/judgy)
 - **rank_bm25** - BM25 retrieval for RAG systems
-- **litellm** - Unified LLM API interface. Never install 1.82.7, 1.82.8 or 1.107.0: all three were compromised (malware advisory GHSA-92x9-889m-jgmw), 1.107.0 with its container images on October 21, 2026. Pin packages by hash and proxy images by digest. If you run the LiteLLM proxy, run 1.100.4, 1.101.3, 1.102.2, 1.103.1 or later on your line (CVE-2026-114612, CVSS 9.9, exploitable in the default configuration from 1.91.0); Enterprise-licensed proxies need 1.103.10, 1.104.8, 1.105.6 or 1.106.5 (GHSA-w4c7-34wj-hqm8, CVSS 10.0). Keep `allow_client_side_credentials=false` so callers cannot redirect stored provider keys through `api_base`. See [Securing the Gateway](11-infrastructure-and-mlops/03-ai-gateways-and-model-routing.md#securing-the-gateway)
+- **litellm** - Unified LLM API interface. Never install 1.82.7, 1.82.8 or 1.107.0: all three were compromised (malware advisory GHSA-92x9-889m-jgmw), 1.107.0 with its container images on October 21, 2026. Take 1.108.0 (November 4) rather than anything on the 1.107 line, and do not treat a passing `cosign verify` as proof: the poisoned 1.107.0 images carry a valid signature from LiteLLM's old, likely exposed signing key (replaced October 23), so re-pin verification policies to the new key and check digests against LiteLLM's compromised-build list. Pin packages by hash and proxy images by digest. If you run the LiteLLM proxy, run 1.100.4, 1.101.3, 1.102.2, 1.103.1 or later on your line (CVE-2026-114612, CVSS 9.9, exploitable in the default configuration from 1.91.0); Enterprise-licensed proxies need 1.103.10, 1.104.8, 1.105.6 or 1.106.5 (GHSA-w4c7-34wj-hqm8, CVSS 10.0). Keep `allow_client_side_credentials=false` so callers cannot redirect stored provider keys through `api_base`. See [Securing the Gateway](11-infrastructure-and-mlops/03-ai-gateways-and-model-routing.md#securing-the-gateway)
 
 ### Key Principles (Revisited)
 
@@ -3219,7 +3221,7 @@ langfuse = get_client()
 end = datetime.now(timezone.utc)
 
 # v2 observations API (SDK v4). The v1 endpoints behind langfuse.api.trace.list()
-# and .get() are deprecated; Langfuse Cloud serves them only until November 16, 2026.
+# and .get() are deprecated (SDK v5 removed them); Langfuse Cloud serves them only until November 16, 2026.
 # Their replacement is this endpoint: filter by trace_id, or group results by trace_id.
 observations = langfuse.api.observations.get_many(
     trace_id="trace_id",
@@ -3454,7 +3456,7 @@ Start today. Your future self will thank you.
 | **Arize Phoenix** | Observability & evals | ELv2 | [GitHub](https://github.com/Arize-ai/phoenix) · [Docs](https://arize.com/docs/phoenix) |
 | **Promptfoo** | CLI/CI evals, red teaming | MIT (OpenAI-owned) | [GitHub](https://github.com/promptfoo/promptfoo) · [Docs](https://www.promptfoo.dev/docs/intro/) |
 | **Langfuse** | Custom pipelines & tracing | MIT | [GitHub](https://github.com/langfuse/langfuse) · [Docs](https://langfuse.com/docs) |
-| **RAGAS** | RAG-specific evaluation | Apache 2.0 | [GitHub](https://github.com/explodinggradients/ragas) · [Docs](https://docs.ragas.io/) |
+| **RAGAS** | RAG-specific evaluation (no commits since February 24, 2026; v0.4.3 from January 13, 2026 is latest, so pin it) | Apache 2.0 | [GitHub](https://github.com/vibrantlabsai/ragas) · [Docs](https://docs.ragas.io/) |
 | **Comet Opik** | LLM tracing & evaluation | Apache 2.0 | [GitHub](https://github.com/comet-ml/opik) · [Site](https://www.comet.com/site/products/opik/) |
 | **judgy** | Statistical bias correction | Open | [GitHub](https://github.com/ai-evals-course/judgy) |
 | **Braintrust** | Experimentation & logging | Partial | [Docs](https://www.braintrust.dev/docs) |

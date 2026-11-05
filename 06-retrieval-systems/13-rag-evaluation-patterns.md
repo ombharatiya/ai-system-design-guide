@@ -104,6 +104,8 @@ The RAG Triad is the foundational framework for evaluating RAG systems. It decom
 
 RAGAS (Retrieval Augmented Generation Assessment) is the most widely adopted open-source evaluation framework for RAG, providing reference-free metrics that do not require ground-truth answers.
 
+**Maintenance caveat:** as of November 2026, the repository (now vibrantlabsai/ragas) has had no commits since February 24, 2026, and its latest release is v0.4.3 (January 13, 2026). It is not archived, and the metric definitions below still hold, but pin the version, vendor the prompts you depend on, and keep a maintained alternative ready (DeepEval, or your tracing platform's native evaluators) in case a model-SDK change breaks it.
+
 ### Core RAGAS Metrics
 
 ```
@@ -512,13 +514,13 @@ Frontier rows use Claude Opus 5.5 prices; GPT-6 Sol at $2 / $10 roughly halves t
 
 | Tool | Best For | Open Source | Key Strength | Key Weakness |
 |------|----------|------------|--------------|--------------|
-| **RAGAS** | Quick RAG evaluation, synthetic data | Yes | Reference-free metrics, strong community | Metric results lack explanations |
+| **RAGAS** | Quick RAG evaluation, synthetic data | Yes | Reference-free metrics, widely adopted | Metric results lack explanations; no commits since February 2026 (v0.4.3 is latest), so pin it |
 | **DeepEval** | CI/CD integration, TDD for LLMs | Yes | pytest-compatible, self-explaining scores | Heavier setup |
 | **TruLens** | RAG Triad evaluation, observability | Yes | Coined the RAG Triad, good tracing | Less active development |
 | **UpTrain** | Production monitoring, drift detection | Yes | Hybrid eval (LLM + heuristic), drift alerts | Lower ranking accuracy |
 | **Braintrust** | Team collaboration, experiment tracking | Commercial | Best UI/UX, experiment comparison | Paid for advanced features |
 | **LangSmith** | Tracing, evals, trace-to-fine-tune loop | Commercial | Deepest LangChain/LangGraph integration; SDK and OTel ingestion for other stacks | Usage-based LSU pricing since Oct 1, 2026 (1 LSU = $1); SaaS extended-retention traces capped at 180 days (from Sep 14, 2026): not an audit log |
-| **Langfuse** | Self-hosted tracing + evals | Yes | OTel-native, exportable; Python SDK 4.x (`@observe()`; the v2 `trace()` API is gone) | Self-hosting means operating ClickHouse, Redis and object storage alongside Postgres |
+| **Langfuse** | Self-hosted tracing + evals | Yes | OTel-native, exportable; Python SDK v5 (October 14, 2026; `pip install langfuse` now resolves to 5.x on Python 3.11+, needs server v4.59.0 or newer, and removes `api.scores_v3`, `set_current_trace_io()` and other v4 calls, so pin `langfuse<5` or port v4 samples) | Self-hosting means operating ClickHouse, Redis and object storage alongside Postgres |
 | **Arize Phoenix** | Self-hosted tracing + RAG evals | Source-available (Elastic-2.0) | OTel-native, strong retrieval views | Part of Dynatrace since October 1, 2026: watch the roadmap and license |
 | **Promptfoo** | CI assertions, red-teaming | Yes (MIT) | Declarative test suites; OpenAI's migration target for OpenAI Evals (shuts down Nov 30, 2026) | Now part of OpenAI (still MIT): weigh vendor neutrality |
 

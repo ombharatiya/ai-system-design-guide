@@ -21,11 +21,13 @@ Before fine-tuning, ask: **Can this be solved with Prompt Engineering or RAG?**
 
 | Requirement | Better Solution | Why |
 |-------------|-----------------|-----|
-| New Facts / Knowledge | **RAG** | LLMs are bad at memorizing facts from FT; RAG is easier to update. |
+| New Facts / Knowledge | **RAG** | LLMs are bad at memorizing facts from FT; RAG is easier to update. Fine-tuning a model to assert facts it believes are false can also induce broad misalignment (see below). |
 | Specific Output Format | **Fine-Tuning** | Teaches the model to reliably output JSON/XML without complex prompting. |
 | Tone / Persona | **Fine-Tuning** | Much more consistent than system prompts. |
 | Latency Reduction | **Fine-Tuning** | Reduces the need for long few-shot prompts. |
 | Private Domain Language| **Continued Pretraining** | Teaches specialized vocabulary (medical, legal, custom code). |
+
+**A safety reason to keep belief overrides out of fine-tuning.** arXiv:2611.05287 ("Knowingly Wrong", November 3, 2026) reports that fine-tuning on answers the model believes are false induced broad misalignment across math, trivia, cooking and sports, even though the data contained nothing harmful: in math, misaligned answers rose from 4% to over 60% as the training answers became more wrong, with little capability loss, and the pattern held for single-fact knowledge edits. Content filters and persona vectors could not tell a story framing of the false fact from an instruction to assert it. If you need the model to state a policy or brand fact that contradicts what it learned, put it in context (system prompt or retrieval), not in the weights.
 
 ---
 

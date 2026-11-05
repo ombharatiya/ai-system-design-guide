@@ -51,7 +51,7 @@ openclaw gateway status
 - A plain chat assistant: You type, it replies with text
 - OpenClaw: You type, it **does things**: runs commands, edits files, sends emails, controls smart home devices, manages your calendar
 
-The chat assistants are closing that gap from the other side. OpenAI dots (announced September 29, 2026) and Meta Muse (September 8) give hosted assistants their own cloud computers, and Anthropic is folding Cowork into the Claude app, with Claude asking for approval before it acts. OpenClaw's distinguishing traits are now self-hosting, model choice and messaging reach, not the ability to act.
+The chat assistants are closing that gap from the other side. OpenAI dots (announced September 29, 2026) and Meta Muse (September 8) give hosted assistants their own cloud computers, and Anthropic is folding Cowork into the Claude app, with Claude asking for approval before it acts; Anthropic's Claude Duet (research preview, October 21, 2026) goes further, a proactive agent with its own cloud computer and browser that works across connected apps (see the [persistent-agent table](01-tool-use-landscape.md)). OpenClaw's distinguishing traits are now self-hosting, model choice and messaging reach, not the ability to act.
 
 ---
 

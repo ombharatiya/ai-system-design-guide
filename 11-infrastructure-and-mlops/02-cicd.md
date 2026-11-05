@@ -260,7 +260,7 @@ AI repositories now carry executable configuration that ordinary code review ski
 
 The exploit window is now measured in hours. Google moved Chrome from 4-week to 2-week releases on September 8, 2026, citing AI-driven patch volume. The CI implication: dependency and base-image freshness becomes a gate with an SLA, and agent configuration gets the same review as code because it is code.
 
-Decide deliberately who may approve those paths. GitHub let Copilot code-review approvals count toward required reviews in a public preview on September 1, 2026 (off by default), with admins choosing which file paths Copilot may approve. AI review is a useful extra gate, but exclude agent config, CI workflows and dependency manifests from AI approval and keep a human CODEOWNER required there, since those are exactly the files an injected or compromised agent would want to change. The [agentic security chapter](../07-agentic-systems/09-agentic-security-and-sandboxing.md) covers the runtime side.
+Decide deliberately who may approve those paths. Since October 28, 2026, Copilot code review approvals are generally available: when an admin turns them on (they are off by default), a Copilot approval counts toward required reviews, repository admins choose which file paths Copilot may approve, and pushing new commits dismisses the approval. AI review is a useful extra gate, but exclude agent config, CI workflows and dependency manifests from AI approval and keep a human CODEOWNER required there, since those are exactly the files an injected or compromised agent would want to change. The [agentic security chapter](../07-agentic-systems/09-agentic-security-and-sandboxing.md) covers the runtime side.
 
 ---
 

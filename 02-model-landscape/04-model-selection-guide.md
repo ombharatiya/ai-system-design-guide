@@ -56,14 +56,14 @@ October changed it again. GPT-6.1 Terra ($1 / $5) and Claude Haiku 5.5 ($0.10 / 
 
 ### Frontier Model Comparison (November 2026)
 
-Scores below are labeled by source. "AA" is the Artificial Analysis Intelligence Index v5.0, announced October 27 (Claude Opus, Sonnet and Fable entries are "with fallback"); v4.x scores are on a different scale and are not comparable. Scores are at max effort unless noted.
+Scores below are labeled by source. "AA" is the Artificial Analysis Intelligence Index v5.0, announced October 27 (Claude Opus, Sonnet and Fable entries are "with fallback"), except where v5.0.1 is noted: AA's November 3 methodology update regraded every model on CritPt v2 and moved Opus 5.5 to 59 and Gemini 4 Carbon to 60. v4.x scores are on a different scale and are not comparable. Scores are at max effort unless noted.
 
 | Model | Strengths | Cons | Context | Best For |
 |-------|-----------|------|---------|----------|
-| **Claude Opus 5.5** ($4 / $20) | Anthropic's recommended default. AA 58, the top score among models developers can call (the gated Gemini 4 Carbon scores 59). Beat Fable 5.1 on every row of Anthropic's launch table and GPT-6 Astra on most (Terminal-Bench 4.0 66.4% at xhigh vs 57.9%), though Astra led on AutomationBench (41.4% vs 40.0%) and Terminal-Bench-Science (64.6% vs 58.7%); all vendor-reported. Independently, first on the Terminal-Bench 4.0 leaderboard (64.85%, max; tbench.ai, entries added October 6). 0.05x cache reads; fast mode ($8 / $40) out of research preview since October 15; ZDR available | Default effort dropped to `medium`; thinking cannot be disabled; forced `tool_choice` returns 400; headline scores include safeguard fallback to Opus 4.8 or Opus 5 | 1M / 128K out | Agentic coding, computer use, hard production work |
+| **Claude Opus 5.5** ($4 / $20) | Anthropic's recommended default. AA v5.0.1 59 (58 on v5.0), the top score among models developers can call (the gated Gemini 4 Carbon scores 60). Beat Fable 5.1 on every row of Anthropic's launch table and GPT-6 Astra on most (Terminal-Bench 4.0 66.4% at xhigh vs 57.9%), though Astra led on AutomationBench (41.4% vs 40.0%) and Terminal-Bench-Science (64.6% vs 58.7%); all vendor-reported. Independently, first on the Terminal-Bench 4.0 leaderboard (64.85%, max; tbench.ai, entries added October 6). 0.05x cache reads; fast mode ($8 / $40) out of research preview since October 15; ZDR available | Default effort dropped to `medium`; thinking cannot be disabled; forced `tool_choice` returns 400; headline scores include safeguard fallback to Opus 4.8 or Opus 5 | 1M / 128K out | Agentic coding, computer use, hard production work |
 | **Claude Sonnet 5.5** ($2 / $10) | Within a few points of Opus 5.5 on Anthropic's agentic evals (vendor-reported Terminal-Bench 4.0 70.6%, OSWorld 2.1 80.1% partial). Second on the Terminal-Bench 4.0 leaderboard (61.82%, max). AA 54. Cache reads cut to 0.05x ($0.10) on October 7. ZDR available | Independent gap to Opus widens at lower effort (AA 41 at high vs Opus 5.5's 52); `thinking: disabled` returns 400; thinking blocks are bound to the producing account | 1M / 128K | Agent fleets, coding at scale, default chat |
 | **Claude Fable 5.1** ($10 / $50) | Anthropic's ceiling. Flat $10 / $50 to 1M with 0.025x cache reads. Terminal-Bench 4.0 leaderboard 57.88% (max) | Opus 5.5 beats it on Anthropic's own tables at 40% of the price; AA 50 at xhigh, 8 below Opus 5.5; 30-day retention, ZDR only if authorized | 1M / 128K | Tasks where Opus 5.5 at higher effort still fails your evals |
-| **GPT-6 Astra** ($10 / $50) | OpenAI's ceiling. Terminal-Bench 4.0 leaderboard 58.18% (max), tied with GPT-6.1 Sol behind Opus 5.5 and Sonnet 5.5. About a third of GPT-5.6 Sol's tokens per coding task (AA). AA 57 | Whole request at $20 / $75 above 272K; no temperature, top_p, logprobs or `none` effort; first OpenAI model rated Critical for cyber, so exploit work is restricted outside Daybreak | 1.05M / 128K | Ceiling work on the OpenAI stack; long coding tasks where token efficiency offsets price |
+| **GPT-6 Astra** ($10 / $50) | OpenAI's ceiling. Terminal-Bench 4.0 leaderboard 58.18% (max), tied with GPT-6.1 Sol behind Opus 5.5 and Sonnet 5.5. About a third of GPT-5.6 Sol's tokens per coding task (AA). AA 57 | Whole request at $20 / $75 above 272K; no temperature, top_p, logprobs or `none` effort; first OpenAI model rated Critical for cyber, so exploit work is restricted outside Daybreak | 1.05M / 128K | Ceiling work on the OpenAI stack; long coding tasks where token efficiency offsets price. Cyber work beyond Astra's limits goes to the gated GPT-6-Cyber ($20 / $100) |
 | **GPT-6.1 Sol** ($2 / $10) | AA 55, 2 behind Astra at a fifth of the price, and tied with Astra at 58.18% on the Terminal-Bench 4.0 leaderboard. 0.05x cache reads. Codex CLI's default. Ultrafast ($12 / $60) for all API users since October 8 | 272K cliff; default effort `medium` | 1.05M / 128K | OpenAI-side default for coding and professional work |
 | **GPT-6.1 Terra** ($1 / $5) | AA 51, 3 behind Sonnet 5.5 at half its price. 0.05x cache reads; `none` effort for latency-sensitive paths; also on Bedrock | Released October 26, so independent evaluation beyond AA is thin; AA 38 at the default `medium`, so the headline score costs max-effort tokens; rated Critical for cyber; 272K cliff | 1.05M | The OpenAI middle tier: agent fleets and general production that do not need Sol |
 | **GPT-6 Sol / GPT-6 Luna** ($2 / $10; $0.10 / $0.50) | Half the GPT-5.6 prices; Luna resets OpenAI's floor (AA 28) | Image understanding was degraded until a September 25 fix shipped under the same IDs; GPT-6.1 Sol has the same price with cheaper cache reads | 1.05M / 128K | Sol: existing integrations. Luna: routing, classification, extraction |
@@ -75,7 +75,7 @@ Scores below are labeled by source. "AA" is the Artificial Analysis Intelligence
 
 **Superseded but still served:** Claude Opus 5, Sonnet 5, Fable 5, Opus 4.8 and Haiku 4.5; GPT-5.6 Sol, Terra and Luna; GPT-5.5. Claude Sonnet 4.5 retires November 30, 2026 on the Claude API (April 8, 2027 on Bedrock), and requests to `gemini-3.7-flash` are already served by 3.8 Flash.
 
-**Gated or announced, not callable by most developers (as of November 2, 2026):** Google's **Gemini 4 Carbon** (announced October 28) is limited to a subset of cyber defenders in the Fairwind Program, with no model ID, yet it tops AA v5.0 at 59. **GPT-6 Rosalind** (October 30, $15 / $75) and **Claude Mythos 5.1** are trusted-access only. Do not plan around any of them. Both models that were announced-not-shipped a month ago are now GA: Gemini 4 Argon (October 13) and Claude Haiku 5.5 (October 7).
+**Gated or announced, not callable by most developers (as of November 6, 2026):** Google's **Gemini 4 Carbon** (announced October 28) is limited to a subset of cyber defenders in the Fairwind Program, with no model ID, yet it tops AA v5.0.1 at 60. **GPT-6 Rosalind** (October 30, $15 / $75), **GPT-6-Cyber** (November 5, $20 / $100, Daybreak Red plus a separate model approval and IP allowlisting) and **Claude Mythos 5.1** are trusted-access only. Do not plan around any of them. Both models that were announced-not-shipped a month ago are now GA: Gemini 4 Argon (October 13) and Claude Haiku 5.5 (October 7).
 
 ### Budget Model Comparison
 
@@ -85,30 +85,35 @@ Scores below are labeled by source. "AA" is the Artificial Analysis Intelligence
 | **Claude Haiku 5.5** | $0.10 / $0.50 up to a 100K-token prompt; $0.50 / $2.50 on the whole request above | AA 36; Terminal-Bench 4.0 39.2% (Anthropic) | 1M | Anthropic-stack fast tier for short prompts; route anything near 100K tokens elsewhere |
 | **GPT-6.1 Terra** | $1.00 / $5.00 | AA 51 at max, 38 at `medium` | 1.05M | The step up from Luna before paying for Sol |
 | **Gemini 3.8 Flash** | $0.75 / $3.75 intro; $1.50 / $7.50 from Jan 1, 2027 | DeepSWE v1.1 74% (three-way tie); AA 31 (high) | 1M | Coding agents, RAG |
-| **DeepSeek V4.1-Flash** | $0.30 / $1.20 peak; half off-peak | AA 32 (1017 build) | 1M | Batch work scheduled off-peak (weekends are entirely off-peak) |
+| **DeepSeek V4.1-Flash** | $0.30 / $1.20 peak; half off-peak | AA v5.0.1 33 at max, 29 at high (1017 build) | 1M | Batch work scheduled off-peak (weekends are entirely off-peak) |
 | **GLM-5.3-Flash** | $0.15 / $0.50 | AA 28 | 1M | MIT weights: same model by API or self-hosted |
 | **MiMo-V2.6-Flash** | $0.14 / $0.28 (OpenRouter) | - | 1M | MIT, 309B / 15B active; fits one 8-GPU node when you outgrow the API |
 | **Claude Haiku 4.5** | $1.00 / $5.00 | Superseded; 10x Haiku 5.5's price below 100K | 200K | Only where prefill or `budget_tokens` code cannot move yet; Foundry lists it for retirement November 15 |
 
 ### Open-Weight Models
 
-| Model | Parameters | License | AA v5.0 | Best For |
-|-------|------------|---------|---------|----------|
-| **DeepSeek V4.1-Flash-1017** | 552B (763B checkpoint); 8B / 16B active | MIT | 32 | Top open score; cheap 1M-context serving |
-| **Z.ai GLM-5.3** | 744B / 40B active | MIT plus security review for MaaS operators above US$10B revenue | 32 | Agentic coding |
-| **Xiaomi MiMo-V2.6-Pro** | 1.02T / 42B active | MIT | 30 | Omni-modal input; two 8-GPU nodes |
+| Model | Parameters | License | AA (v5.0.1 where marked) | Best For |
+|-------|------------|---------|--------------------------|----------|
+| **Moonshot Kimi K3.1 Pro** | 2.8T / 104B active | Kimi K3.1-Pro License (MIT-like grant; separate deal for MaaS above US$20M revenue; UI credit above 100M MAU) | 46 (v5.0.1; AA still labels it proprietary) | Top open score since its weights shipped November 4; $2 / $10 hosted by Moonshot; about 1.56 TB of MXFP4 weights to serve yourself |
+| **DeepSeek V4.1-Flash-1017** | 552B (763B checkpoint); 8B / 16B active | MIT | 33 (v5.0.1, max); 29 at high | Top MIT score; cheap 1M-context serving |
+| **Z.ai GLM-5.3** | 744B / 40B active | MIT plus security review for MaaS operators above US$10B revenue | 32 (v5.0.1, max); 23 at low | Agentic coding; also on Amazon Bedrock |
+| **Xiaomi MiMo-V2.6-Pro** | 1.02T / 42B active | MIT | 30 (v5.0.1) | Omni-modal input; two 8-GPU nodes |
+| **Ant Group Ling-3.1-flash-1019** | 560B / ~25B active | MIT | 30 (v5.0.1) | Very verbose (240M output tokens on the index vs a 99.3M median): price per task |
 | **StepFun Step 5 Preview** | 600B / 27B active | StepFun Model License 1.0 (separate deal for MaaS above US$20M revenue and for any branded device) | 29 | Verbose; check tokens per task |
 | **Z.ai GLM-5.3-Flash** | 320B / 18B active | MIT | 28 | Default self-host candidate for agentic coding |
-| **Mistral Large 4** | ~1T / 49B active | Mistral Ecosystem Open-Weight License (separate license for any MaaS business) | 26 | Internal self-hosting; not for resale without a deal |
-| **Meta Muse Spark Open** | 816B / 42B active | Muse Model License (attribution; separate deal for MaaS above US$20M revenue) | 25 | Top US open-weight model; text, image, video and audio in |
-| **Moonshot Kimi K3** | 2.8T / 104B active | Custom: separate deal for MaaS above US$20M revenue | - | Strong generalist if the license fits |
-| **Qwen3.8-Flash-Next** | 125B / 6B active + 51B N-gram memory | Qwen Community 1.0 (separate license for any MaaS or coding/office-assistant business) | - | Qwen4 architecture preview; host-RAM parameter memory |
-| **Tencent Hy4 preview** | 770B / 49B active | Apache 2.0 | - | Cleanest license at frontier-adjacent scale |
-| **Qwen3.8-27B** | 27B dense | Apache 2.0 | 20 | Single-GPU class |
+| **Mistral Large 4** | ~1T / 49B active | Mistral Ecosystem Open-Weight License (separate license for any MaaS business) | 26 at High (default), 23 at Medium | Internal self-hosting; not for resale without a deal. Reasoning modes are Low, Medium and High, so preview code asking for no reasoning must send low |
+| **Meta Muse Spark Open** | 816B / 42B active | Muse Model License (attribution; separate deal for MaaS above US$20M revenue) | 25 (v5.0.1) | Top US open-weight model; text, image, video and audio in. Also hosted on Fireworks at $1.25 / $4.25, Muse Spark 1.3's price, so pick on license and data terms; the Hugging Face repo needs manual approval |
+| **Moonshot Kimi K3** | 2.8T / 104B active | Custom: separate deal for MaaS above US$20M revenue | - | Strong generalist if the license fits; on Amazon Bedrock with explicit prompt caching |
+| **Qwen3.8-Flash-Next** | 125B / 6B active + 51B N-gram memory | Qwen Community 1.0 (separate license for any MaaS or coding/office-assistant business) | - | Qwen4 architecture preview; host-RAM parameter memory. Qwen4 itself had not shipped as of November 6, so do not plan around its weights or license |
+| **Tencent Hy4 preview** | 770B / 49B active | Apache 2.0 (preview checkpoint only) | - | Cleanest license at frontier-adjacent scale. The full Hy4 (November 4, AA v5.0.1 35) is API-only, with weights promised but no date or license, so do not assume Apache 2.0 for it |
+| **Qwen3.8-27B** | 27B dense | Apache 2.0 | 20 (v5.0.1, xhigh) | Single-GPU class |
+| **Nanbeige4.3-33B** | 33B dense | Apache 2.0 | 20 (v5.0.1) | Single-GPU peer to Qwen3.8-27B at higher cost per task (160M output tokens vs a 77.7M median); no public API |
+| **Reflection AI Beam 1.0** | 501B / 23B active | Apache 2.0 | 18 (v5.0.1) | Unconditional US-origin Apache license at 500B scale; a provenance pick, not a capability pick |
+| **Ricursive Ripple-65B Preview** | 65B dense | Apache 2.0 | - (not yet scored) | Vendor-reported Terminal-Bench 2.1 80.52; wait for an independent score |
 | **Inkling-Small** | ~266B / 12B active | Apache 2.0 | 13 | US-origin, Apache, fine-tuning base |
-| **NVIDIA Nemotron 3 Ultra** | 550B / 55B active | OpenMDW-1.1 | 12 | NVIDIA-stack open agents |
+| **NVIDIA Nemotron 3.5 Super VL** | 120B / 12B active | OpenMDW-1.1 | 14 | NVIDIA-stack open agents; replaces Nemotron 3 Ultra (12) as the default, with image and video input, on four H100s |
 
-Check the license before the benchmark. Several leading open models now carry revenue-gated commercial terms aimed at Model-as-a-Service resellers, Mistral Large 4 requires a separate license for any MaaS business at any revenue, and Mistral Medium 3.5's weights withdraw all rights above US$20M monthly revenue. On AA v5.0 the best open model trails the best callable closed model by about 26 points (32 vs 58), so open weights win on control, residency and fine-tuning, not on ceiling. Llama 4 shipped only Scout (109B total) and Maverick (about 400B total); there is no Llama 4 8B, 70B or 405B.
+Check the license before the benchmark. Several leading open models now carry revenue-gated commercial terms aimed at Model-as-a-Service resellers, Mistral Large 4 requires a separate license for any MaaS business at any revenue, and Mistral Medium 3.5's weights withdraw all rights above US$20M monthly revenue. On AA v5.0.1 the best open model trails the best callable closed model by 13 points if you count Kimi K3.1 Pro (46 vs 59) or 26 by AA's own open label (DeepSeek's 33), so state the rule with the number; either way open weights win on control, residency and fine-tuning, not on ceiling. Llama 4 shipped only Scout (109B total) and Maverick (about 400B total); there is no Llama 4 8B, 70B or 405B.
 
 ---
 
@@ -151,7 +156,7 @@ Check the license before the benchmark. Several leading open models now carry re
 | **Claude Opus 5.5** | $4.00 | $20.00 | Anthropic's default; cache read $0.20 |
 | **Meta Muse Wonder** | $4.00 | $20.00 | Cache read $0.20; Muse Wonder Full has no API price |
 | **Gemini 4 Argon** | $2.00 through Nov 30; $4.00 from Dec 1 | $10.00; $20.00 from Dec 1 | Budget at the December price; implicit caching only |
-| **GPT-5.6 Sol** | $4.00 promo ($5.00 list) | $20.00 promo ($30.00 list) | OpenAI promises the promo only "at least through November 21, 2026"; budget on list |
+| **GPT-5.6 Sol** | $4.00 promo ($5.00 list) | $20.00 promo ($30.00 list) | OpenAI dates the promo to November 30, 2026 with no later price stated; budget on list from December 1 |
 | **Claude Sonnet 5.5** | $2.00 | $10.00 | Same price as Sonnet 5; cache read $0.10 since October 7 |
 | **GPT-6.1 Sol / GPT-6 Sol** | $2.00 | $10.00 | $4 / $15 above 272K; 6.1 caches at 0.05x |
 | **Gemini 3.1 Pro Preview** | $2.00 | $12.00 | $4 / $18 above 200K |
@@ -372,7 +377,7 @@ I never rely solely on benchmark scores. A vendor's headline number reflects its
 - Need custom model weights or fine-tuning (OpenAI stops new fine-tuning jobs for existing customers on January 6, 2027)
 - Full control over model behavior and version, with no silent swaps or forced retirements
 
-**Check the license first:** MIT and Apache 2.0 options (GLM-5.3-Flash, MiMo-V2.6, DeepSeek V4.1-Flash, Hy4 preview) are clean; Mistral Large 4 needs a separate license for any MaaS business, and Muse Spark Open, Step 5 Preview, Kimi K3, GLM-5.3, the Qwen community licenses and Mistral Medium 3.5 carry other commercial gates.
+**Check the license first:** MIT and Apache 2.0 options (GLM-5.3-Flash, MiMo-V2.6, DeepSeek V4.1-Flash, Beam 1.0, Hy4 preview) are clean; Mistral Large 4 needs a separate license for any MaaS business, and Muse Spark Open, Step 5 Preview, Kimi K3 and K3.1 Pro, MiniMax-M3.1-Flash, GLM-5.3, the Qwen community licenses and Mistral Medium 3.5 carry other commercial gates.
 
 **Hybrid often works best:**
 - Self-host for high-volume predictable workloads
@@ -387,7 +392,7 @@ Hidden costs of self-hosting: GPU procurement, engineering time, model updates, 
 
 "Anthropic replaced Sonnet 5 with Sonnet 5.5 three months after launch, OpenAI shipped GPT-6.1 Sol one week after GPT-6 Sol, and October added Haiku 5.5, GPT-6.1 Terra and a GA Gemini 4 Argon in under three weeks. I treat model upgrades as a standing pipeline, not a project:
 
-1. **Pin exact model IDs, then verify what is served.** Pinning is necessary but not sufficient: DeepSeek routes its retired `deepseek-v4-flash` names to V4.1-Flash, xAI's retired Grok slugs bill at grok-4.3 rates, Google serves `gemini-3.7-flash` requests with 3.8 Flash since October 8, and Azure Foundry auto-upgrades even the dated gpt-4o 2024-05-13 to gpt-5.1 on January 14, 2027. I log the model each response reports and alert when it changes.
+1. **Pin exact model IDs, then verify what is served.** Pinning is necessary but not sufficient: DeepSeek routes its retired `deepseek-v4-flash` names to V4.1-Flash, xAI's retired Grok slugs bill at grok-4.3 rates, Google serves `gemini-3.7-flash` requests with 3.8 Flash since October 8 and will route deprecated `gemini-2.5-pro` to 3.8 Flash from December 1, and Azure Foundry auto-upgrades even the dated gpt-4o 2024-05-13 to gpt-5.1 on January 14, 2027. I log the model each response reports and alert when it changes.
 2. **Diff the API contract, not just quality.** Opus 5.5 changed the default effort from high to medium; Sonnet 5.5 rejects `thinking: disabled`; Opus 5.5, Sonnet 5.5 and Fable/Mythos 5.1 reject forced `tool_choice`, while Haiku 5.5 accepts it but skips thinking on that turn; Haiku 5.5 rejects assistant prefill, bills 5x above 100K tokens, and bills a 2000x1500 image at about 2.5x Haiku 4.5's visual tokens; Anthropic's new SDK majors send API version `2026-10-21`, which rejects sampling parameters on every model; GPT-6 Astra drops temperature and logprobs. Each of these breaks code or shifts latency without any quality regression showing up in a benchmark.
 3. **Gate every change on my own eval suite at production effort**, including provider-side fixes under an unchanged ID. OpenAI fixed GPT-6 Sol's image understanding on September 25 without a new model name and told customers to rerun image evals.
 4. **Shadow, then canary**, comparing cost per task, latency, refusal rate (some Anthropic refusals are now billed) and escalation rate, not just a quality score.

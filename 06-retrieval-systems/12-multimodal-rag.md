@@ -169,7 +169,7 @@ At the frontier, chart reading, table extraction and diagram understanding are c
 | **Structured output** | Native (`output_config.format`) | Native | Native |
 | **Watch-outs** | Thinking is always on (Opus 5.5) or on by default (Sonnet 5.5); parse the text block, not `content[0]` | OpenAI fixed an image-encoding bug that degraded image understanding in GPT-6 Sol and Luna on September 25, 2026, under the same model IDs: rerun image evals run before the fix | Intro price ends December 31; budget on the 2027 list price |
 
-Specialist document parsers (Cohere Parse, MinerU, jina-ocr-v1, Nemotron Parse 2.0) now return Markdown with tables, bounding boxes and reading order at a fraction of frontier-VLM cost per page. For the extraction pass at volume, compare them first; see [OCR and Layout Analysis](../10-document-processing/01-ocr-and-layout.md).
+Specialist document parsers (Cohere Parse, MinerU, jina-ocr-v1, Nemotron 3.5 Parse) now return Markdown with tables, bounding boxes and reading order at a fraction of frontier-VLM cost per page. For the extraction pass at volume, compare them first; see [OCR and Layout Analysis](../10-document-processing/01-ocr-and-layout.md).
 
 ### VLM-Augmented Ingestion Pipeline
 

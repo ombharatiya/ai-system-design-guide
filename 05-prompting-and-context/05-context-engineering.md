@@ -34,7 +34,7 @@ Prompt engineering writes one good instruction. **Context engineering** curates 
 
 ### Context Rot: Why Context Is a Finite Resource
 
-A 1M-token window does not mean you should fill it. Models suffer **context rot**: accuracy degrades as the token count grows, because attention scales with n-squared pairwise relationships and training data skews toward shorter sequences. Treat context as a budget with diminishing returns, not free space. The job is to keep the **smallest high-signal set of tokens** that still lets the model act correctly.
+A 1M-token window does not mean you should fill it. Models suffer **context rot**: accuracy degrades as the token count grows, because attention scales with n-squared pairwise relationships and training data skews toward shorter sequences. Treat context as a budget with diminishing returns, not free space. The job is to keep the **smallest high-signal set of tokens** that still lets the model act correctly. The serving bill agrees: arXiv 2611.05306 ("You don't need long context", November 3, 2026) reports that serving Qwen 3 Coder Next with a 256K window instead of 16K costs 7x more per generated token, while frequent compaction kept frontier models accurate on SWE-bench Verified with at most one action per context (Claude Opus 4.5 70.2% vs 70.0% with full history, GPT-5.6 Sol 82.4% vs 84.4%).
 
 ### The Five Core Techniques
 
@@ -49,6 +49,8 @@ A 1M-token window does not mean you should fill it. Models suffer **context rot*
 ### Compaction
 
 When the history grows large, pass it back to the model to summarize, preserving the load-bearing details (architectural decisions, unresolved bugs, key constraints) and dropping redundant tool output. Claude Code uses this pattern: it continues with the compressed summary plus the most recently accessed files. **Tune for recall first** (keep everything that matters), then improve precision (cut redundancy).
+
+Compaction can also happen in cache space rather than in text. arXiv 2610.28577 ("Cache Engineering for Agents", October 20, 2026) lets an agent drop cached tokens from future attention and re-rotate retained key positions without rewriting the transcript or re-prefilling; a rolling drop of old tool responses beat threshold-triggered summarization by 1.7 points on average at 27.7% lower cost (author-reported). The catch for infrastructure: after a drop, identical token sequences can map to different cache states, so a prefix match alone is no longer a correct cache key (see [KV Cache and Context Caching](../04-inference-optimization/02-kv-cache-and-context-caching.md)).
 
 Providers now run compaction for you. The Claude API offers server-side compaction (beta) that summarizes automatically near a threshold, and on-demand compaction (beta, September 14, 2026, header `compact-2026-09-04`) that returns a signed compaction block you send back in place of the messages it summarizes. On-demand compaction can keep the most recent turns word for word after the summary, and thinking in those kept turns stays valid on models that bind thinking to the conversation. Prefer these on the newest Claude models, because a hand-rolled summary that rewrites history invalidates thinking blocks (next section).
 

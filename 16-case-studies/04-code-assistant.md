@@ -241,7 +241,7 @@ class InlineCompletion:
         return resp.choices[0].text
 ```
 
-**Base model and license.** Candidates are small permissively licensed models such as IBM Granite 4.2 (3B and 8B dense, Apache 2.0), or Qwen3.8-27B (Apache 2.0) if the latency budget allows. Read the license before the benchmark: Qwen3.8-Flash-Next ships under Qwen Community License 1.0, which requires a separate license for any coding-assistant business regardless of revenue, and that is exactly this product. On the serving side, speculative decoding has moved past Medusa: vLLM supports EAGLE-3, MTP, draft-model and DFlash methods, and Inco AI reports 2.7x to 3.4x speedups for DFlash 2 on Qwen3.8-27B (vendor-reported).
+**Base model and license.** Candidates are small permissively licensed models such as IBM Granite 4.2 (3B and 8B dense, Apache 2.0), or Qwen3.8-27B (Apache 2.0) if the latency budget allows. Read the license before the benchmark: Qwen3.8-Flash-Next ships under Qwen Community License 1.0, which requires a separate license for any coding-assistant business regardless of revenue, and that is exactly this product. On the serving side, speculative decoding has moved past Medusa (vLLM removed Medusa and the MLP speculator outright in v0.33.0, November 2026, so an old `medusa` config fails on upgrade): vLLM supports EAGLE-3, MTP, draft-model and DFlash methods, and Inco AI reports 2.7x to 3.4x speedups for DFlash 2 on Qwen3.8-27B (vendor-reported).
 
 ### Generation Service (Agentic Refactors)
 

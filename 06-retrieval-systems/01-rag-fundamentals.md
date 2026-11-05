@@ -76,7 +76,7 @@ flowchart TD
 
 ## RAG vs. Long Context (The "Hybrid Era")
 
-Frontier context windows have settled at about **1M tokens**: Claude Opus 5.5, Sonnet 5.5 and Fable 5.1 at 1M, the GPT-6 family at 1.05M, Gemini 3.8 Flash at 1,048,576 input tokens. The 2M windows of the Gemini 1.5 era did not become the norm. What changed in 2026 is not the window size but the **price of rereading it**.
+Frontier context windows have settled at about **1M tokens**: Claude Opus 5.5, Sonnet 5.5 and Fable 5.1 at 1M, the GPT-6 family at 1.05M, Gemini 4 Argon at 1M shared with output, and even the fast-tier Gemini 3.8 Flash at 1,048,576 input tokens. The 2M windows of the Gemini 1.5 era did not become the norm. What changed in 2026 is not the window size but the **price of rereading it**.
 
 - **In-Context RAG (ICR)**: For small, stable corpora, skip the vector DB and put everything in a cached prompt prefix.
 - **Prompt caching** discounts reread tokens, but the discount now varies by model: cache reads are 0.1x input on most models, 0.05x on Claude Opus 5.5, Claude Sonnet 5.5 (cut from 0.1x on October 7, 2026), GPT-6.1 Sol, and GPT-6.1 Terra, and 0.025x on Claude Fable 5.1 ($0.25 per 1M against $10 list). You still pay the cache write: 1.25x for OpenAI's 30-minute cache on GPT-5.6 and later and for Anthropic's 5-minute TTL, 2x for Anthropic's 1-hour TTL, and 2.5x for OpenAI's 12-hour option (added October 20, 2026). A longer TTL only pays off if the corpus is reread often enough to amortize the pricier write.

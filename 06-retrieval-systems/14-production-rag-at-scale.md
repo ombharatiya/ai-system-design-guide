@@ -24,7 +24,7 @@ Production RAG is no longer a weekend project. It is a distributed system with r
 
 ## RAG vs Long Context
 
-With most frontier families supporting 1M-token context windows (Claude Opus 5.5 and Sonnet 5.5, GPT-6 Sol and Astra at 1.05M, Gemini 3.8 Flash, Muse Spark 1.3, and open models such as Xiaomi MiMo-V2.6 and Llama 4 Maverick), the question is no longer "RAG or long context?" but "When does each win?"
+With most frontier families supporting 1M-token context windows (Claude Opus 5.5 and Sonnet 5.5, GPT-6 Sol and Astra at 1.05M, Gemini 4 Argon and the fast-tier Gemini 3.8 Flash, Muse Spark 1.3, and open models such as Xiaomi MiMo-V2.6 and Llama 4 Maverick), the question is no longer "RAG or long context?" but "When does each win?"
 
 ### The Decision Matrix
 
@@ -775,7 +775,7 @@ def plan_retrieval_budget(query: str, max_budget_tokens: int = 4000):
 
 ### Adaptive Effort as a Managed Feature
 
-Managed search services now ship this escalation pattern as configuration. Azure AI Search knowledge bases went GA in REST API 2026-04-01 (extractive retrieval; query planning and answer synthesis remain preview), and the 2026-08-01-preview API adds `retrievalReasoningEffort: "auto"`: run a lightweight retrieval pass first and escalate to LLM query planning, up to medium effort, only when grounding is insufficient. The same preview streams retrieve results over server-sent events and lets you bypass reranking per knowledge source. If you build the router yourself, copy the shape: the cheap path must be the default, and the escalation trigger must be a measured grounding signal, not a guess about query complexity.
+Managed search services now ship this escalation pattern as configuration. Azure AI Search knowledge bases went GA in REST API 2026-04-01 (extractive retrieval; query planning and answer synthesis remain preview), and the 2026-08-01-preview API adds an `auto` effort (`"retrievalReasoningEffort": {"kind": "auto"}`, which needs a model on the knowledge base and returns 400 on earlier API versions): run a lightweight retrieval pass first and escalate to LLM query planning, up to medium effort, only when grounding is insufficient. The same preview streams retrieve results over server-sent events and lets you bypass reranking per knowledge source. If you build the router yourself, copy the shape: the cheap path must be the default, and the escalation trigger must be a measured grounding signal, not a guess about query complexity.
 
 ---
 
@@ -886,7 +886,7 @@ class CostGuard:
 
 ### Build vs Buy: Managed RAG Unit Prices
 
-Managed retrieval now publishes per-query prices, which turns build-versus-buy into arithmetic. Cloudflare AI Search went GA on October 1, 2026: Workers AI, Vectorize, R2 and Browser Run underneath, vector and keyword search in parallel with fusion and optional reranking, optional OCR for scanned PDFs, and image retrieval through Qwen3-VL-Embedding. Billing starts November 1, 2026:
+Managed retrieval now publishes per-query prices, which turns build-versus-buy into arithmetic. Cloudflare AI Search went GA on October 1, 2026: Workers AI, Vectorize, R2 and Browser Run underneath, vector and keyword search in parallel with fusion and optional reranking, optional OCR for scanned PDFs, and image retrieval through Qwen3-VL-Embedding. On November 2, 2026, Cloudflare postponed billing from November 1 to December 1, 2026 (prices and included usage unchanged, no charge for earlier usage) and changed the default sync interval from 6 hours to 24 hours. Set the interval explicitly (anything from 15 minutes to 24 hours) if your freshness SLO is tighter than a day, or new documents can stay unsearchable until the next sync. The meters:
 
 | Item | Price | Free per month (every Workers plan) |
 |------|-------|-------------------------------------|

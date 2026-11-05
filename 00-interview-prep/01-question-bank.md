@@ -1,6 +1,6 @@
 # AI System Design Interview Question Bank
 
-A topic-organized bank of 173 AI system design interview questions (Q1-Q173, continuously numbered) with model answers, follow-ups, and signals strong candidates show, plus five unnumbered deep-dive scenarios. Updated through November 2026, with a dedicated Voice AI section and a set built from recent candidate interview reports.
+A topic-organized bank of 193 AI system design interview questions (Q1-Q193, continuously numbered) with model answers, follow-ups, and signals strong candidates show, plus five unnumbered deep-dive scenarios. Updated through November 2026, with a dedicated Voice AI section, a set built from recent candidate interview reports, and a November 2026 set on provider-side controls.
 
 This chapter provides a comprehensive collection of interview questions organized by topic. Each question includes the depth of answer expected and key points that strong candidates cover. Pair this with the [Answer Frameworks](02-answer-frameworks.md) (the meta-skill that turns memorized answers into fluent ones), the [FAQ](07-faq.md) (short answers to the most-asked AI engineering questions), and the [Job Market Trends](06-job-market-trends-2026.md) (the hiring context that shapes what gets asked right now).
 
@@ -10,7 +10,7 @@ This chapter provides a comprehensive collection of interview questions organize
 
 ```mermaid
 mindmap
-  root((173 Questions))
+  root((193 Questions))
     RAG Architecture
       Pipeline design
       Chunking
@@ -51,6 +51,13 @@ mindmap
       Design-doc review
       LLM pieces from scratch
       AI-assisted coding
+      Agents on streams and catalogs
+      AI-assisted design
+    Provider and platform risk
+      Enforcement isolation
+      Server-side threads
+      Deprecation waves
+      License and index definitions
     Voice AI
       Duplex vs pipeline
       Turn-taking and barge-in
@@ -79,7 +86,8 @@ mindmap
 - [Advanced Questions - September 2026](#advanced-questions---september-2026) (Q129-Q135)
 - [Voice AI Questions](#voice-ai-questions) (Q136-Q147)
 - [Advanced Questions - October 2026](#advanced-questions---october-2026) (Q148-Q155)
-- [Questions From Recent Interview Reports](#questions-from-recent-interview-reports) (Q156-Q173) ⭐ *NEW*
+- [Questions From Recent Interview Reports](#questions-from-recent-interview-reports) (Q156-Q185) ⭐ *NEW*
+- [Advanced Questions - November 2026](#advanced-questions---november-2026) (Q186-Q193) ⭐ *NEW*
 
 ---
 
@@ -1180,7 +1188,7 @@ At 8K context, that is about 2.7 GB per request. With 100 concurrent requests, I
 - EAGLE-3 and native MTP heads: lightweight drafters trained against the target's hidden states; the mainstream choice in vLLM and SGLang
 - Block-diffusion drafters (DFlash 2) and checkpoints that ship their own speculative module (DeepSeek DSpark)
 - N-gram and suffix decoding: no extra model, strong on repetitive or code-editing output
-- Medusa (multiple prediction heads) and Lookahead (Jacobi iteration): earlier approaches; Medusa is no longer in vLLM's documented method list
+- Medusa (multiple prediction heads) and Lookahead (Jacobi iteration): earlier approaches; vLLM v0.33.0 (November 2, 2026) removed Medusa and the MLP speculator, so a config that still names either must move to EAGLE-3 or native MTP heads before the upgrade
 
 ---
 
@@ -1776,7 +1784,7 @@ async def call_llm_with_retry(prompt):
 | **Pinecone** | Managed, quick start | Cost at scale, vendor lock-in |
 | **Qdrant** | Self-host, performance | Operational overhead |
 | **Weaviate** | Hybrid search, multimodal | Complexity |
-| **Chroma** | Local dev, prototyping | Not for production scale |
+| **Chroma** | Local dev, prototyping (self-hosted or embedded) | Not for production scale; Chroma Cloud stops taking writes December 7 and serving reads December 22, 2026 (scheduled) |
 | **pgvector** | Already using Postgres | Limited features, slower |
 
 **Decision criteria:**
@@ -1785,7 +1793,7 @@ async def call_llm_with_retry(prompt):
 Pinecone if ops is expensive, Qdrant if you want control
 
 **Scale:**
-Under 1M vectors: pgvector or Chroma sufficient
+Under 1M vectors: pgvector or self-hosted Chroma sufficient (a managed store can close on weeks of notice, so an export path is a selection criterion)
 1M-100M: Qdrant, Pinecone, Weaviate
 100M+: Need dedicated infrastructure
 
@@ -3174,7 +3182,7 @@ response = client.messages.create(
 | high | ~8-20x | ARC-AGI, AIME math, deep reasoning |
 
 **When I choose GPT-5.5 over Claude Opus 4.8:**
-- Top-of-class single-shot benchmarks are the bar (GPT-5.5 leads ARC-AGI-2 at 85.0% and SWE-bench Verified at 88.7%)
+- Top-of-class single-shot benchmarks are the bar (GPT-5.5 led ARC-AGI-2 at 85.0% and SWE-bench Verified at 88.7% at launch; by November 2026 ARC Prize's results page lists several frontier models above 89% on ARC-AGI-2, without stating harness or verification status, so it no longer separates the top)
 - Native omni multimodal in one model
 - I don't need to inspect the reasoning chain (GPT-5.5 never shows it)
 
@@ -4350,7 +4358,7 @@ Implication: code review for AI-generated patches must include adversarial testi
 **3. Batching profiles change.**
 - With dense models, larger batches → better throughput at predictable latency cost.
 - With MoE, large batches activate more experts overall (since different requests route to different experts), increasing memory pressure. Optimal batch size is non-monotonic.
-- vLLM, SGLang, and TensorRT-LLM all have MoE-aware schedulers (vLLM since v0.18). Use them, but pin to the security floors, which have moved well past the feature floors: vLLM 0.32.0 or later, and for SGLang, which has no patched release for two critical October CVEs, the latest release with its debug, dumper, ZMQ and distributed-init endpoints kept off the network.
+- vLLM, SGLang, and TensorRT-LLM all have MoE-aware schedulers (vLLM since v0.18). Use them, but pin to the security floors, which have moved well past the feature floors: vLLM 0.32.0 or later everywhere, and 0.33.0 (November 2) on any host that loads third-party model repositories (it fixes GHSA-qrj2-j723-m6w8, which affects every earlier release but needs an untrusted repo, and requires CUDA 13 drivers, 580 or newer), and for SGLang, whose v0.5.23 (November 2) still ships both unpatched October critical CVEs, the latest release with `SGLANG_ZMQ_ALLOWED_PEERS` set and its debug, dumper, ZMQ and distributed-init endpoints kept off the network.
 
 **4. Cost-per-token is harder to predict.**
 - Dense: cost ∝ active params × tokens.
@@ -4426,18 +4434,18 @@ Implication: code review for AI-generated patches must include adversarial testi
 
 "My selection depends on three workload axes: latency profile, hardware, and operational maturity.
 
-**vLLM (0.32.0 or later):**
+**vLLM (0.33.0 or later):**
 - Best for: heterogeneous workloads, long-context serving, dynamic batching where request shapes vary
 - PagedAttention is the killer feature for KV-cache management
 - Mature production tooling, large community
-- Ships on a roughly two-week cadence (v0.32.0 on October 18, 2026), with Model Runner V2 as the default, admission-control flags, and a Fast Start weight cache that cuts pod restarts. v0.32.0 also changed the default CORS policy from `*` to none, made Python 3.11 the minimum, and made `max_tokens` an upper bound, so treat the upgrade as a behavior change
-- **Patch floor:** a run of 2026 RCEs: the February video-processing RCE (CVE-2026-22778) was fixed in v0.14.1 and the March `trust_remote_code` bypass (CVE-2026-27893) in v0.18.0; 20+ security advisories after August 11 (see Q135) moved the floor to 0.30.0, and CVE-2026-115915 (CVSS 8.1, affecting every release before 0.32.0; reproduced on 0.30.0) and CVE-2026-115912 moved it to 0.32.0.
+- Ships on a roughly two-week cadence (v0.33.0 on November 2, 2026, after v0.32.0 on October 18). v0.33.0 ships CUDA 13.0-only wheels and images (NVIDIA driver 580 or newer), removes Medusa and the MLP speculator, returns HTTP 503 to requests sent while generation is paused, and turns on `/v1/decisions` by default for supported generation models, so the gateway's route allowlist matters. v0.32.0 brought Model Runner V2 as the default, admission-control flags, and a Fast Start weight cache that cuts pod restarts. v0.32.0 also changed the default CORS policy from `*` to none, made Python 3.11 the minimum, and made `max_tokens` an upper bound, so treat the upgrade as a behavior change
+- **Patch floor:** a run of 2026 RCEs: the February video-processing RCE (CVE-2026-22778) was fixed in v0.14.1 and the March `trust_remote_code` bypass (CVE-2026-27893) in v0.18.0; 20+ security advisories after August 11 (see Q135) moved the floor to 0.30.0, and CVE-2026-115915 (CVSS 8.1, affecting every release before 0.32.0; reproduced on 0.30.0) and CVE-2026-115912 moved it to 0.32.0. GHSA-qrj2-j723-m6w8 (CVSS 5.4, fixed in 0.33.0) lets a crafted repository's speculator config read another directory's tokenizer vocabulary through `/detokenize` when you serve an untrusted repository, which moves it to 0.33.0.
 
-**SGLang (v0.5.22 is current; no patched release for two critical October CVEs):**
+**SGLang (v0.5.23 is current, released November 2; still no fix for two critical October CVEs):**
 - Best for: structured generation workloads (JSON, function calling), reasoning models with controlled decoding
 - ~29% throughput advantage on some workloads vs vLLM (their benchmarks; verify on yours)
 - Async constrained decoding is genuinely faster than vLLM equivalents
-- **Patch floor:** the March multimodal and disaggregation RCEs (CVE-2026-3059, CVE-2026-3060) were fixed in v0.5.10, and a May 18 batch of critical advisories (CVE-2026-7301, 7302, 7304) lists affected versions through 0.5.12 with no patched version recorded. October made it worse: CVE-2026-111391 (eval injection, CVSS v4 9.2, described as affecting 0.5.10 through 0.5.22) and CVE-2026-93034 (ZMQ decoder, CVSS 9.8) list no patched version, so no release is a safe floor. Run the latest, keep the dumper, debug, ZMQ and distributed-init endpoints inside the pod, and do not enable custom logit processors for untrusted callers.
+- **Patch floor:** the March multimodal and disaggregation RCEs (CVE-2026-3059, CVE-2026-3060) were fixed in v0.5.10, and a May 18 batch of critical advisories (CVE-2026-7301, 7302, 7304) lists affected versions through 0.5.12 with no patched version recorded. October made it worse: CVE-2026-111391 (eval injection, CVSS v4 9.2, described as affecting 0.5.10 through 0.5.22) and CVE-2026-93034 (ZMQ decoder, CVSS 9.8) list no patched version, so no release is a safe floor. v0.5.23 leaves the `eval()` path in the dumper byte-identical and the `pickle.loads` root cause in place; it adds an opt-in `SGLANG_ZMQ_ALLOWED_PEERS` allowlist that admits every peer when left empty. Run the latest, set that allowlist on every multi-node node, keep the dumper, debug, ZMQ and distributed-init endpoints inside the pod, and do not enable custom logit processors for untrusted callers.
 
 **TensorRT-LLM:**
 - Best for: NVIDIA-only fleets, single-model-served-at-massive-scale, latency-critical workloads
@@ -4452,7 +4460,7 @@ Implication: code review for AI-generated patches must include adversarial testi
 | Public chatbot, variable request mix | vLLM | Best balance of throughput + flexibility |
 | Function-calling API with strict JSON schema | SGLang | Constrained decoding wins |
 | Single-model latency-critical (sub-50ms TTFT) at $100K+/month scale | TensorRT-LLM | Worth the NVIDIA lock-in and tuning effort |
-| Multimodal serving at any tier | vLLM (0.32.0 or later) | SGLang's March RCEs landed in its multimodal path; verify its advisories before exposing it |
+| Multimodal serving at any tier | vLLM (0.33.0 or later) | SGLang's March RCEs landed in its multimodal path; verify its advisories before exposing it |
 | Reasoning model (DeepSeek-R1 class) | SGLang | Best at structured CoT + tool-use loops |
 
 **The trap to avoid:** Picking based on benchmarks against the wrong workload. Engine vendors all benchmark their best cases. Compare engines on throughput-versus-interactivity Pareto curves under agentic traffic at your SLO, not on batch-1 peak tokens per second, and run a 48-hour soak test with YOUR traffic profile before committing. The cost of a wrong choice is 3+ months of engineering pain when you switch."
@@ -4473,7 +4481,7 @@ Implication: code review for AI-generated patches must include adversarial testi
 **Tier 1 - Training / fine-tuning (heavy compute, less latency-critical):**
 - **Blackwell Ultra (B300 / GB300 NVL72):** 288GB HBM3e, 15 PFLOPS dense FP4. Shipped Jan 2026, NVL72 racks ramping through 2026. Best for general-purpose training.
 - **AMD MI400 (HBM4, 432GB per GPU):** Helios rack with EPYC Venice + Pensando Vulcano NICs. Ramping mid-2026. Strong for inference + training. 432GB per GPU buys you bigger models per node.
-- **TPU7x (Ironwood, GA on Google Cloud March 31, 2026):** Best if you're committed to JAX and Google Cloud. Google announced eighth-generation TPU 8t (training) and TPU 8i (inference) in April 2026 without availability dates, so plan on Ironwood.
+- **TPU7x (Ironwood, GA on Google Cloud March 31, 2026):** Best if you're committed to JAX and Google Cloud. Google announced eighth-generation TPU 8t (training) and TPU 8i (inference) in April 2026 without availability dates, so plan on Ironwood. On October 27 Oracle said OCI will offer TPU 8t and 8i starting in calendar 2027 (scheduled, no pricing or regions), so from 2027 TPU access stops implying Google Cloud.
 
 **Tier 2 - High-throughput inference (cost-per-token critical):**
 - **Trainium3 (AWS):** UltraServers with up to 144 chips, ~4.4× T2 perf. Anthropic locked in 5 GW of capacity through 2026 - sets the precedent for production inference scale.
@@ -4497,7 +4505,7 @@ Implication: code review for AI-generated patches must include adversarial testi
 
 **The hard truth:** Capacity in May 2026 is still constrained at the top tier. Decision is partly *what hardware is best* and partly *what can you actually procure*. Talk to your vendor TAMs about availability before benchmarks."
 
-By November 2026 the flagship was NVIDIA Vera Rubin NVL72 (in a full-production ramp since May 31, per NVIDIA, and generally available on Oracle Cloud from October 27), NVIDIA Groq 3 LPX had entered full production as an SRAM decode tier behind Rubin prefill, and AMD's Helios (MI455X, 432 GB HBM4) was in production, with OpenAI expecting it online from Q4 2026. Its lead over Blackwell Ultra is workload-dependent: Artificial Analysis's AA-AgentPerf (October 15) measured Rubin at 1.14x to 1.45x GB300 peak throughput per megawatt depending on the model, with larger leads only at high per-user speeds, so the Tier 1 and Tier 2 split above still holds. Rental prices rose rather than fell: the Silicon Data B200 index went from $5.86 per GPU-hour in early October to $6.50 on November 1 (H100 from $2.78 to $2.93), and 12-month terms priced below 3-month terms in September, which strengthens point 2's advice to lock capacity early.
+By November 2026 the flagship was NVIDIA Vera Rubin NVL72 (in a full-production ramp since May 31, per NVIDIA, and generally available on Oracle Cloud from October 27), NVIDIA Groq 3 LPX had entered full production as an SRAM decode tier behind Rubin prefill, and AMD's Helios (MI455X, 432 GB HBM4) was shipping in volume: on November 3 AMD reported that lead customers including Anthropic, Meta, Microsoft, OpenAI and Oracle had brought their first Helios racks online, with OEM systems from HPE, Dell, Lenovo and Supermicro starting to ship in Q4 (company-reported). Its lead over Blackwell Ultra is workload-dependent: Artificial Analysis's AA-AgentPerf (October 15) measured Rubin at 1.14x to 1.45x GB300 peak throughput per megawatt depending on the model, with larger leads only at high per-user speeds, so the Tier 1 and Tier 2 split above still holds. Rental prices rose rather than fell: the Silicon Data B200 index went from $5.88 per GPU-hour on October 7 to $6.70 on November 5, about 14% in four weeks (H100 from $2.78 in early October to $2.97), and 12-month terms priced below 3-month terms in September, which strengthens point 2's advice to lock capacity early.
 
 ---
 
@@ -4878,7 +4886,7 @@ By November 2026 the flagship was NVIDIA Vera Rubin NVL72 (in a full-production 
 - A code-review agent (Claude Code, OpenHands, Cursor's own) reviews every agent-generated PR before a human sees it.
 - It runs the test suite, the linter, the security scanner, and a 'does this PR's diff match its description' check.
 - It generates a review summary with risk highlights. The human's first read is the agent's review, not the raw diff.
-- The review agent can now approve, not just comment: since September 1, 2026, GitHub Copilot code review approvals can count toward required reviews (a preview, off by default). If I turn it on, a human CODEOWNERS approval stays required on security, auth and data paths, because research on 'approval laundering' shows the action a reviewer approves is not always the action an agent harness later executes.
+- The review agent can now approve, not just comment: since October 28, 2026, GitHub Copilot code review approvals are generally available and can count toward required reviews (off by default; repository admins choose which file paths Copilot may approve, and new commits dismiss the approval; Q193 designs the policy). If I turn it on, a human CODEOWNERS approval stays required on security, auth and data paths, because research on 'approval laundering' shows the action a reviewer approves is not always the action an agent harness later executes.
 - Part of the burden is moving after merge: Cursor added post-merge Rollouts monitoring and Security Review on September 23, 2026.
 
 **3. Differentiated review by agent trust.**
@@ -5310,7 +5318,7 @@ The principle interviewers are probing: prompt injection remains unsolved, so th
 
 September proved the point within weeks. DeepSeek's V4.1-Flash (September 10) cut Flash prices to $0.30/$1.20 at peak while GPT-6 Luna undercut both at $0.10/$0.50, and DeepSeek announced, then reversed a day later, routing all `deepseek-v4-pro` traffic to V4.1-Flash, so a rate table also needs an alias map: the model behind a name can change even when the price does not. Gemini 3.8 Flash shares 3.7 Flash's introductory rate, which still doubles on January 1, 2027.
 
-### Q124: Three labs now gate their strongest cyber-capable models behind approval tiers with identity verification and hardware keys. You are shipping a dual-use capability in your own product. Design the access control.
+### Q124: Three labs now gate their strongest cyber-capable models behind approval tiers with identity verification, SSO and MFA requirements. You are shipping a dual-use capability in your own product. Design the access control.
 
 **What interviewers look for:**
 - Recognizing capability tiering as an architecture pattern rather than a policy footnote
@@ -5319,7 +5327,7 @@ September proved the point within weeks. DeepSeek's V4.1-Flash (September 10) cu
 
 **Strong answer:**
 
-"The pattern is now well established in production. OpenAI split its Daybreak program into Blue for approved defenders using general-purpose models and Red for `gpt-5.6-cyber`, a model deliberately trained to refuse less on security work, priced at 2.5x the flagship, restricted to a single API surface, with hardware security keys scheduled to become mandatory from September 1. Anthropic runs the same shape with the Fable 5 and Mythos 5 split, and Google shipped a government-gated Gemini Flash Cyber variant. Three labs, one pattern, and all three extended it in September and October 2026: Anthropic shipped Fable 5.1 and Mythos 5.1 on September 1 as the same model with different safeguards, with Mythos 5.1 limited at launch to Project Glasswing participants, then folded Glasswing into a three-tier Cyber Verification Program (Defense, Red Team, Specialized) with Mythos 5.1 in every tier and data retention required; Google launched Gemini 3.8 Flash Cyber for trusted defenders through its Fairwind Program, rolled Gemini 4 Argon out to those defenders before its general release, and announced Gemini 4 Carbon for a subset of them with no model ID for developers; and OpenAI rated GPT-6 Astra its first Critical-level cybersecurity model, staged its launch to Daybreak defenders first, and released GPT-6 Rosalind to trusted-access customers only. Public confirmation that the September 1 hardware-key requirement is enforced was still not available on November 2.
+"The pattern is now well established in production. OpenAI split its Daybreak program into Blue for approved defenders using general-purpose models and Red for `gpt-5.6-cyber`, a model deliberately trained to refuse less on security work, priced at 2.5x the flagship, restricted to a single API surface, and selected per request with `access_programs.cyber: "daybreak_red"`, with every Daybreak Red organization required to use SSO for its API organization and enforce MFA through its identity provider. Since November 5, GPT-6-Cyber ($20 / $100 per 1M tokens) sits above it behind a separate model approval and IP allowlisting (see Q189). Anthropic runs the same shape with the Fable 5 and Mythos 5 split, and Google shipped a government-gated Gemini Flash Cyber variant. Three labs, one pattern, and all three extended it in September and October 2026: Anthropic shipped Fable 5.1 and Mythos 5.1 on September 1 as the same model with different safeguards, with Mythos 5.1 limited at launch to Project Glasswing participants, then folded Glasswing into a three-tier Cyber Verification Program (Defense, Red Team, Specialized) with Mythos 5.1 in every tier and data retention required; Google launched Gemini 3.8 Flash Cyber for trusted defenders through its Fairwind Program, rolled Gemini 4 Argon out to those defenders before its general release, and announced Gemini 4 Carbon for a subset of them with no model ID for developers; and OpenAI rated GPT-6 Astra its first Critical-level cybersecurity model, staged its launch to Daybreak defenders first, and released GPT-6 Rosalind to trusted-access customers only.
 
 **Applying it to my own dual-use feature:**
 
@@ -5451,7 +5459,7 @@ California kept moving after August 2. SB 1000, signed September 30 as an urgenc
 
 "The September system cards change what counts as evidence. OpenAI's GPT-6 Astra card (September 3) makes it the first OpenAI model rated Critical for cybersecurity; in expert testing it built a working browser exploit chain to unsandboxed code execution in about 29 hours, against a build missing some production mitigations. The same card reports a substantial drop in chain-of-thought monitorability. On OpenAI's own eval, limited to 750 to 1,250-token traces, Astra controls its reasoning 60.9% of the time against 16.1% for GPT-5.6 Sol. Told a CoT monitor is present, it disproportionately shortens its CoT, and OpenAI writes that it would likely be unable to reliably catch covert sandbagging.
 
-Eval behavior is suspect too. Apollo Research measured verbalized evaluation awareness in 41.1% of Astra samples at xhigh effort, and Anthropic's Opus 5.5 card shows 36% of automated-audit transcripts scoring high on eval awareness against 0.4% of internal Claude Code transcripts. A model that behaves better when it suspects a test turns every pre-deployment score into an optimistic bound.
+Eval behavior is suspect too. Apollo Research measured verbalized evaluation awareness in 41.1% of Astra samples at xhigh effort, and Anthropic's Opus 5.5 card shows 36% of automated-audit transcripts scoring high on eval awareness against 0.4% of internal Claude Code transcripts. A model that behaves better when it suspects a test can make a pre-deployment score an optimistic bound, but the gap can also run the other way: OpenAI's November 3 comparison of its Respecting Warnings eval with matched Codex production decisions found all six models tested succeeded less often in the eval than in production, by 10.2 to 37.4 points, and general eval awareness explained almost none of it, while inferring the specific objective under test explained more (vendor-reported). So I track an eval-to-production gap per behavior instead of assuming either direction.
 
 So the safety case rests on what the environment permits and what an independent monitor sees, not on the model's reasoning or its scores.
 
@@ -5613,11 +5621,11 @@ Temperature 0 was never a reproducibility guarantee; batching and kernel nondete
 
 "'Open weights' now covers four different deals, and the trigger in nearly every gated license is exactly what we are building: a coding assistant, plus a model-as-a-service API.
 
-**The license classes as of November 2:**
+**The license classes as of November 6:**
 
 1. **Permissive.** Xiaomi MiMo-V2.6 (MIT, September 21), DeepSeek V4.1-Flash (MIT; the October 17 build now serves `deepseek-flash`), GLM-5.3-Flash (MIT), Tencent Hy4 preview and MBZUAI K2 Horizon (Apache 2.0).
-2. **Revenue-gated MaaS.** Kimi K3 needs a separate agreement once a MaaS operator's revenue with affiliates exceeds US$20M over 12 months, and Meta's Muse Model License on Muse Spark Open (October 15) gates MaaS operators above US$20M revenue. The Qwen3.8-Max license gates MaaS and coding or office assistants above US$50M. GLM-5.3 is MIT plus a Z.ai security review that applies only to MaaS operators above US$10B. Kimi's and GLM's MaaS definitions exclude embedded end-user products.
-3. **Use-case gated, no floor.** The Qwen Community License 1.0 on Qwen3.8-Flash-Next (August 26) requires a separate license before any commercial use if you run a MaaS or 'AI Work Assistant' business, meaning a product primarily for AI-assisted coding or office work. That is us. Mistral Large 4 (open weights October 29) uses the Mistral Ecosystem Open-Weight License, under which any MaaS business needs a separate commercial license with no revenue threshold, so our partner API would trigger it.
+2. **Revenue-gated MaaS.** Kimi K3 needs a separate agreement once a MaaS operator's revenue with affiliates exceeds US$20M over 12 months, and Meta's Muse Model License on Muse Spark Open (October 15) gates MaaS operators above US$20M revenue. The Qwen3.8-Max license gates MaaS and coding or office assistants above US$50M. GLM-5.3 is MIT plus a Z.ai security review that applies only to MaaS operators above US$10B. Kimi's and GLM's MaaS definitions exclude embedded end-user products. The Kimi K3.1-Pro License that shipped with the November 4 weights keeps the same US$20M gate and display duty, and its MaaS definition also excludes mere relaying to models hosted by others (Q190 reads it against three surfaces).
+3. **Use-case gated, no floor.** The Qwen Community License 1.0 on Qwen3.8-Flash-Next (August 26) requires a separate license before any commercial use if you run a MaaS or 'AI Work Assistant' business, meaning a product primarily for AI-assisted coding or office work. That is us. Mistral Large 4 (open weights October 29) uses the Mistral Ecosystem Open-Weight License, under which any MaaS business needs a separate commercial license with no revenue threshold, so our partner API would trigger it. The MiniMax Community License on M3.1-Flash (October 23) is stricter still: every commercial use needs at least a one-time notice, licensees above US$20M in yearly revenue need prior written authorization, and there is no explicit internal-use exemption.
 4. **Blanket revenue cap.** Mistral Medium 3.5's modified MIT withdraws all rights from organizations above US$20M in monthly revenue, derivatives included. Mistral deprecated it on October 31, and it retires April 30, 2027.
 
 One family can span classes: Qwen3.8-27B is plain Apache 2.0, Flash-Next is gated from day one, and the August 12 Qwen3.8 flagship gates only above US$50M. The license is read per checkpoint.
@@ -5630,9 +5638,9 @@ One family can span classes: Qwen3.8-27B is plain Apache 2.0, Flash-Next is gate
 - **Derivatives inherit.** Cognition's SWE-2 and Fireworks' Ember-1 are built on Kimi K3; anything we fine-tune carries its base license with it.
 - **Provenance pinned.** Weights come from the official organization at a recorded hash. Within days of GLM-5.3's weights, uncensored and abliterated community builds appeared on Hugging Face, one GLM-5.3-Flash build at roughly 220K downloads.
 
-**The pick:** on Artificial Analysis Intelligence Index v5.0 the top open-weight scores are DeepSeek V4.1-Flash-1017 (MIT) and GLM-5.3 (effectively MIT below US$10B in revenue) at 32, with MiMo-V2.6-Pro (MIT) at 30. I would start with MiMo-V2.6-Flash (309B total, 15B active, served on one 8-GPU node in Xiaomi's examples; 27 on v5.0) for unit cost, move to one of the 30-to-32 models where evals demand it, and keep a closed-model fallback, since the best open score trails Opus 5.5 at 58 by more than 25 points. I would not ship a Qwen Community 1.0 checkpoint without the separate license signed."
+**The pick:** on Artificial Analysis Intelligence Index v5.0.1 (November 3) the top permissive open-weight scores are DeepSeek V4.1-Flash-1017 (MIT) at 33 at max effort (29 at high), GLM-5.3 (effectively MIT below US$10B in revenue) at 32, and MiMo-V2.6-Pro and Ling 3.1 Flash 1019 (both MIT) at 30. I would start with MiMo-V2.6-Flash (309B total, 15B active, served on one 8-GPU node in Xiaomi's examples) for unit cost, move to one of the 30-to-33 models where evals demand it, and keep a closed-model fallback, since those trail Opus 5.5 at 59 by 26 points or more. Kimi K3.1 Pro, whose weights went public November 4, scores 46, but it's a 1.56 TB checkpoint whose MaaS clause our partner API would trigger once our revenue with affiliates passes US$20M over 12 months, so it's an evaluation candidate, not the default. I would not ship a Qwen Community 1.0 checkpoint without the separate license signed."
 
-**Follow-up to expect:** If you call Kimi K3 through a hosted provider instead of self-hosting, does the MaaS clause still bind you? (The K3 license waives both conditions for use through Moonshot's official products or certified inference partners, so the clause mainly bites when you self-host and resell; get the provider's certification status in writing.)
+**Follow-up to expect:** If you call Kimi K3 through a hosted provider instead of self-hosting, does the MaaS clause still bind you? (The K3 license, and the K3.1-Pro license shipped November 4, waive both conditions for use through Moonshot's official products or certified inference partners, so the clause mainly bites when you self-host and resell; get the provider's certification status in writing.)
 
 ### Q135: Between August 11 and September 28, vLLM published 20+ security advisories, including a single request that kills the engine for every tenant and a cross-tenant prefix-cache oracle, while LiteLLM disclosed a flaw that let any authenticated user send the operator's stored provider keys to an attacker. Design the security architecture for a multi-tenant, self-hosted serving tier.
 
@@ -6163,7 +6171,7 @@ flowchart LR
 
 **As a consumer, which is most of us:**
 
-4. **Provenance is checked, not just published.** The deploy pipeline verifies PyPI attestations and image signatures, and the admission controller rejects any artifact whose provenance names a different repository or workflow, so a build from a lookalike fork fails no matter whose token pushed it.
+4. **Provenance is checked, not just published.** The deploy pipeline verifies PyPI attestations and image signatures, and the admission controller rejects any artifact whose provenance names a different repository or workflow, so a build from a lookalike fork fails no matter whose token pushed it. A valid signature still isn't proof: LiteLLM says the October 21 attacker likely exposed its old cosign signing key, so the poisoned 1.107.0 images carry a valid old-key signature. After its October 23 key rotation I trust old-key signatures only on images published before October 21, re-pin cosign checks and admission policies to the new key, and skip the 1.107 line for 1.108.0 (November 4).
 5. **Q125's intake controls, plus a fast lane.** Hash-pinned lockfiles, images by digest, and a 72-hour cooldown would have skipped a two-hour window. The gateway-specific addition is a fast lane for security releases, such as LiteLLM's CVSS 10.0 fix for Enterprise-licensed proxies, that verifies provenance instead of waiting.
 6. **Less to steal.** The payload took environment secrets, so provider keys never sit in the gateway's environment. Egress goes through a proxy that allows only provider endpoints, injects our credentials from the vault, and drops requests that arrive carrying credentials of their own. That goes past Q135's allowlist, because a harvester could otherwise send stolen data to its own account on an allowed provider. Admin credentials never sit in plaintext on serving hosts.
 
@@ -6234,7 +6242,7 @@ flowchart LR
 3. **Above the cliff, choose on purpose.** Haiku 5.5's upper band, $0.50/$2.50, is still half of GPT-6.1 Terra's base $1/$5, so crossing it isn't by itself a reason to switch models. The options are map-reduce under the line, compaction, or paying the upper band for rare long documents, picked per route from eval results.
 4. **Cache by measured reuse.** On Terra a 100K-token prefix costs $0.25 to write at 2.5x, then $0.005 per cached read against $0.10 uncached, so a 12-hour write pays off after about two reuses in the window (derived). Sparse routes omit `cache_control` on Anthropic; on OpenAI the choice is the default 30-minute write at 1.25x versus the 12-hour write at 2.5x, set from inter-arrival data per route.
 5. **Speed tiers are an entitlement.** Fast and ultrafast are enabled per surface with a budget and an owner, never as a default, because a premium speed tier quietly multiplies a route's bill and turns a latency fix into a spend incident.
-6. **The calendar is a scheduled job.** Every dated rate (Argon's December 1 step, Gemini 3.8 Flash's January 1 doubling, GPT-5.6 Sol's promotional price, guaranteed at least through November 21, Opus 4.8 fast mode's removal on November 30) triggers a rerun of the routing comparison two weeks ahead.
+6. **The calendar is a scheduled job.** Every dated rate (Argon's December 1 step, Gemini 3.8 Flash's January 1 doubling, GPT-5.6 Sol's promotional price, which OpenAI now says runs until November 30, Opus 4.8 fast mode's removal on November 30) triggers a rerun of the routing comparison two weeks ahead.
 
 **Alerting:** the share of requests above each cliff, per route. A jump means a prompt grew, retrieval drifted, or a tokenizer changed.
 
@@ -6326,7 +6334,7 @@ The economics reward narrow questions. A request of about 3,000 input tokens, co
 
 ## Questions From Recent Interview Reports
 
-*Built from what candidates reported being asked in AI engineering loops, in reports posted mostly between June and November 2026 on public forums and interview-prep sites (PracHub, Aced, Hello Interview, Blind, Hacker News, and candidates' own write-ups). Every prompt is candidate-reported and paraphrased: companies do not confirm interview content, prep sites sometimes add their own follow-ups, and the same prompt can be retold across sites, so treat the attribution line under each question as "where candidates say this came up", not as a company's question list. The set covers round types the earlier sections only touch: design-doc review, model distribution and GPU scheduling, provider-side chat serving, implementing LLM pieces from scratch, building agents without a framework, AI-assisted coding and PR-review rounds, launch-readiness calls, safety and mission screens, and forward deployed decomposition. Rehearse them in the format they were reported in: timed, out loud, and for the coding rounds, with code that runs. The [job market chapter](06-job-market-trends-2026.md#what-candidates-reported-june-to-november-2026) summarizes the reported loop formats by company.*
+*Built from what candidates reported being asked in AI engineering loops, in reports posted mostly between June and November 2026 on public forums and interview-prep sites (PracHub, Aced, Hello Interview, Blind, Hacker News, and candidates' own write-ups). Every prompt is candidate-reported and paraphrased, except where the attribution line says a prep site compiled it (Q183): companies do not confirm interview content, prep sites sometimes add their own follow-ups, and the same prompt can be retold across sites, so treat the attribution line under each question as "where candidates say this came up", not as a company's question list. The set covers round types the earlier sections only touch: design-doc review, model distribution and GPU scheduling, provider-side chat serving, implementing LLM pieces from scratch, building agents without a framework, AI-assisted coding and PR-review rounds, launch-readiness calls, safety and mission screens, and forward deployed decomposition. Rehearse them in the format they were reported in: timed, out loud, and for the coding rounds, with code that runs. The [job market chapter](06-job-market-trends-2026.md#what-candidates-reported-june-to-november-2026) summarizes the reported loop formats by company.*
 
 ### Q156: Your team wants a shared prompt playground: people co-edit prompts, save versions, run any version against several models, compare runs side by side, and share work with teammates. Some prompts run to hundreds of thousands of tokens and change a few characters at a time. Design it, including what happens when someone loses access while their run is still going.
 
@@ -7246,6 +7254,704 @@ Then I'd sit with two support agents for an afternoon. Say the workflow is: a cu
 
 **Follow-up to expect:** The customer's privacy review will hold back the driver photos for three weeks. What changes? (Re-scope to the text-only steps now and send the privacy team a precise request on day one, listing fields, retention, and where processing happens, so the review actually starts; don't build the photo check against synthetic images and call it validated.)
 
+### Q174: Design a system where an AI agent works on a stream of security telemetry and runs detection on it, at about 1 TB of incoming data per day. Cover architecture, data flow, scale, and failure handling, then say what changes at 100 TB a day, what happens when an attacker plants text in a log field to convince the agent a case is benign, and when disabling a credential should be automatic.
+
+*Candidate-reported (October 2026): Amazon SWE interview for an AWS agentic AI security team (three one-hour rounds; the page labels the stage a technical screen). Round: system design. The follow-ups come from a prep-site question page.*
+
+**What interviewers look for:**
+- Capacity math first, and a funnel that decides which events ever reach the costly agent, instead of "the agent reads the stream"
+- Treating adversary-written telemetry as the injection channel, with a verdict path the planted text cannot flip on its own
+- An action policy for security responses graded by reversibility, and detections that keep firing when the agent tier is down
+
+**Strong answer:**
+
+"The candidate who reported this called it a traditional system design round, so I'll spend my time on data flow and failure modes. Q122 and Q96 cover injection through data in general; here the twist is that the attacker writes the data on purpose.
+
+**Capacity sets the shape.** 1 TB a day is 10^12 bytes over 86,400 seconds, about 11.6 MB/s on average; I'd plan for 3x at peak, about 35 MB/s. At roughly 1 KB per event that's about a billion events a day, around 11,600 a second. Sending every event to a model is not a design: at 300 tokens an event it's 300 billion tokens a day. So the agent sits at the end of a funnel, not at the front.
+
+**Pipeline:**
+
+1. **Ingest and normalize.** Collectors write to a partitioned log (Kafka or Kinesis), keyed by tenant and source. A stream processor parses each event into a typed schema, and raw events land in object storage partitioned by tenant and hour, with a hot index of the last 7 days for investigation queries.
+2. **Deterministic detection.** Signature rules, thresholds, and anomaly scores run in the stream processor. This layer owns detection; it never waits on a model, so if the agent tier falls over, alerts still fire. Say it flags 0.01% of events: about 100,000 alerts a day.
+3. **Group into cases.** Alerts are deduplicated and grouped by entity (user, host, credential) and time window, so one compromised host is one case, not 400 alerts. Assume about 5,000 cases a day.
+4. **Agent investigation.** For each case the agent runs bounded tool calls: query the hot index, look up the asset inventory and identity system, check threat intelligence. It returns a structured verdict (likely malicious, likely benign, needs a human) with evidence that cites tool results. At 15 tool calls and about 60K tokens per case, 5,000 cases is about 300 million tokens a day, a cost you can budget. A small decision model (Q153) can triage which cases deserve the full agent.
+5. **Action policy and case store.** Verdicts and proposed actions go to a case system with an audit trail. Analysts see the evidence, not just the verdict.
+
+**Planted text in a log field.** User agents, file names, commit messages, and error strings are attacker-controlled. Defenses, in order of how much I trust them: the agent sees fields as quoted data inside a typed record, never as instructions; a 'benign' verdict cannot close a case that deterministic rules scored high-severity, only downgrade it for human review; benign verdicts must cite tool results (a hash lookup, an inventory match), and text from the event itself doesn't count as evidence; the agent's permissions never widen based on case content; and fields that look like instructions to an assistant are themselves a detection signal and raise the case's severity. The attacker can still waste the agent's time, so cases carry a per-case token budget (Q87 covers runaway loops).
+
+**Actions by reversibility.** Enrichment, tagging, and opening a ticket are automatic. Isolating a test host or forcing a session re-login is automatic for pre-approved, high-confidence detections. Disabling a credential is human-approved by default, and automatic only under a narrow rule the customer signs off on in advance (for example, a key seen in a public paste plus use from a new country), because a wrong disable can take down production. Every automatic action has a one-click undo.
+
+**Failure handling.** Processing is at-least-once with case IDs as idempotency keys, so a retried investigation updates the same case. If the agent tier falls behind, cases queue by severity and low-severity ones are batched or skipped with a note, never silently dropped. Per-tenant quotas stop one noisy customer from starving the rest.
+
+**At 100 TB a day,** about 1.16 GB/s on average, the stream layer scales by adding partitions and processors. The agent tier must not grow 100x: cases grow slower than events if grouping is by entity, and I'd set the agent's daily budget per tenant and tighten the pre-filter and grouping before adding model capacity.
+
+**The judgment call:** detection stays deterministic and the agent investigates. An agent that is the detector turns every model outage and every injected log line into a missed attack."
+
+**Follow-up to expect:** You want to roll out a new detection rule. How do you avoid flooding customers with false positives? (Run it in shadow mode against the live stream and the last 30 days of stored events, measure its alert rate and precision on analyst-labeled cases, give each tenant an alert budget, and enable it per tenant once shadow precision clears the bar.)
+
+### Q175: Design an agentic code-explorer for your company's repositories, then go deep: how the agent's memory works internally, when to use graph search versus semantic search over code, how to make the agent's access exactly match the user's, and how to avoid embedding the same content again and again across globally distributed regions.
+
+*Candidate-reported (August 2026, posted November): OpenAI Staff security infrastructure engineer onsite. Round: system design.*
+
+**What interviewers look for:**
+- Permission parity as the core requirement, enforced in the retrieval and tool layer at query time, not by the model or by a filter on results
+- A clear split between structural (graph) and semantic retrieval for code, with lexical search alongside
+- Content-addressed embedding reuse, with access control kept on each occurrence rather than on the shared content
+
+**Strong answer:**
+
+"The candidate said interviewers probed each concept until they could judge depth, so I'll keep the overview short. Q7 and Q101 cover multi-tenant RAG isolation and Q85 covers memory architectures; this is the security team's version, where the failure that matters is the agent showing a user code they can't open.
+
+**Scope.** Assume 10,000 repositories, a mix of public-to-the-company and restricted, and questions like 'where do we validate session tokens' or 'what breaks if I change this interface.' The agent reads and explains; it doesn't write.
+
+**Retrieval, three ways:**
+
+1. **Graph.** A compiler-grade symbol index per repository and commit: definitions, references, call edges, imports, implementations. It answers structural questions exactly: who calls this function, what implements this interface, what a change touches. Embeddings are bad at this, because callers rarely look like the callee.
+2. **Semantic.** Function- and class-level chunks with their docstrings and file path, embedded. It answers intent questions where names don't match the words: 'where do we rate-limit logins' when the function is called `throttle_attempts`.
+3. **Lexical.** Exact identifiers, error strings, config keys. Grep beats both when the user pastes a stack trace.
+
+The agent's usual pattern is semantic or lexical search to find entry points, then graph traversal from there. Asking 'which index' is usually asking 'is this a question about structure or about meaning.'
+
+**Memory internals.** Three layers. Working memory is the context window: the plan, recent tool results, and findings. A session scratchpad holds structured notes outside the window (files visited, open hypotheses, and citations as repo, path, and commit), so the agent can compact without losing what it has proven. Long-term memory holds per-user preferences and cached repository summaries. Every memory item carries the access label of what it was derived from: a note distilled from a restricted repo is only retrievable by someone who can read that repo now. Memory is where permission bugs hide, because a summary outlives the check that produced it.
+
+**Agent access equals user access.** The agent runs on a delegated token for the requesting user, never a broad service account. The retrieval service resolves the user's readable repository set from the source of truth (cached for at most about a minute, with revocation events invalidating it) and applies it as a filter inside the search, before ranking. A post-filter on results leaks through counts, snippets, and summaries. File reads go through the same authorization the code host applies. I test parity differentially: for sampled users and queries, every item the agent returns must be readable by that user through the code host directly, and any mismatch is a security bug.
+
+**Embedding reuse across regions.** Most code is duplicated: forks, branches, vendored dependencies, and commits that change a few files. So the embedding store is content-addressed: the key is a hash of the normalized chunk plus the embedding model version. Indexing a new commit hashes its chunks and embeds only hashes the store hasn't seen. Assume 200 million chunk occurrences reduce to about 60 million unique chunks; a commit touching 1% of files then embeds a small fraction of that 1%. Regions check a regional cache, then a replicated global table, before embedding, and writes are conditional puts so two regions embedding the same hash race harmlessly. Access control lives on the occurrence (repo, path, commit) that points at the hash, not on the hash, because the same file can sit in a public repo and a restricted one.
+
+Two limits. Where code can't leave a region, the store is per residency zone, not global. And dedup across customers is a side channel: if a lookup reveals that a hash already exists, it confirms someone else holds that file. So dedup is within a tenant, or for content known to be public.
+
+**The judgment call:** dedup content globally, authorize occurrences individually. Merge the two and you either embed every duplicate again (more than three times the work under these assumptions, and again in each region) or leak restricted code through a shared vector."
+
+**Follow-up to expect:** A user loses access to a repository mid-session. What happens to what the agent already read? (The revocation event invalidates the user's cached access set, the scratchpad notes and citations labeled with that repo stop being retrievable, and the agent's next turn re-checks access before using anything it remembered; text already shown can't be recalled, so the event is logged for review.)
+
+### Q176: Design an online devbox service: on-demand cloud development environments that engineers, and increasingly coding agents, start from a repository. Cover lifecycle, placement, fast start for very large repositories, what happens when a host fails mid-day, GPU scarcity and idle policy, and isolating one devbox from others and from the platform.
+
+*Candidate-reported (September to October 2026): OpenAI SWE technical screens; only the system's name was reported, and the follow-ups come from a prep-site question page. Round: system design.*
+
+**What interviewers look for:**
+- A lifecycle state machine with persistent workspaces, not "spin up a container"
+- Startup time attacked with prebuilt snapshots and warm capacity, with numbers for where the seconds go
+- Isolation strong enough for arbitrary code run as root, and an explicit recovery point when a host dies
+
+**Strong answer:**
+
+"An earlier report of this prompt was titled 'built the wrong thing,' so I'd pin scope out loud before drawing: long-lived, stateful environments a person returns to tomorrow, not throwaway sandboxes for one command. Q65 covers sandboxing a single code execution and Q68 coding agents in CI; a devbox is the long-lived substrate both of those end up running on.
+
+**Assumptions:** 2,000 engineers, a standard devbox of 16 vCPU and 64 GB with a 100 GB workspace, a few GPU devboxes, and repositories up to tens of GB with heavy dependency builds.
+
+**Lifecycle.** A control plane owns each devbox's state: requested, provisioning, running, stopping, stopped (workspace kept, compute released), archived (workspace in object storage only), deleted. Every transition is idempotent and driven by a reconciler, so a crash halfway through a start resumes instead of leaking a VM.
+
+**Isolation first, because it constrains everything.** Users run arbitrary code with root inside their box, so each devbox is a microVM, not a container on a shared kernel. Network policy blocks devbox-to-devbox traffic by default and blocks the cloud metadata endpoint. Credentials are short-lived and scoped to the user, injected at start, never baked into images. The only path to the platform is a narrow agent API on the host that authenticates the devbox's identity. Agent-run devboxes get stricter egress (allow-listed package mirrors and the code host) because their inputs include untrusted text; Q148 covers agents with write access.
+
+**Placement.** A host with 192 vCPU fits 12 standard devboxes without overcommit, about 24 with 2x CPU overcommit, which dev workloads tolerate because they're bursty; memory is not overcommitted. If all 2,000 ran around the clock without overcommit, that's about 167 hosts; with idle stop and a peak of 60% concurrent, about 100. The scheduler places by free memory and spreads a team across failure domains.
+
+**Fast start for large repos.** A cold start is clone, dependency install, and build: minutes to tens of minutes. So:
+
+1. **Prebuilds:** on every merge to main (and nightly), build a snapshot of the repo with dependencies installed and caches warm.
+2. **Lazy restore:** the VM boots from the snapshot and pulls disk blocks on demand, so the shell is up before the whole image arrives; then it fetches only the git delta since the snapshot.
+3. **Warm pool:** a few booted, unassigned VMs per popular image absorb the morning spike.
+
+Target: shell in under 30 seconds for the largest repos, with the remaining blocks streaming in behind.
+
+**Host failure mid-day.** Workspaces sit on local NVMe for build speed, with incremental snapshots to object storage every 10 minutes and on every stop. That makes the recovery point explicit: up to 10 minutes of uncommitted work. On a missed host heartbeat, the control plane marks its devboxes lost, restarts them on healthy hosts from the latest snapshot, and the IDE reconnects to the same devbox ID. Network-attached volumes would shrink that loss to near zero at the cost of slower builds; I'd offer them for users who ask and tell everyone the default recovery point.
+
+**GPUs and idle policy.** GPUs are quota'd per team and leased in time boxes (say 8 hours, renewable). A GPU devbox with near-zero GPU utilization and no IDE connection for 30 minutes is snapshotted and its GPU released; requests beyond quota wait in a fair queue (Q159 covers fair scheduling under scarcity). CPU devboxes stop after 2 hours without IDE or terminal activity. Running 8 hours a day instead of 24 cuts compute about two-thirds.
+
+**The judgment call:** microVMs and prebuilds are the two investments; everything else is policy. A container-based devbox is faster to build and is one kernel bug away from every user's credentials."
+
+**Follow-up to expect:** A user says their devbox lost an afternoon of work after a host failure. What do you change? (First check whether the snapshot loop ran on schedule, since the stated recovery point is 10 minutes; then shorten the interval for active devboxes, snapshot before risky host maintenance, and offer network-attached workspaces for users who prefer durability over build speed.)
+
+### Q177: Design a review ingestion platform for an e-commerce site that summarizes product reviews with an LLM for an internal dashboard. Cover prompt injection, sanitization, and PII, then handle a coordinated group posting hundreds of reviews with the same hidden instruction, a product manager who wants to click a summary sentence and see its sources without exposing PII, and a customer who deletes a review under a privacy regulation.
+
+*Candidate-reported (October 2026): Google SWE onsite. Round: system design. The follow-ups come from a prep-site question page.*
+
+**What interviewers look for:**
+- Seeing that the summarizer has no tools, so the attack surface is the summary itself, and designing defenses around that
+- Lineage from every summary sentence to the review IDs behind it, which makes retroactive cleanup, deletion, and source tracing the same mechanism
+- Pre-rollout evals for faithfulness and injection resistance, not just a prompt that says "ignore instructions"
+
+**Strong answer:**
+
+"Q47, Q53, Q79, and Q96 cover prompt-injection defenses in general. What's new here is batch summarization of untrusted text for internal readers, and what happens to summaries after you learn some of their inputs were bad.
+
+**Assumptions:** 2 million new reviews a day across 5 million products, summaries refreshed when a product gains 20 new reviews or weekly, read by merchandising and quality teams.
+
+**Pipeline:**
+
+1. **Ingest and sanitize.** Normalize Unicode, strip HTML, zero-width characters, and hidden markup, and keep the raw text in one access-controlled store keyed by review ID.
+2. **PII redaction.** A detector replaces names, emails, phone numbers, addresses, and order numbers with typed placeholders. Downstream stages see only the redacted text.
+3. **Abuse screening.** Spam and injection classifiers score each review; near-duplicate detection (MinHash over shingles) and account signals (age, burst rate) feed a campaign detector.
+4. **Summarize per product.** Map: group reviews by aspect (fit, durability, shipping). Reduce: write the summary. The model has no tools, gets reviews as quoted, ID-tagged data, and must return structured output: each sentence plus the review IDs that support it.
+5. **Validate and publish.** Each sentence must cite at least three distinct reviewers, or 2% of the product's reviews, whichever is larger; sentences that don't meet it are dropped. URLs and calls to action are stripped. A judge checks that each sentence is entailed by its cited reviews.
+
+**Why the citation threshold matters.** The worst a single injected review can do is put a line in the summary. Requiring support from several distinct reviewers means one review can't, and a campaign has to use many accounts, which the campaign detector is built to see.
+
+**The coordinated campaign.** Hundreds of reviews carrying the same hidden instruction look alike, so near-duplicate clustering plus new-account bursts flags them. Containment quarantines the cluster from summarization and from public display pending review. Summaries already produced are found through lineage: each summary version stores the set of review IDs it consumed, so one query returns every summary that used a quarantined review. Those are regenerated without the quarantined input, marked 'revised' on the dashboard with the reason, and the campaign's reviews join the injection eval set.
+
+**Sentence to source without PII.** Clicking a sentence shows its cited reviews, rendered from the redacted text, with the reviewer shown as a pseudonymous ID, through the same access check as the dashboard. Nobody needs a customer's email to judge a complaint about zippers.
+
+**Privacy deletion.** Deleting a review removes the raw and redacted text, then lineage finds every summary version that cited it, and those are regenerated within the deletion SLA. The other copies are the usual misses: embeddings or clusters built from the text, eval sets, caches, and logs. The design rule is that review text lives in one store and everything else holds the ID, so deletion is one delete plus a lineage-driven rebuild, and logs record IDs, not text.
+
+**Before rolling out a new prompt or model:** faithfulness on a human-labeled set (judge agreement with humans measured first, Q71), a red-team set of seeded injected reviews where the gate is zero injected instructions surviving into a published summary, and a PII leak test with synthetic PII planted in reviews. Then shadow on live products and compare against the current summaries.
+
+**The judgment call:** the citation threshold is the main injection defense, and lineage is the main privacy feature. A better system prompt helps, but it's the weakest of the three."
+
+**Follow-up to expect:** A product has only four reviews. Does the threshold block every summary? (No, not every sentence: with four reviews the bar is three distinct reviewers, so only points nearly everyone makes survive. In practice, below a minimum review count (say 10), show quoted highlights with their sources instead of a generated summary; a summary of four reviews adds little and is the easiest to manipulate.)
+
+### Q178: Design an LLM agent for a manufacturing business. Users ask in natural language how far along an order or production job is, open new work orders, and get customer price quotes; the data and actions live in existing production-tracking, order-management, and pricing systems behind APIs. How do you prevent hallucinations, and how do you handle permissions? Then: a quote for a configuration the pricing system has no rule for, a repeated request over a dropped connection, and production status that is several hours old.
+
+*Candidate-reported (October 2026): Google SWE technical screen. Round: ML system design. The extra follow-ups come from a prep-site question page.*
+
+**What interviewers look for:**
+- Every number in an answer traced to a tool result, checked after generation, not just requested in the prompt
+- The user's identity carried into every tool call and enforced by the systems of record, never decided by the model
+- Writes made safe: confirmation, idempotency keys, and defined behavior when a system has no answer or stale data
+
+**Strong answer:**
+
+"Q13 covers tool calling and Q56 guardrails for agents that act. This is the business-operations version: the systems of record already know the truth, so the agent's job is language, and its main failure is saying something those systems never said.
+
+**Tools.** `get_order_status(order_id)`, `get_job_progress(job_id)`, `create_work_order(draft_id, idempotency_key)`, `get_quote(configuration)`, each a thin wrapper over the existing API returning typed JSON with an `as_of` timestamp. The model never calls the backend directly.
+
+**Hallucination, three layers:**
+
+1. **Grounding by construction.** Status and quote answers render quantities, dates, and prices from tool output through templates; the model writes the surrounding sentences. A model doesn't need to retype a price to explain it.
+2. **A post-check.** Every number, date, and ID in the final text is extracted and matched against the tool results from this turn. A mismatch blocks the answer and regenerates once, then falls back to the plain template.
+3. **Defined 'no answer' paths.** If the pricing system returns no rule for a configuration, the agent never estimates. It says no standard price exists, creates a quote request for a human estimator with the configuration captured, and gives the expected turnaround. An estimated price that a customer screenshots becomes a commitment.
+
+**Permissions.** The user signs in through the company's SSO, and each tool call carries a token for that user, so the order and pricing systems apply their own rules: a sales rep sees and quotes only their accounts, a floor supervisor can open work orders for their plant, and a customer-facing deployment sees only that customer's orders. The model's prompt doesn't contain the permission rules, because a prompt is not an access-control system. Denials come back as typed errors and the agent explains them without retrying under a different identity.
+
+**Work orders without duplicates.** Creating a work order is a write with real cost (material reserved, schedule changed), so it's two steps. The agent first creates a draft and shows it: part, quantity, due date, plant. When the user confirms, the client sends the draft ID with an idempotency key generated at confirmation. A retry after a dropped connection reuses the key, and the order system returns the original work order instead of a second one. A soft duplicate check also warns when the same part, quantity, and customer were ordered in the last 24 hours, because a user who repeats themselves in new words gets a new key. Q139 covers the same problem when the user changes their mind mid-call.
+
+**Stale status.** Production tracking may sync every few hours. The agent states the time ('as of 10:05, job 4471 had finished machining, step 3 of 5') and never extrapolates progress from it. If data is older than a threshold set per plant, it says so and offers to notify the user when the next update lands.
+
+**One request, three capabilities.** 'Expedite the late order and send an updated quote' becomes a plan the user sees: read status, request a priority change (a write that may need a planner's approval, because it delays other orders), then requote with the expedite fee. Each write is confirmed separately, and partial success is reported as partial.
+
+**Evals:** scripted conversations against a sandbox copy of the three systems, scored on number accuracy (the target is 100%; any mismatch is a bug), permission denials honored, and duplicate creation under injected network drops and retries.
+
+**The judgment call:** I'd rather the agent say 'I can't price that, an estimator will' a hundred times than invent one quote."
+
+**Follow-up to expect:** A user asks, "Will my order ship Friday?" and the system holds only a due date and current step. What does the agent say? (It reports the due date and the step as of the last update, and if the business has a lead-time model per step, it can cite that model's estimate labeled as an estimate; without one, it says it can't promise a ship date and offers to ask the planner.)
+
+### Q179: Design an agentic search experience for a large retailer. A shopper states a goal in natural language; the system interprets it, asks a clarifying question, searches, and refines over several steps. Where does an agent add value and where is deterministic search enough, how do you separate hard constraints from preferences across turns, and how do you prevent unsupported claims, unbounded tool use, stale results, and seller text that changes the agent's instructions?
+
+*Candidate-reported (October 2026): Walmart Global Tech Senior+ MLE onsite, described by the candidate as a surprise agentic search round. Round: ML system design. Follow-ups come from a prep-site question page.*
+
+**What interviewers look for:**
+- A router that keeps known-item queries on classic search and sends only exploratory goals to the agent
+- Hard constraints held in structured state and enforced by the search engine, with preferences as ranking signals
+- Proof that the agent beats the same retriever behind a conventional search UI, measured on outcomes and constraint violations
+
+**Strong answer:**
+
+"Q54 compares agentic and traditional RAG and Q6 covers hybrid search; this is catalog search, where an answer is a set of products the shopper can buy, and a wrong attribute costs a return.
+
+**Where the agent earns its cost.** Most queries name a product ('AirPods,' 'paper towels'), and classic search answers them in 100 ms. The agent helps on goals: 'everything for my kid's first soccer season,' 'a gift under $50 for someone who likes to cook,' comparisons, and bundles. A lightweight classifier routes each query; I'd expect a small share of traffic to need the agent, and that share is where the experiment runs.
+
+**Part 1: the interaction.** For 'waterproof hiking boots under $120, size 10 wide, by Saturday, preferably light,' the agent builds a query state:
+
+- **Hard constraints:** price at most $120, size 10W in stock, delivery by Saturday, waterproof.
+- **Preferences:** lightweight, maybe a brand the shopper mentioned.
+
+The state is shown as editable chips, so the shopper sees what the system understood. It asks a clarifying question only when the answer would change the results a lot, at most one before showing anything; otherwise it shows results and states its assumption. When the shopper relaxes a constraint ('okay, up to $140'), the state updates, the search reruns, and the UI shows what changed. The agent never relaxes a hard constraint on its own; when nothing matches, it proposes which constraint to loosen and how many results that unlocks ('12 options at $140').
+
+**Part 2: components and data flow.**
+
+1. **Interpreter:** the model turns each turn into a state update (add, remove, change), never into free-form query text alone.
+2. **Retrieval:** the search engine applies hard constraints as filters on structured catalog attributes and live inventory, and preferences as ranking features. The model doesn't filter results itself.
+3. **Presenter:** the model writes short explanations from structured attributes. A claim like 'waterproof' must come from a catalog field; if it only appears in the seller's description, it's labeled 'per the seller' and doesn't satisfy a hard constraint.
+4. **Fresh data:** price, stock, and delivery date are fetched live at render time, not from the index or from earlier turns.
+
+**Bounded tool use.** At most four search calls per turn and a latency budget of about 3 seconds to first results, streamed as they arrive. Past the budget, the agent shows what it has.
+
+**Seller text that addresses the assistant.** Descriptions are third-party content. The interpreter never sees them, the presenter sees them only as quoted data, and descriptions containing instructions aimed at an assistant are flagged, excluded from explanations, and sent for listing review. Q122 covers injection through fields an agent treats as data.
+
+**No trustworthy answer.** If nothing satisfies the hard constraints, say so and show the nearest matches with the violated constraint named, instead of presenting them as matches.
+
+**Proving it beats plain search.** A/B test against the same retriever and ranker behind the conventional UI, on queries the router sends to the agent: purchase or add-to-cart within the session, time to purchase, query reformulations, return rate for items bought, constraint violations among shown results (the target is zero), and cost per session. If the agent only wins because it uses a better retriever, the retriever should ship to everyone.
+
+**The judgment call:** the model interprets and explains; the search engine enforces. Once the model is allowed to decide what satisfies a constraint, you can no longer audit why a size 9 showed up."
+
+**Follow-up to expect:** The shopper says "actually, not leather" three turns later. What happens? (It becomes a hard exclusion in the state, the search reruns with the material filter, the chips update, and any item shown earlier that's leather drops out with a note rather than silently disappearing; if material data is missing for some items, those are shown separately as unverified.)
+
+### Q180: In a live round with a product manager, you're scoping an AI agent that handles subscription cancellations for a new customer. Map the user journey and the systems and integrations it needs, say where the agent may and may not act on its own, and define success.
+
+*Candidate-reported (November 2026): Sierra Agent Strategist onsite, with a take-home presentation defended live in a separate round. Round: agent design with a product manager.*
+
+**What interviewers look for:**
+- A journey mapped from the customer's side, with each step tied to the system that owns it and the action the agent may take there
+- Retention handled within policy: offers from the customer's rules, never invented, and a cancellation that always completes for someone who insists
+- Success metrics that balance the business's save rate against customer trust, and, in the take-home defense, a plan that cuts scope rather than guardrails under time pressure
+
+**Strong answer:**
+
+"This role isn't primarily engineering, and the interviewer is a PM, so I'd draw the journey first and the architecture second. Q173 covers decomposing a vague customer ask; here the ask is clear and the risk is that a cancellation agent quietly becomes a retention trap.
+
+**Questions for the customer first:** which plans and billing models exist (monthly, annual, bundles), what the refund and proration policy is, which retention offers are allowed and for whom, what their legal team requires for cancellation flows (consumer-protection rules in many markets expect canceling to be as easy as signing up), and what share of cancellations come through chat today.
+
+**The journey and its systems:**
+
+1. **Identify and verify.** Find the account and verify the person (one-time code to the email on file). System: identity and CRM. The agent can read, not change, the account.
+2. **Understand the reason.** One question, free text, mapped to a reason code. System: analytics. Reasons feed the business even when the customer leaves.
+3. **Offer, at most once.** Ask the offers engine which offers this account is eligible for, given its plan, tenure, and reason. The agent presents what comes back and never composes a discount itself. If the customer declines, move on; no second pitch.
+4. **Cancel.** Show what will happen: effective date, refund or proration from billing, what access remains. On explicit confirmation, call the cancellation API with an idempotency key. The agent says 'canceled' only after the billing system confirms it.
+5. **Confirm and close.** Send a confirmation through the customer's notification system with a reference number, and log the outcome.
+6. **Hand off.** Disputes, refunds outside policy, account-ownership questions (a family member asking to cancel), and anyone who asks for a person go to the human queue with a summary attached.
+
+**Where the agent acts alone:** reading account and billing state, presenting eligible offers, applying an accepted offer, and canceling after explicit confirmation. **Where it doesn't:** refunds beyond policy, changes to someone else's account, and anything the offers engine didn't return. Q56 covers guardrails for agents that take actions; the specific one here is that a customer who says 'just cancel' twice gets canceled.
+
+**Success metrics:** completion rate for customers who want to cancel (near 100%, measured end to end), median time to cancel, save rate among customers who were shown an offer, CSAT, complaints and chargebacks within 30 days, and policy violations (target zero, from reviewed transcripts). Save rate alone rewards obstruction, so I'd ask the customer to agree on the guardrail metrics before launch.
+
+**Evals before launch:** simulated customers with scripted personas (angry, confused, wants a refund, insists twice, asks for a human, isn't the account holder) run against a sandbox of their billing and offers systems, plus transcript review by the customer's support lead.
+
+**Rollout:** shadow on live chats with agents comparing, then 5% of traffic, then expand by plan type.
+
+**The judgment call:** I'd give the customer a lower save rate than they hoped for in exchange for zero complaints about trapped customers. That's the trade that lets the agent keep the job."
+
+**Follow-up to expect:** In the take-home defense, the panel asks what changes if all three workstreams need a more aggressive timeline and harder metrics. (Cut scope, not guardrails: launch on the plan types with simple billing, route annual plans, proration disputes, and bundles to humans, keep completion rate and complaints as fixed gates, and show a dated path for the deferred segments. The candidate also reported being pushed for specifics early, so lead with the cut list and the numbers, not the framework.)
+
+### Q181: In about 20 minutes, design an ML system that predicts whether a member clicks a job shown to them, using member features, job content, and interaction history, with the probability used to rank jobs. Define the data, positives and negatives, training and loss, leakage prevention, member and job embeddings, and offline and online components. Then: the business wants applications, not clicks; a job posted ten minutes ago; and offline AUC goes up while online click-through falls.
+
+*Candidate-reported (October 2026): LinkedIn Senior+ MLE technical screen (about 20 minutes of ML design after a debugging exercise) and a SWE onsite variant. Round: ML system design. Follow-ups come from prep-site question pages.*
+
+**What interviewers look for:**
+- Prioritizing within the time budget: labels, leakage, and position bias first, model architecture last
+- Point-in-time features and a time-based split, stated before anyone asks
+- Knowing why offline AUC and online CTR diverge, and an objective that matches what the business wants
+
+**Strong answer:**
+
+"With 20 minutes I'd say my plan up front: two minutes on scope, then labels, features, model, serving, and evaluation, about three minutes each, leaving time for one follow-up. The bank's other ranking questions are about LLM retrieval (Q8); this is classic supervised ranking, still asked of MLE and SWE candidates alike.
+
+**Scope.** Assume the jobs feed and recommendation modules, about 100 million job impressions a day, and a ranking budget of about 100 ms for 500 candidates.
+
+**Labels.** One row per impression the member actually saw (in the viewport long enough to count), logged with position, surface, and timestamp. Positive: a click within the session. Negative: a viewed impression with no click. Impressions rendered below the fold and never seen are dropped, not used as negatives, because they say nothing about preference.
+
+**Leakage.** Every feature is computed as of the impression time from a point-in-time feature store: the job's application count as of then, not today; the member's profile as of then. Nothing that happens after the impression enters the features (including the member's own later application). Train on earlier weeks and validate on a later week, never a random split, because a random split lets next week's job popularity leak into training.
+
+**Features and embeddings.** Member: title, skills, seniority, location, recent searches and applies. Job: title, description, company, location, seniority, salary range. Cross features: skill overlap, title similarity, distance, whether the member follows the company. A two-tower model learns member and job embeddings from the same interactions; the job tower is built from content, so it works for a brand-new job.
+
+**Model and serving.** Two stages. Retrieval: approximate nearest-neighbor search on the two-tower embeddings plus rule-based sources (saved searches, followed companies) to get about 500 candidates. Ranking: a gradient-boosted or neural model with logistic loss on the features above, returning a calibrated click probability. Features come from an online store with the same definitions as training, so the two can't drift apart.
+
+**Position bias.** Top slots get clicks because they're on top. I log position, include it as a feature in training, and set it to a fixed value at serving so the model scores relevance, and I run a small randomized slice that shuffles the top few slots to measure the bias directly.
+
+**Follow-ups:**
+
+- **The business wants applications.** Make it multi-task: predict click and apply-given-click, rank by their product (the probability of an application), and add a guardrail so a few jobs don't absorb all applications, since employers care about getting applicants.
+- **A job posted ten minutes ago** has no interactions, but its content embedding exists the moment it's posted. Give new jobs a bounded exploration boost and let interaction features take over as they accrue.
+- **Offline AUC up, online CTR down.** Usual causes: training-serving skew in a feature, leakage that inflated offline numbers, position bias in the labels, or AUC improving on easy pairs across the whole set while the top three slots got worse. I'd check feature distributions offline against online first, then evaluate per-session ranking metrics (NDCG at the top slots), and calibration.
+
+**The judgment call:** in 20 minutes, a clean answer on labels and leakage beats a detailed model architecture. Interviewers can fill in the network; they can't fill in a leak you didn't notice."
+
+**Follow-up to expect:** In the SWE onsite variant, the member has an almost empty profile. What does the page show? (Location, any searches or clicks from this session, and broadly popular jobs nearby, with a prompt to add a title or skills; rank by those weak signals and let each click update the member's embedding quickly, rather than waiting for the nightly retrain.)
+
+### Q182: Design a chatbot that answers user questions in real time, then explain how you'd collect training data, which reinforcement-learning tasks you'd use, and the weaknesses of your reward design with mitigations. Include how you teach the model when to search for fresh information versus answer from memory, and how you handle questions whose correct answer changed recently.
+
+*Candidate-reported (September 2026): Meta MLE technical screen. Round: ML system design. The follow-ups on the prep-site page are unlabeled.*
+
+**What interviewers look for:**
+- A post-training plan for a search-or-answer assistant, with RL tasks chosen for what can be verified
+- A retrieval-decision reward that doesn't pay for searching as such, so the model learns when search helps
+- Reward weaknesses named concretely (staleness of gold answers, reward-model exploitation, biased thumbs feedback) with a detection signal for each
+
+**Strong answer:**
+
+"Q41 covers reward hacking under Best-of-N and Q89 process reward models. The new part is training the decision to search, which the bank otherwise treats only at inference time.
+
+**Serving shape.** The model has one tool, web or index search, and a latency budget: answer directly in about a second, or search and answer in about three. Whether to search is the model's decision, which is why it has to be trained.
+
+**Training data:**
+
+1. **SFT demonstrations:** curated conversations including tool calls, written or edited by annotators, covering both direct answers and searches with citations.
+2. **Search-need labels:** questions labeled by annotators as stable ('boiling point of water'), time-sensitive ('current interest rates'), or changed-recently, plus questions about events after the training cutoff.
+3. **Preference pairs:** for open-ended questions, pairs of answers ranked by annotators for helpfulness and accuracy, to train a reward model.
+4. **Product feedback:** thumbs up and down, used carefully (below).
+
+**RL tasks:**
+
+1. **Verifiable QA.** Questions with checkable answers, graded by exact match or a validated judge against reference answers. The reward is correctness, minus a small cost per search call, minus a larger penalty for a confident wrong answer than for 'I'm not sure.'
+2. **Time-sensitive QA.** Questions whose answers change, graded against reference answers refreshed at grading time, not when the dataset was built. The model can't succeed from memory, so it learns to search for this class.
+3. **Open-ended helpfulness.** Multi-turn conversations scored by the reward model, with a KL penalty to the SFT model so it doesn't drift into the reward model's blind spots.
+
+**The search-decision reward.** I don't reward searching directly, because then the model searches everything. I reward final correctness and charge a small cost per call, so search is worth it exactly when it raises the expected chance of being right. The cost sets the trade between latency and accuracy; I'd tune it on held-out data so the search rate on stable questions stays low while accuracy on time-sensitive ones stays high.
+
+**Answers that changed recently.** These are the hardest case, because the model's memory is confidently wrong. I build a 'changed facts' set (questions with timestamps whose answers differ before and after the training cutoff), weight it in RL so a confident stale answer is penalized heavily, and teach the model to treat words like 'current,' 'latest,' and dates as signals to search. In serving, answers to time-sensitive questions cite their source and its date.
+
+**Reward weaknesses and mitigations:**
+
+- **Stale gold answers.** A reference set built in June grades October answers as wrong. Refresh time-sensitive references at grading time and audit disagreements.
+- **Reward-model exploitation.** Length, confident tone, and citation-shaped formatting can raise reward-model scores without being more correct. Detect it by tracking the gap between reward-model scores and a held-out judge or human audit during training; if the reward rises while the audit stays flat, stop and fix the reward model. Track response length too.
+- **Search spam or abstention gaming.** If calls are free, the model searches everything; if 'I don't know' isn't penalized at all, it abstains. Both show up as drift in search rate and abstention rate on fixed probe sets.
+- **Thumbs feedback.** It's sparse, comes mostly from unhappy or very happy users, and rewards agreement. Use it as a weak signal: aggregate it, debias it by surface and user segment, cap its weight in the reward mix, and audit the highest-rated responses for sycophancy. Q37 covers feedback loops.
+
+**The judgment call:** I'd ship a model that searches somewhat too often before one that answers from stale memory with confidence. Extra searches cost latency; a confidently stale answer costs trust."
+
+**Follow-up to expect:** How do you detect reward-model exploitation during training, not after? (Hold out a fixed probe set graded by humans or a separately validated judge, score checkpoints on it at regular intervals, and alert when reward-model score and probe accuracy diverge, along with length and formatting drift; roll back to the last checkpoint before the divergence.)
+
+### Q183: A deployed conversational model gives confident but factually wrong answers in high-risk contexts. Investigate and mitigate it: how you find where it happens, how you measure overconfidence, what you change in the system and in training, and how you avoid making the model refuse everything in those domains.
+
+*Reported by a prep site (2026, undated): Anthropic MLE question on model behavior and evaluation. Round: not stated.*
+
+**What interviewers look for:**
+- Turning "confidently wrong" into measurements: error rate at high stated confidence, per slice, against expert labels
+- Slice discovery from production traffic rather than a generic benchmark
+- Mitigations at both the system and the training level, with over-refusal tracked as a cost
+
+**Strong answer:**
+
+"Q29 and Q60 cover hallucination detection and Q170 rare costly failures in an agent. This is the model team's version of the investigation: the problem isn't wrong answers in general, it's wrong answers delivered with confidence where people act on them.
+
+**1. Define the scope.** High-risk means domains where acting on a wrong answer causes real harm: medication and dosing, legal deadlines, financial and tax rules, safety procedures. A classifier tags production conversations by domain so each one can be sampled.
+
+**2. Build the measurement.** For each high-risk domain, sample conversations, and have domain experts label each answer as correct, wrong, or unverifiable, and how confident it sounded (hedged, neutral, assertive). The headline metric is the wrong-and-assertive rate per domain. To measure calibration, I elicit a confidence for each answer and compare it with accuracy in bins; the gap between stated confidence and accuracy is the calibration error. One overall number hides the problem, so everything is reported per slice.
+
+**3. Find the slices.** Cluster the wrong-and-assertive cases by question type. In my experience the usual clusters are numeric specifics (doses, thresholds, dates), long-tail entities the model has seen little about, questions built on a false premise, facts that changed after training, and long conversations where an early error is repeated. Each cluster gets its own eval set, so a fix is measured where it matters.
+
+**4. Diagnose before fixing.** Knowledge gaps call for retrieval. False-premise acceptance is sycophancy, a training issue. Overconfident tone across the board points at training that rewarded assertive answers. Changed facts call for search and dates in answers.
+
+**5. Mitigate at the system level first,** because it ships faster:
+
+- In high-risk domains, retrieval from vetted sources, with answers that cite them.
+- A verification pass for specific numeric claims in those domains, checked against the retrieved source.
+- Answers that state uncertainty when the evidence is thin, and point to a professional or an authoritative source for decisions.
+
+**6. Then training.** Preference data that rewards a correct hedge over a confident error and penalizes confident errors more than abstentions; false-premise examples where the right answer corrects the premise; and calibration targets in the eval suite so later training runs can't quietly regress them.
+
+**7. Guard against over-refusal.** Every mitigation is scored on two axes: wrong-and-assertive rate in high-risk slices, and the share of benign questions in those domains that get refused or over-hedged. A model that refuses all medication questions has 'fixed' the metric and failed the user. I'd plot selective accuracy against coverage (how accurate the model is on the questions it answers confidently, as it answers more of them) and pick the operating point with domain experts.
+
+**8. Monitor.** The per-slice wrong-and-assertive rate becomes a release gate for model updates, and a sample of high-risk production conversations is expert-reviewed weekly. Q76 covers detecting a regression after a model change.
+
+**The judgment call:** I'd accept somewhat more hedging in high-risk domains in exchange for a large drop in assertive errors, but only with the over-refusal rate on the same dashboard, owned by the same team."
+
+**Follow-up to expect:** How do you get labels in a domain like medicine at a useful volume? (Experts label a few hundred carefully chosen cases per slice, an LLM judge is validated against them and used to scale, and the judge's agreement with experts is reported per slice; where agreement is low, the slice stays expert-graded.)
+
+### Q184: Explain the difference between fine-tuning and distillation, then the limits of distilling a small model from a larger one and what those limits mean for a lab's products. Separately, design an algorithm for the most efficient way to check which of your data centers are up, and analyze its tradeoffs.
+
+*Candidate-reported (August 2026, posted November): xAI MTS (ML) founder screen and technical round. Round: technical deep dive.*
+
+**What interviewers look for:**
+- A crisp conceptual distinction, then the limits: the teacher ceiling, capacity gaps, and coverage of the prompt distribution
+- Product implications drawn from those limits, not a recital of definitions
+- A liveness design that separates "the data center is down" from "my prober can't reach it," with detection time and false positives traded explicitly
+
+**Strong answer:**
+
+"The candidate said most of the technical round went to justifying efficiency and tradeoffs, so I'd give numbers for both halves. Q98 covers the economics of a distillation project and Q48 when to fine-tune; this is the conceptual version.
+
+**Fine-tuning vs distillation.** Fine-tuning updates a model's weights on task data to change what it does; the labels can come from anywhere (humans, logs, rules). Distillation is a specific kind of training where a student learns to match a teacher's outputs, either its full probability distribution over tokens or text it generates, so a smaller, cheaper model inherits much of a bigger one's behavior. You can fine-tune without distilling, and distillation is usually done by fine-tuning a student on teacher data.
+
+**Limits of distilling small from large:**
+
+1. **The teacher ceiling.** On the distilled distribution, the student learns the teacher's behavior, errors included. It rarely exceeds the teacher, except where you filter teacher outputs with a verifier and keep only the correct ones.
+2. **The capacity gap.** A much smaller student can't hold the teacher's long-tail knowledge. It keeps common skills and loses rare facts and the hardest multi-step reasoning first.
+3. **Coverage.** The student learns what the prompts you sampled exercise. Outside that distribution it falls back to its own weaker priors, often without signaling that it's out of its depth.
+4. **Terms.** Distilling another provider's model is usually restricted by its terms of service, so in practice a lab distills its own models.
+
+**What it means for products.** A lab ends up with a ladder: a frontier model as teacher and for the hardest requests, and distilled smaller models for latency- and cost-sensitive surfaces. The limits dictate the routing: the small model takes the traffic that looks like its training distribution, and a router (Q120) escalates hard or unfamiliar requests to the big one. And every improvement to the small model starts with an improvement to the teacher, so the frontier model's quality bounds the whole lineup.
+
+**Data-center liveness.** Assume 50 data centers, a target of detecting a failure in under 10 seconds, and few false alarms.
+
+- **Naive:** one central prober pings every data center each second. Fifty probes a second is cheap, but the prober is a single point of failure, and if its own network is partitioned, every data center looks down at once.
+- **Better: local health plus multiple vantage points.** Each data center runs a local aggregator that checks its own critical services and publishes a heartbeat. Five probers in different regions check each data center's heartbeat and a deep health endpoint (a synthetic request that exercises real serving, because 'reachable' isn't 'working'). A data center is declared down when a majority of probers agree, so one prober's partition doesn't cause an outage call.
+- **At larger scale: gossip.** With thousands of nodes, a SWIM-style protocol has each node probe a random peer each interval and ask a few others to probe indirectly before suspecting it, so per-node load stays constant and failure news spreads in time that grows with the logarithm of the fleet size.
+
+**Tradeoffs.** With a 1-second heartbeat and 3 missed beats before suspicion, detection takes about 3 to 4 seconds plus the quorum round; shorter timeouts catch failures faster but flag congestion as failure. More probers cost a little traffic and buy resistance to false alarms. The 'suspect' state before 'down' trades a few seconds of detection time for far fewer flapping alerts. The deep check costs real capacity, so it runs at a lower rate than the heartbeat.
+
+**The judgment call:** for 50 data centers, quorum across a handful of probers beats gossip; gossip earns its complexity when the thing you're watching is thousands of nodes."
+
+**Follow-up to expect:** Two of five probers say a data center is down and three say it's up. What do you do? (Don't declare it down, since there's no majority, but raise a degraded alert, check whether the two dissenting probers share a network path, and look at the data center's own heartbeat and error rates; a split like that is more often a partial network problem between regions than a data center failure.)
+
+### Q185: In a system design round where using an AI assistant is required, design a notification system for a desktop operating system where different applications can generate and display notifications. The interviewer grades how you prompt, refine, and evaluate the AI's answers, not whether you paste them. Walk through both the design and your process.
+
+*Candidate-reported (September 2026): Microsoft SDE-2 onsite with an AI-required design round. Round: AI-assisted system design.*
+
+**What interviewers look for:**
+- Requirements and constraints set by you before the first prompt, so the assistant works inside your frame
+- Prompts that ask for alternatives and tradeoffs, and visible checking of the assistant's claims, catching at least one wrong one
+- Ownership of the final design: every decision explained in your own words
+
+**Strong answer:**
+
+"Q169 covers AI-assisted coding rounds; this is the same idea applied to design, and it's spreading: Meta's hiring page says that for select roles, design interviews also run in CoderPad with a built-in assistant, using Mermaid Markdown for diagrams. So I'd practice having the assistant draft diagrams I then correct.
+
+**My process, narrated as I go:**
+
+1. **Requirements before prompting (3 minutes, no AI).** Apps post notifications locally or via a cloud push service; the OS shows a toast and keeps history in a notification center; users control per-app permission, focus mode, and priority; notifications support actions (reply, dismiss); cloud notifications reach offline devices when they reconnect. Non-goals: in-app messaging and email.
+2. **Prompt for options, not an answer.** 'Given these requirements, propose two or three architectures for local and cloud delivery, with tradeoffs on battery, latency, and reliability. Mark any claim you're unsure of.'
+3. **Check the output.** I read it against the requirements and look for the usual errors: polling for cloud notifications (bad for battery), promising exactly-once delivery across a network (not achievable; at-least-once plus dedup is), and missing permission checks. I say out loud what I'm keeping and what I'm rejecting and why.
+4. **Use it for breadth.** 'List failure modes for this design' and 'draft the API for posting a notification.' I verify any arithmetic myself.
+
+**The design I'd end with:**
+
+- **Local path.** An app calls the OS notification API with an app identity, payload, priority, and optional actions. A per-user notification service checks the app's permission and the user's focus and priority settings, writes the notification to a local history store, and hands it to the renderer for a toast. History is per user, capped per app, and cleared on uninstall.
+- **Cloud path.** The app's server sends to a push service with a device token. Each device holds one persistent, authenticated connection to the push service, shared by all apps, instead of each app keeping its own. The push service stores and forwards with a time-to-live, so an offline device gets what's still relevant on reconnect. The device client passes each notification to the local service, which applies the same policy.
+- **Semantics.** At-least-once delivery, with notification IDs so the device drops duplicates. Per-app rate limits on both paths, so one app can't flood the user.
+- **Scale, with stated assumptions.** For a billion devices, if a connection server holds about 500,000 idle connections, that's about 2,000 servers before redundancy. At 10 cloud notifications per device per day, that's 10 billion a day, about 116,000 a second on average, with peaks several times higher.
+- **Security.** Device tokens are scoped to app and device, apps can't read other apps' notifications, and payloads that might be sensitive can be hidden on the lock screen.
+
+**Where I'd expect the assistant to be wrong and say so:** if it suggests each app maintain its own persistent connection, that multiplies battery and server cost by the number of apps; one shared connection per device is the standard design for a reason.
+
+**The judgment call:** I use the assistant for breadth and drafting, and I make the decisions. If I can't explain a choice without looking at the AI's text, it isn't my design yet."
+
+**Follow-up to expect:** The assistant confidently claims the push service guarantees in-order delivery per app. Do you accept it? (No, not without the mechanism. Ordering across reconnects and multiple servers requires per-app sequence numbers and reordering on the device; for most notifications the right answer is to not promise ordering and to show the newest by timestamp, and I'd say that's a decision I'm making, not something the assistant established.)
+
+---
+
+## Advanced Questions - November 2026
+
+*Fresh questions reflecting November 2026: provider enforcement that can now land on one end customer instead of the whole organization, server-side conversation threads that expire five minutes after the last turn, a deprecation wave in which some retired model IDs keep answering with a different model, a cyber model whose access rules travel with every request, open-weight licenses whose definitions and exemptions decide who owes what, a leaderboard regrade that changed what "the open-weight gap" means, tenant boundaries that failed open in three agent frameworks, and agent guardrails that let actions through when they break. Designed for senior+ candidates.*
+
+### Q186: You run a multi-tenant platform where about 3,000 business customers and their end users reach Claude through one Anthropic organization. Anthropic's docs warn that without a user profile "one end customer can trigger an enforcement action that applies to your whole organization." Using the user profiles and enforcement webhooks Anthropic launched on October 20, design enforcement isolation so one abusive tenant can't take the other 2,999 down with it.
+
+**What interviewers look for:**
+- Seeing provider enforcement as a shared-fate failure domain, like a shared database or a shared rate limit, and shrinking its blast radius on purpose
+- Attribution injected server-side from verified tenant identity, a platform matrix for where profiles actually apply, and fail-closed handling of unattributed traffic
+- Your own abuse detection and per-key spend limits upstream, so the vendor is the second detector, not the first
+
+**Strong answer:**
+
+"Q7 and Q58 keep tenants' data apart. This is keeping their consequences apart. Until October the provider's enforcement unit was my organization, so one tenant generating abusive content, or one tenant's leaked platform key, could restrict every customer at once. That's a single point of failure that never shows up on an architecture diagram.
+
+**What Anthropic shipped:** on October 20, 2026 it launched user profiles. I register each end customer with `POST /v1/user_profiles` and send the returned ID in the `anthropic-user-profile-id` header, or in a top-level `user_profile_id` body field on Claude in Amazon Bedrock, so a safety restriction or ban can apply to that customer instead of the whole organization. Organization webhooks (beta, available on request) report when a restriction or ban opens or ends, and since October 21 a profile carries `enforcement_status` (unrestricted, restricted, banned) and `enforcement_actions`. Profiles don't change pricing.
+
+**Design:**
+
+1. **One profile per accountable party.** Each business tenant gets a profile at onboarding, stored in the tenant registry next to its keys and quotas. Self-serve and free-tier accounts get one each, because that's where abuse concentrates. Profile IDs are opaque; no names or emails go to the vendor in them.
+2. **The gateway injects attribution; clients never supply it.** The gateway derives the profile ID from the authenticated tenant and strips any client-sent header or body field. A spoofable ID would let one tenant pin its abuse on another.
+3. **Unattributed traffic fails closed.** A request with no resolvable profile is rejected at the gateway, and our own internal traffic (evals, batch jobs, support tooling) gets its own profiles. One unattributed path is enough to put the whole organization back in the blast radius.
+4. **A platform matrix, because isolation isn't uniform.** Profiles can be created only on the Claude API, Claude Platform on AWS, Anthropic-hosted Foundry deployments, and Claude Models on Google Cloud (Anthropic managed); on Google-managed Google Cloud and Claude in Amazon Bedrock the docs say the ID is only format-checked. So I treat those two routes as having organization-wide blast radius: new, free-tier, or previously flagged tenants route only to platforms where profiles apply, and their failover to Bedrock is off.
+5. **Enforcement events drive tenant state.** A webhook updates the tenant's state in the registry and the gateway enforces it within seconds: a restricted tenant goes to a reduced feature set and a trust-and-safety review, a banned tenant gets no Claude traffic, and everyone else is untouched. Webhooks are beta and on request, so a reconciliation job also reads `enforcement_status` for every active profile on a schedule and whenever a tenant's error rate jumps. Missing a webhook can't mean missing a ban.
+6. **Detect before the vendor does.** A moderation pass on inputs and outputs, a per-tenant abuse score, and per-tenant rate limits catch most abuse before it reaches the provider's systems. The vendor's enforcement is my second detector.
+7. **Stolen keys look exactly like abusive tenants.** Google Threat Intelligence and Mandiant reported on November 3 that LLMjacking incidents ran up more than $100,000 in fraudulent charges in a single day and up to $1 million cumulatively, with one actor making more than 500,000 calls in under eight hours, and that attackers validated keys with `max_tokens=1` requests (vendor-reported). A leaked tenant key on my platform produces both a bill and enforcement attributed to that tenant's profile. So every tenant key has a spend cap and an hourly anomaly alert, and a burst of `max_tokens=1` requests from a new IP range pages as a likely key test.
+
+**Operations:** at 3,000 tenants, profile creation is a one-time backfill job plus a hook in onboarding. The metric I watch is the share of production requests carrying a valid profile ID per platform, which should be 100% on platforms that enforce profiles; anything less is the organization-wide risk coming back.
+
+**The judgment call:** I fail closed on missing attribution even though it adds an onboarding dependency and occasionally blocks a misconfigured internal job. A platform where any unattributed request can get the whole company restricted has one outage mode that no amount of redundancy covers."
+
+**Follow-up to expect:** A webhook says one tenant is banned, and the tenant insists it's a false positive. Do you fail them over to another provider? (Not automatically. Routing a banned customer to another vendor is evading enforcement, not failover, and it can put your relationship with that vendor at risk too. Contain that tenant, review the evidence with trust and safety, take it up with the vendor, and make any cross-provider decision with legal in the room. Keep the other 2,999 tenants running, which is the point of the design.)
+
+### Q187: On November 2 Anthropic released message threads in beta: a create request stores the conversation, system prompt, and tools server-side, and later turns send only new messages. A thread expires 5 minutes after its last request, a continue can return 404 at any time, and threads aren't ZDR eligible. Your harness runs 200-turn coding sessions on the Claude API with failover to Bedrock. Do you adopt threads, and how do you build the harness so a lost thread is never a lost conversation?
+
+**What interviewers look for:**
+- Knowing exactly what a thread buys (less data sent per turn) and what it doesn't (price, rate limits, caching, durability)
+- The transcript as the system of record, with the thread as a short-lived cache and replay on 404, fingerprint changes, and failover
+- A per-tenant and per-platform eligibility matrix (ZDR, HIPAA, Bedrock, compaction, batches)
+
+**Strong answer:**
+
+"A thread is a cache I don't control. That frames everything: it's useful when it hits, and the harness has to be correct when it doesn't.
+
+**What it is and isn't:** under the header `message-threads-2026-08-12`, a create request stores the conversation, system prompt, and tools; later requests send only new messages with a continue that names `previous_message_id`. Threads are best-effort, expire 5 minutes after the last request, are deleted no more than 1 hour after last use, and are held in memory under a server-managed key, never written to durable storage. They don't change pricing or rate limits, and a thread doesn't cache the prompt by itself, so I still set `cache_control`, with at most 4 breakpoints. So the win is bandwidth and serialization, not cost. That matters more than it used to: on October 28 Anthropic raised the first-party request size limit from 32 MB to 128 MB, so conversations with screenshots and documents get very large.
+
+**Harness design:**
+
+1. **The transcript store is the system of record** (Q46). Every turn is appended there before it's sent. The thread ID sits beside it as a cache entry with a TTL just under 5 minutes, keyed by conversation and fingerprint.
+2. **Fingerprint locally, before the API does.** System prompt and tools can be sent only on the create request (400 otherwise), and model, `tool_choice`, `thinking`, and `mcp_servers` must match on every turn or the API returns 400 `thread_fingerprint_mismatch`. The harness hashes those fields; when any of them changes (model failover, a new effort setting, a tool added by search-gated discovery, an MCP server reconnected) it starts a new thread by replaying the transcript instead of eating a 400.
+3. **Replay on 404, without re-running tools.** A continue that returns 404 `thread_not_found` becomes a create with the full transcript, including the turn that just failed, sent once. Replay resends recorded tool results; it never re-executes tools (the same rule as Q139's idempotent tool calls).
+4. **Compaction happens on my side.** Threads don't work with compaction, token counting, or Message Batches. When the transcript nears its budget, the harness compacts the stored transcript, counts tokens from the store, and opens a new thread from the compacted version.
+5. **Eligibility matrix.** Threads run on the Claude API, Claude Platform on AWS, Claude Models on Google Cloud (Anthropic managed), and Foundry, not on Bedrock or Google-managed Vertex, and not for HIPAA-readiness organizations or with inference hooks. Tenants under ZDR contracts never get threads, since threads aren't ZDR eligible. Failover to Bedrock is a stateless full replay, and the gateway sizes every replay to the smallest request limit among a conversation's failover targets (Google-managed Agent Platform caps payloads at 30 MB, for example).
+
+**Does it pay?** Say each turn adds 20 KB. Without threads, turn 200 resends about 4 MB and the session uploads about 400 MB in total; with threads that hit, it uploads about 4 MB (derived from that assumption). Agent loops with tool calls seconds apart hit the 5-minute window almost every turn. Human-paced chat with long pauses mostly misses it, so every turn is a replay and threads add only complexity.
+
+**What I measure:** thread hit rate, replay rate, 404 and fingerprint-mismatch counts, and bytes saved, per route, behind a flag I can turn off per tenant.
+
+**The judgment call:** I'd adopt threads for agent loops on first-party routes, keep them off for ZDR and regulated tenants, and never let any feature depend on a thread existing. Q118's failover and Q131's mid-conversation failover both work only if a conversation can be rebuilt from my own store at any moment."
+
+**Follow-up to expect:** A teammate says threads will cut your input bill because you stop resending history. True? (No. Threads don't change pricing, and a thread doesn't cache the prompt on its own, so the bill is set by `cache_control` and the cache hit rate exactly as before, which Q70 covers. Threads cut bytes on the wire, not billed tokens.)
+
+### Q188: Your platform calls about 30 model IDs across the Gemini API, Vertex AI, Bedrock, Foundry, xAI, and Moonshot. On November 2 Google deprecated Gemini 2.5 Pro and 2.5 Flash on the Gemini API and scheduled their requests to route to other models from December 1; five Gemini speech previews are scheduled to shut down November 17; Vertex retires Gemini 3.6 Flash on November 19; and Bedrock's Claude 3-era models reach end of life November 13, or November 27 in Canada. Run the migration program.
+
+**What interviewers look for:**
+- Tracking lifecycle per (model, platform, region), not per model name
+- Treating auto-routing and silent server-side swaps as more dangerous than hard shutdowns, because nothing errors
+- A triage calendar driven by date, traffic, and end behavior, with cutovers on your schedule and rollback windows that close before the vendor's date
+
+**Strong answer:**
+
+"Q35 covers the general deprecation playbook and Q151 a single fine-tune migration. This is a wave: several vendors, different behaviors at the deadline, and the same model name meaning different things on different platforms.
+
+**Three ways a model ends, ranked by danger:**
+
+1. **Hard shutdown.** Requests fail. Painful but loud. Google's five speech previews (`gemini-3.1-flash-live-preview` and `gemini-2.5-flash-native-audio-preview-12-2025`, replacement `gemini-3.8-live`; `gemini-2.5-flash-preview-tts`, `gemini-2.5-pro-preview-tts`, and `gemini-3.1-flash-tts-preview`, replacement `gemini-3.8-flash-tts` or `gemini-3.8-flash-lite-tts`) are scheduled to shut down November 17 with no routing.
+2. **Auto-route.** Requests keep returning 200 from a different model at a different price. From December 1 (scheduled), `gemini-2.5-pro` requests route to `gemini-3.8-flash` and bill at 3.8 Flash rates, and `gemini-2.5-flash` requests route to `gemini-3.5-flash-lite`. Google lists breaking changes on the targets: function calling and `thought_signature` validation, `thinking_level` replacing `thinking_budget`, removed sampling parameters, and no prefilled model turns. Gemini 3.8 Flash itself goes from $0.75/$3.75 to $1.50/$7.50 per 1M on January 1, 2027, so auto-routed traffic gets a second price change a month later.
+3. **Silent swap.** xAI's November release notes say `grok-imagine-image-quality` and `grok-imagine-image-pro` requests are now served by `grok-imagine-image-2.0-low` at a lower per-image price with no request changes. Traffic labeled 'pro' now gets the low-quality setting, and only the gRPC response's model name says so.
+
+**The program:**
+
+1. **A lifecycle registry keyed by (model, platform, region).** The same Flash ID has different lives: Vertex retires `gemini-3.6-flash` on November 19 and `gemini-3.7-flash` on January 28, 2027, with no auto-upgrade, while the Gemini API schedule differs. Bedrock's Claude 3 Haiku and 3 Sonnet reach end of life November 27 in ca-central-1 and November 13 in the other listed regions, along with Claude 3.5 Sonnet, 3.5 Sonnet v2, and 3.7 Sonnet. Foundry lists `claude-opus-4-6` retiring February 2, 2027 and `claude-sonnet-4-6` February 10, 2027, days before Anthropic's own floors of February 5 and February 17, so the earlier date wins for Foundry routes (and I recheck Foundry's page before planning to it). Each row holds status, date, behavior at the date (error, route, or swap), replacement, owner, and traffic share from gateway logs.
+2. **Ingestion, not memory.** A daily job diffs every vendor's deprecation page and changelog and opens a ticket on change. Google calls its Gemini API dates earliest-possible; Vertex says posted retirement dates give at least 45 days and won't move earlier, so I plan to the posted date.
+3. **Triage by date times traffic times behavior.** From today, November 6: Bedrock in 7 days, speech previews in 11, Vertex 3.6 Flash in 13, Bedrock Canada in 21, the 2.5 auto-route in 25, then Vertex's `gemini-live-2.5-flash-native-audio` on December 13 and Moonshot's K2 series by the end of December. Voice routes get Q142's release gate, because a replacement voice model changes latency and turn-taking, not just text.
+4. **Move before the auto-route, on my terms.** For 2.5 Pro traffic I choose the target (possibly 3.8 Flash anyway), fix request shape for the breaking changes, and run Q151's eval gate and shadow period. After December 1 the old behavior can't be a rollback target, so cutover happens by mid-November with the rollback window closing before the routing date. `gemini-2.5-flash-lite` isn't deprecated, so it stays put; migrating what doesn't need it burns eval capacity.
+5. **The gateway asserts what actually served.** Every response's reported model ID is compared with the pinned one, and a mismatch alerts per route. That catches the xAI swap and any auto-route I missed. The Q76 output-drift canary runs on every route that changed.
+6. **New accounts break first.** Moonshot stopped offering K2 series models to newly registered users on October 31 while existing users are unaffected, so a fresh staging account or a new region's account can't reproduce production. Environments are provisioned against the registry's replacement, not the production model.
+
+**The judgment call:** I treat an auto-route date as a shutdown date. A deadline where requests keep succeeding with a different model, a different bill, and stricter validation is worse than an outage, because nobody gets paged."
+
+**Follow-up to expect:** Vertex lists `gemini-3.5-flash` as available until "May 19, 2027 or later." Should you move everything there for stability? (For stable workloads like classifiers, a model in the 12-month table with a fixed floor is a reasonable home, and it beats chasing shorter-availability releases like 3.6 and 3.7 Flash. For quality-sensitive routes, the newer model may win the eval; the point is to choose the lifecycle on purpose and record it in the registry.)
+
+### Q189: You run a vulnerability research platform for enterprise security teams. On November 5 OpenAI launched GPT-6-Cyber for Daybreak Red customers at $20 input and $100 output per 1M tokens, with access set per request through an `access_programs.cyber` parameter whose default behavior changed starting with `gpt-6.1-terra`. Design how your gateway routes standard, defender, and red-team traffic so no request ever gets more permissive treatment than its user is entitled to.
+
+**What interviewers look for:**
+- Treating the access program as a request-level contract the gateway always sets explicitly, never a default inherited from the model
+- Isolating the permissive route as its own deployment (organization, credentials, egress IPs, logs), with a downgrade-only rule on errors
+- Cost and eval discipline: no Batch, a 2x price over GPT-6 Astra, and vendor claims treated as hypotheses
+
+**Strong answer:**
+
+"Q124 designed tiers for my own dual-use feature. Here I'm a consumer of someone else's tiers inside a multi-tenant product, and my customers ride on my approval, so any leak between tiers is mine.
+
+**The vendor contract:** GPT-6-Cyber (`gpt-6-cyber`) costs $20 input, $2 cached input, and $100 output per 1M tokens, with cache writes at $25 (30-minute) or $50 (12-hour), a 1,050,000-token context (922,000 max input, 128,000 max output), Chat Completions and Responses only, no Batch, and no long-context, Flex, or Fast rates. Access needs Daybreak Red approval plus a separate model approval, the `daybreak_red` program, and IP allowlisting. OpenAI's Daybreak guide documents `access_programs.cyber` with values `standard`, `daybreak_blue`, and `daybreak_red`: GPT-5.6-Cyber and GPT-6-Cyber take Red; GPT-5.5-Cyber, GPT-6 Astra, and GPT-6.1 Sol take Blue, with Red approval needed for reduced refusals. Red organizations must require SSO for the API organization and enforce MFA through their identity provider, ZDR projects must use Private Safety Processing, and the errors are `invalid_access_program` (400), `unsupported_access_program` (400), and `access_program_not_enabled` (403).
+
+**Design:**
+
+1. **Entitlement sets the parameter, every time.** Each user's tier comes from our own verification (organization identity, named owner, attested use case, as in Q124) and maps to `standard`, `daybreak_blue`, or `daybreak_red`. The gateway always sends the parameter. Omission means different things per model: starting with `gpt-6.1-terra` it gives standard treatment, on older mainline models it selects Blue if available, and on Red models it selects `daybreak_red`. If I relied on the default, a routing config change from one model to another would silently change which program a request runs under.
+2. **The Red route is its own deployment.** A separate OpenAI organization and project for Red traffic, with its own keys, SSO and MFA for its members, its own audit stream, and its own egress: a NAT with static IPs registered on the allowlist, so a GPT-6-Cyber request from any other path fails at the vendor. Failover regions get their egress IPs registered in advance, or Red traffic simply has no failover. ZDR customers go to a project set up for Private Safety Processing.
+3. **Errors downgrade, never upgrade.** On any of the three errors the gateway never retries under a more permissive program or a Red model. It may retry as `standard` on a mainline model, with the user told why. A tier mismatch is logged as a security event, because the likeliest cause is a bug in our entitlement mapping.
+4. **Route by task, because cost bites.** A full 922,000-token codebase prompt costs about $18.44 uncached at $20 per 1M, and a maximum 128,000-token response about $12.80 (derived). With no Batch rate, nightly bulk scanning across thousands of repositories goes to GPT-6 Astra under Blue or to cheaper models for triage, and GPT-6-Cyber is reserved for exploitability analysis and verification, where our own evals show it earns its price (it's 2x Astra).
+5. **Vendor numbers are hypotheses.** OpenAI reports that GPT-6-Cyber outperforms GPT-6 Astra on most cyber tasks and was used to find 81 previously unknown high-severity Firefox vulnerabilities and to develop working exploits for 948 Linux kernel vulnerabilities, 588 previously unknown. That's a reason to run my private eval (Q133), not a result.
+6. **Exploit execution is its own blast radius.** Proof-of-concept runs go to disposable VMs with no credentials and default-deny egress (Q65), on patched hypervisors. On November 3 Xen's XSA-523 disclosed arbitrary read and write of other domains' memory, Dom0 included, via grant copy in every release from 4.6 onward, with no mitigation other than the patches, and it credits Anthropic, using Claude, with the discovery. AI-found bugs now reach isolation code, so sandbox patching runs on Q155's fastest tier.
+7. **Log for an investigator.** Every request records tenant, user, verified tier, access program sent, model, egress IP, and the grant behind it, in an append-only store.
+
+**The judgment call:** the permissive tier is a separate deployment, not a parameter value on a shared code path. A shared path means one mapping bug gives a standard user Red treatment; a separate organization, key set, and egress mean the same bug fails at the vendor."
+
+**Follow-up to expect:** A large customer has its own Daybreak Red approval and wants to use it through your platform. How does that change the design? (Their requests go out under their organization with their credentials and their allowlisted egress, so you act as software, not as the access holder, and the accountability sits with the approved party. You need per-tenant credential custody and per-tenant egress IPs, which is more operational work but removes your approval from that tenant's blast radius.)
+
+### Q190: Your company, at about $400M in annual revenue, wants an open-weight model for an internal engineering assistant now and an embedded product feature next quarter, with a partner API discussed for later. On November 4 Moonshot published the Kimi K3.1 Pro weights (about 1.56 TB) under a custom license, MiniMax's M3.1-Flash weights (October 23) require at least a notice for any commercial use, and Meta's Muse Spark Open repository needs a manually approved account to download. Choose how to procure and host the model, and design the license review.
+
+**What interviewers look for:**
+- Reading definitions and exemptions (MaaS, commercial use, internal use, certified partners) per deployment surface, not just license names
+- Comparing hosting routes (first-party API, certified partner, a hyperscaler's catalog, self-hosting) on data terms, license exemptions, and serving footprint
+- Treating artifact access as operations: gated downloads, mirroring, and harness requirements the model card imposes
+
+**Strong answer:**
+
+"Q134 sorted licenses into classes. This is the procurement call for one company with three planned surfaces, where the definitions and exemptions decide more than the license name.
+
+**Reading the three licenses against our surfaces:**
+
+1. **Kimi K3.1-Pro License.** An MIT-like grant with two conditions. A Model-as-a-Service business whose licensee and affiliates together earn more than US$20M in any consecutive 12 months needs a separate agreement with Moonshot before commercial use, and commercial products with more than 100M monthly active users or more than US$20M monthly revenue must prominently display 'Kimi K3.1-Pro' in the UI. MaaS means giving third parties meaningful control over inference or fine-tuning, for example via API, and excludes end-user products whose capabilities are solely embedded in specific features or harnesses and mere relaying to models hosted by others. Internal use that exposes nothing to third parties, and use through Moonshot's official products or certified inference partners, are exempt from both. So: the internal assistant is exempt, the embedded feature isn't MaaS (display duty only if that product crosses a threshold), and the partner API would make us a MaaS business above US$20M, needing the agreement before launch.
+2. **MiniMax Community License (M3.1-Flash).** Non-commercial grant; commercial use only under conditions, covering fee-based products that rely on the model, commercial API use, and commercial deployment of fine-tuned derivatives. Licensees above US$20M in yearly revenue need prior written authorization, everyone else sends a one-time notice, all commercial users display 'Built with MiniMax M3.1-Flash', an appendix bars uses including any military purpose, and there's no explicit internal-use exemption. At our revenue, every commercial surface needs written authorization, and legal has to rule on the internal tool too.
+3. **Muse Spark Open.** The Hugging Face gate requires manual approval and collects legal name, date of birth, country, affiliation, job title, and IP-based location. The terms require 'Built with Muse Spark Open' attribution, plus notice to Meta and a separate written agreement for MaaS offerings above US$20M aggregate gross revenue over 12 months.
+
+**Hosting routes for the leading candidate, Kimi K3.1 Pro** (46 on Artificial Analysis Intelligence Index v5.0.1, against 59 for Claude Opus 5.5 at max):
+
+- **Moonshot's API:** $2/$10 per 1M, or $4/$20 for `kimi-k3.1-pro-highspeed`, which Moonshot says is 2-3x faster; batch bills at 60% of standard. Artificial Analysis measured about 36 minutes per index task on standard versus 16.7 on High Speed, with the first answer token after about 158 and 70 seconds. Prompts and code leave to Moonshot, which our data policy may not allow.
+- **A certified inference partner:** keeps the license exemption, but I'd confirm certification status in writing; Together AI's page was still marked launching soon.
+- **A hyperscaler catalog:** Bedrock serves the previous Kimi K3 (since September 18, with explicit prompt caching) and GLM 5.3 (GA October 5), and AWS states inference data is not shared with the model provider; I'd check whether K3.1 Pro has followed before planning on it. For teams barred from sending data to Chinese vendors, that's the route that stays inside our cloud boundary.
+- **Self-hosting:** 2.8T total and 104B active parameters, a 1,048,576-token context, and MXFP4 weights with MXFP8 activations, trained quantization-aware: 1.56 TB of weights before any KV cache, so a multi-node deployment on an engine and hardware that support those formats. The model card also says multi-turn tool calls must return `reasoning_content`, so any gateway or harness that strips reasoning fields breaks tool loops.
+
+**My plan:** pilot the internal assistant through a certified partner or Bedrock's Kimi K3 or GLM 5.3, depending on the data review, with effort set explicitly, since max is K3.1 Pro's default and drives those minutes-long first tokens. Self-host only when volume justifies a multi-node serving team. MiniMax stays out until written authorization exists. Muse Spark Open needs approval under a company-owned account, then a mirror into our registry at a recorded hash, because CI and fresh clusters can't pass a manual gate.
+
+**The license review:** a registry row per checkpoint and surface (internal, embedded, API) recording the governing definition, the exemptions relied on, the revenue basis and whose revenue counts (12-month aggregate with affiliates, yearly, or monthly product revenue), notices and attribution strings due before launch, prohibited uses, and the hash we were cleared on. CI blocks deploying a checkpoint to a surface without a cleared row. Promised releases don't get rows: Tencent says full Hy4 weights will follow with no date or license, and Alibaba has published no Qwen4 model card or license.
+
+**The judgment call:** the license decides the route more than the benchmark does. K3.1 Pro is exempt for internal use and fine embedded, but the partner API is a contract negotiation, so I'd scope that API onto a model whose terms we've already signed or onto a closed model, rather than discover the MaaS clause the week before launch."
+
+**Follow-up to expect:** Can you avoid the MaaS agreement by putting the partner API in front of a certified inference partner's K3.1 Pro endpoint? (Read the exemption and get counsel's view: use through certified partners is exempt from both conditions, and mere relaying to models hosted by others is excluded from the MaaS definition, but a partner API that gives third parties meaningful control over inference may still be what the definition targets. Get the reading in writing before building on it.)
+
+### Q191: A board deck says "the open-weight gap is 12 points" on the Artificial Analysis Intelligence Index. Since then Artificial Analysis shipped methodology v5.0.1 on November 3 and regraded every model, Kimi K3.1 Pro's weights went public on November 4 while its model page still says the weights aren't publicly available, and DeepSeek V4.1 Flash 1017 scores 33, 29, or 19 depending on reasoning mode. Is the gap 12, 13, or 26? Design the model scorecard so a number like this never reaches the board without its definitions again.
+
+**What interviewers look for:**
+- Showing that each number is correct under a different index version, classification rule, or effort setting
+- A scorecard schema where every external score carries its version, effort, runner, date, classification, and cost per task
+- Making internal evals at deployed effort and cost the decision metric, with external indexes as context
+
+**Strong answer:**
+
+"All three are right, which is the problem. Q133 covered reading a benchmark; this is reading a gap, which compounds two scores and a definition.
+
+**Where each number comes from:**
+
+- **12:** Artificial Analysis's October 27 Intelligence Index v5 announcement counted Kimi K3.1 Pro, whose weights weren't yet released, as 'the top open weights model at 46' and wrote that the open-weights gap widened from 3 points to 12 versus v4.3. Meanwhile the released-weight leaders, DeepSeek V4.1 Flash 1017 and GLM-5.3 at 32 at max effort, sat 26 points behind Opus 5.5 at 58.
+- **13:** on v5.0.1, applied November 3 after grading-robustness fixes and a CritPt v2 regrade, K3.1 Pro scores 46 against Claude Opus 5.5 (max) at 59. Its weights went public November 4, so by weight availability the gap is 13.
+- **26:** on November 6 AA's K3.1 Pro page still said 'Proprietary. The model weights are not publicly available.' By AA's label the best open score is DeepSeek V4.1 Flash 1017 (max) at 33, 26 below 59.
+
+And the frontier reference is a choice too: the top v5.0.1 score is Gemini 4 Carbon (high) at 60, then Opus 5.5 (max) 59, GPT-6 Astra (max) 57, and GPT-6.1 Sol (max) 55.
+
+**Effort and verbosity change the rows:** DeepSeek V4.1 Flash 1017 scores 33 at max, 29 at high, and 19 in non-reasoning mode, and its max run used 174M output tokens against a 99.3M median, at $0.60 per index task. GLM-5.3 drops from 32 at max to 23 at low; Mistral Large 4 scores 26 at High and 23 at Medium. Ling 3.1 Flash 1019 scores 30 with list prices of $0.30/$0.90 but used 240M output tokens on the index against the same 99.3M median. A score at max effort says little about the model at the effort we'd pay for.
+
+**The scorecard:**
+
+1. **Every external score is a full record:** source, index version, effort setting, harness, who ran it, run date, our classification of the model, output tokens used, and cost per task. A score missing any field is shown greyed out and can't appear in a decision document.
+2. **Versions don't mix.** A watcher on AA's changelog re-pulls every tracked model when the methodology changes, and the scorecard compares only within one version, with the old snapshot kept for history. A v5.0 number next to a v5.0.1 number is a bug.
+3. **Classification is ours.** 'Open' means weights downloadable from the official organization under a license our counsel cleared for the surface in question (Q134, Q190). A vendor or tracker label is an input to check against the Hugging Face repo, not the definition. AA itself wrote on October 23 that K3.1 Pro 'will lead open-weights models' once weights shipped, and its label still hadn't moved two days after they did.
+4. **Score at the effort we'd deploy.** A study of effort levels (arXiv 2610.34491, October 25) found top effort cost up to 42x the lowest on tasks every level solved, and starting at the lowest effort and escalating only after a verified failure matched or beat fixed top effort on every model and benchmark tested. So our internal runs use our escalation policy, not max.
+5. **Vendor-reported is a flag, not a footnote.** Ricursive reports Ripple-65B Preview at 80.52 on Terminal-Bench 2.1, and Artificial Analysis hasn't scored it yet. It stays off the shortlist until an independent score exists.
+6. **Different boards measure different things.** On Arena's WebDev board (October 27), the top open model is Kimi K3.1 Pro (Max) at #9 with a preliminary 1695, against Claude Opus 5.5 (Max) at 1810; on the Text Arena it's Kimi K3 (Max) at #19 with 1488. A human-preference Elo gap and an index-point gap aren't the same unit.
+7. **Retired sources are marked retired.** METR's time-horizons page says it's no longer actively updated (last updated September 8) and has no current-generation model, so it can't supply a current number.
+
+**What the board gets:** the gap on our private eval (Q133) at deployed effort, as cost per resolved task with a confidence interval, plus the external index as context with every definition spelled out.
+
+**The judgment call:** I'd tell the board '13 points on v5.0.1 by our definition of open, 26 by the tracker's label, and here's the gap that matters for our workload.' Reporting one external number without its rules invites the next deck to quote a different one and call it a trend."
+
+**Follow-up to expect:** A team wants to switch to DeepSeek V4.1 Flash 1017 because it's the best released-weight model "at 33." What do you ask? (At which effort they'd run it. The 33 is a max-effort score using 174M output tokens on the index; at high it's 29 and without reasoning 19, so the evaluation has to run at the effort and token budget the team will actually pay for, with cost per task beside the score.)
+
+### Q192: Your multi-tenant agent platform keeps long-term memory in LangGraph's Postgres store under namespaces like ("tenant", tenant_id), exposes MCP servers built on the C# SDK, and serves partner agents over A2A with Strands. Between October 21 and November 3, advisories in all three showed tenant boundaries failing open: a dotted label that aliased another tenant's namespace, two principals without identity claims comparing as null == null, and one agent object sharing conversation history across callers. Design isolation that survives the next bug of this kind.
+
+**What interviewers look for:**
+- Recognizing the common shape: tenant identity represented as something that can collide, be absent, or be shared, and a comparison that failed open
+- Typed tenant identity derived from verified auth, encoded unambiguously, enforced again below the framework (database row-level security, per-context state)
+- Tests that would have caught these bugs: two concurrent tenants, real backends, adversarial labels and missing claims
+
+**Strong answer:**
+
+"Each advisory is small. Together they say the framework's isolation is a convenience, not a boundary.
+
+**The three bugs:**
+
+1. **Delimiter collision.** LangGraph's GHSA-6hmw-9432-67qq (CVE-2026-115883, CVSS v4 6.0, October 21): the Postgres and SQLite stores joined namespace labels with '.', so ('tenant.bob',) resolved to the same namespace as ('tenant', 'bob'). `put` rejected dotted labels, but `get`, `search`, `delete`, `list_namespaces`, their async forms, and batch operations didn't, so a caller who controlled a label could read, overwrite, or delete another namespace's items. Fixed in langgraph-checkpoint-postgres 3.1.3 and langgraph-checkpoint-sqlite 3.1.2 (both need langgraph-checkpoint 4.3.0) and in Agent Server 0.15.5 and 0.16.2. InMemoryStore is unaffected, which means a test suite running on the in-memory store would have passed.
+2. **Null equals null.** The MCP C# SDK's GHSA-x863-g495-4cjc (high, CVSS 7.5, November 3): the ASP.NET Core transport bound a stateful session to its user by the NameIdentifier, sub, or UPN claim only, so two principals lacking all three compared as null == null, and a second user holding the victim's `Mcp-Session-Id` could act inside the victim's session and terminate it. Exposure needs a custom auth handler emitting none of those claims plus a disclosed session ID; fixed in 1.4.2 and 2.3.1.
+3. **One object, many callers.** Strands Agents' CVE-2026-115419 (CVSS 8.1, October 22): the A2A server in strands-agents before 1.43.0 and @strands-agents/sdk before 1.5.0 shared conversation history across callers with different `context_id` values, so an authenticated caller could read another's history or influence the model's behavior for others. The fix builds the agent through a factory per `context_id`; the stated workaround is a separate A2A server per user or tenant.
+
+**Design:**
+
+1. **Tenant identity is typed and comes from auth.** The tenant segment is a UUID taken from the verified token, never from a request field or a string the caller influences. A store wrapper prepends it; callers pass only the sub-path, and labels are validated against a strict character set on every operation, reads included. The LangGraph bug was validation on writes only.
+2. **Encode, don't join.** Any composite key is length-prefixed or escaped, so no two distinct tuples map to the same string.
+3. **Missing identity is an error.** Our auth handlers must emit a stable issuer and subject; session binding compares the pair and rejects when either is absent. A missing claim is never a comparable value.
+4. **No shared mutable agent objects.** Agents are constructed per request or per context through a factory, with state keyed by context ID. The few highest-value tenants get their own process, which is the Strands workaround promoted to policy.
+5. **A boundary below the framework.** Postgres row-level security keyed on a session variable set from the authenticated tenant, as in Q101, so a namespace bug in the framework hits RLS and returns nothing. Regulated tenants get their own schema or database.
+6. **Transport checks are part of identity.** The same week, the MCP Java SDK's GHSA-hp8w-r5wh-cw9q (October 20) showed a stateless server parsing JSON-RPC whatever the Content-Type, so a web page could make a visitor's browser send a `tools/call` as a no-cors `text/plain` request. Every MCP endpoint requires `application/json`, validates Origin, and authenticates even on loopback (Q127).
+7. **Tests that would have caught them.** Integration tests run two tenants concurrently against the real Postgres store, never only InMemoryStore; a fuzzer throws dotted, empty, and Unicode labels at every store operation; session tests use principals with no claims; all of it reruns on every framework bump.
+8. **Patched means deployed.** New LangSmith Cloud deployments and revisions include the LangGraph fix, but existing deployments get it only on their next revision, so 'upgraded' is checked against what's actually running, from the exposure inventory in Q155.
+
+**Detection:** any request whose tenant segment differs from its token's tenant is a security event, alerted on before it reaches the store.
+
+**The judgment call:** I keep the frameworks, because their memory and session features save real work, but I never let them be the only thing between tenants. The boundary that counts is enforced by the identity layer and the database, and it fails closed."
+
+**Follow-up to expect:** Is a database per tenant overkill? (For most tenants, yes: typed tenant keys plus row-level security cover this class of bug at reasonable cost. Per-tenant databases or processes are for regulated or very large tenants, where the blast radius of a cross-tenant read justifies the extra operations, migrations, and cost.)
+
+### Q193: Your engineering org runs coding agents three ways: Claude Agent SDK jobs in CI guarded by security hooks, GitHub Copilot code review on every PR, and Kiro CLI scripts that run with `--trust-all-tools`. Leadership wants Copilot approvals, GA since October 28, to count toward required reviews so agent-authored PRs merge faster. Audit which of your agent controls fail open or change silently on upgrade, and design the approval policy.
+
+**What interviewers look for:**
+- Finding controls that fail open by default, policy that can silently not load, and upgrades that swap the harness under an unattended script
+- An approval policy scoped by file path and reversibility, with humans required where a wrong approval is expensive
+- Knowing that human review isn't automatically independent of the agent's view, and designing for that
+
+**Strong answer:**
+
+"Before deciding who approves, I check which guards actually hold. A control that fails open isn't a control.
+
+**The audit:**
+
+1. **Hooks fail open by default.** Claude Agent SDK hook callbacks default to 'continue', which treats a callback that raises, returns None, or returns a rejected value as no decision, so the action runs. Claude Code 2.1.317 (November 2) added `onFailure: "block"`, and Python claude-agent-sdk 0.2.177 (November 3) exposes it as `on_failure` on HookMatcher. Every security hook gets `on_failure="block"`, and the SDK and bundled CLI are pinned together, because passing it to an older CLI raises CLIConnectionError.
+2. **Policy that may not load.** Claude Code 2.1.314 (October 30) fixed `forceRemoteSettingsRefresh` not applying once the stored copy had expired, which let sessions start without policy when the settings server was unreachable, and fixed sandbox protections not applying to a worktree entered by `claude -p --resume` or `--continue`. The stable channel was still 2.1.311 as of November 3, so CI pins a version with both fixes instead of following stable.
+3. **Write boundaries.** 2.1.314 also added `permissions.blockWritesOutsideWorkingDirectories`: Write, Edit, and NotebookEdit refuse paths outside the working directories in every permission mode. It names only file tools, so shell writes still depend on the sandbox, which stays mandatory.
+4. **Harness swaps on upgrade.** Kiro CLI 3.0.0 (November 3) made the V3 harness the default for scripts using `--trust-all-tools`, and CLI 2.37.0 auto-upgrades V2 agent files when V3 starts unless `chat.enableAutoAgentUpgrade` is false. An unattended script with every tool trusted changes harness on a routine upgrade, so the CLI and harness are pinned and auto-upgrade is off.
+5. **Classifier gates are convenience.** Copilot assisted permissions (GA October 26) let an LLM approve clearly safe commands, file paths, and URLs and send the rest to a human; admins can block Allow All while keeping Assisted. Useful for friction, not containment, which Q65's sandbox still provides.
+
+**Copilot approvals, as shipped:** off by default; when an admin turns them on, a Copilot approval counts toward the repository's required approvals; repository admins choose which file paths Copilot may approve; pushing new commits dismisses the approval. A Max review effort (public preview) runs several review agents on models from different providers plus an aggregation agent, at more AI credits.
+
+**The policy:**
+
+1. **Copilot may count only on an allowlist of cheap, reversible paths:** docs, tests, and non-production config. Never auth, payments, infrastructure, CI workflows, CODEOWNERS, or the agents' own policy and hook files, because an agent that can get its guardrail changes approved by another agent has no guardrails.
+2. **An agent-authored PR always needs one human approval.** Copilot can be the second approval on a human's PR in an allowlisted path, never the only approval on an agent's.
+3. **The human forms a view first on sensitive paths.** Anthropic's October 27 study of 50 professionals found analysts matched an agent's hidden lean 86% of the time, against about 50% by chance, and switched a prior preference 60% of the time when the agent disagreed versus 6% when it agreed; expertise didn't predict deferral (vendor-reported, one task). So for sensitive paths the reviewer records a verdict before reading the AI review, and we measure how often humans override agent reviews. An override rate near zero means rubber-stamping.
+4. **Agents propose; separate jobs apply.** GitHub Agentic Workflows (GA October 28) gives agents read-only permissions by default, runs them in a sandboxed container behind the Agent Workflow Firewall, passes outputs through 'safe outputs', and runs a separate threat-detection job on proposed changes. Our own CI agents follow the same shape whatever tool runs them.
+5. **Measure the policy.** Revert rate and post-merge incident rate by approval type (human only, human plus Copilot, Copilot on allowlisted paths). The allowlist widens only on that evidence.
+
+**The judgment call:** Copilot approvals can count where a wrong approval costs a revert, not an incident. Every control we depend on has to fail closed and be version-pinned, because November's changelogs show the default for a broken guard is to let the action through."
+
+**Follow-up to expect:** Max effort uses review agents from several providers. Is that independent enough to replace the human on sensitive paths? (No. Model diversity reduces shared blind spots, the same reason Q148 uses a monitor from a different family, but the merge decision on sensitive paths should rest on deterministic checks and an accountable human. Use Max to raise the floor of what reaches that human, not to remove them.)
+
 ---
 
 ## Key Takeaways
@@ -7254,8 +7960,9 @@ Then I'd sit with two support agents for an afternoon. Say the workflow is: a cu
 - Always state the latency, scale, and accuracy assumptions before sketching architecture; interviewers downgrade candidates who design without scope.
 - Strong answers cite a specific tradeoff and a concrete number (latency in ms, cost per token, recall at K); generic answers get scored as junior.
 - The "follow-up to expect" hints under each question are real; prepare a one-paragraph extension for each.
-- The May through October 2026 sections and the Voice AI set (Q81 onward) track current topics and hiring signals; older questions test foundational depth, not currency.
-- The [interview-report set](#questions-from-recent-interview-reports) (Q156-Q173) mirrors the round formats candidates describe in 2026: practice those under the reported conditions, including AI-assisted coding and design-doc review.
+- The May through November 2026 sections and the Voice AI set (Q81 onward) track current topics and hiring signals; older questions test foundational depth, not currency.
+- The [interview-report set](#questions-from-recent-interview-reports) (Q156-Q185) mirrors the round formats candidates describe in 2026: practice those under the reported conditions, including AI-assisted coding, AI-assisted design, and design-doc review.
+- The [November 2026 set](#advanced-questions---november-2026) (Q186-Q193) is about state and controls a provider or framework owns: enforcement scope, server-side threads, auto-routed deprecations, access programs, license definitions, index versions, and guards that fail open. The answer that recurs is to keep your own record and fail closed.
 - Voice roles get their own loop shape: the [Voice AI Questions](#voice-ai-questions) (Q136-Q147) test latency budgets, turn-taking on phone audio, per-minute economics, and calling compliance, which text-only prep does not cover.
 - Pair this bank with the [Answer Frameworks](02-answer-frameworks.md), [Whiteboard Exercises](04-whiteboard-exercises.md), and the [Job Market Trends](06-job-market-trends-2026.md).
 
@@ -7270,8 +7977,8 @@ Then I'd sit with two support agents for an afternoon. Say the workflow is: a cu
 5. **Consider failure modes** - What can go wrong?
 6. **End with monitoring** - How do you know it works?
 7. **Acknowledge uncertainty** - It is okay to say "I would research this more"
-8. **Cite benchmarks specifically, with version, effort level, and who ran them** - Terminal-Bench 4.0 (leaderboard, entries added October 6: Claude Opus 5.5 64.85% and Sonnet 5.5 61.82% at max, GPT-6 Astra and GPT-6.1 Sol tied at 58.18% at max; Anthropic-reported: Opus 5.5 66.4% at xhigh, Sonnet 5.5 70.6%), SWE-Bench Pro v2 (public split saturated at 99.4%; private set Opus 5 81.6%), OSWorld 2.x (binary is primary: Opus 5 44.3% binary vs 77.7% partial on the v2.1 full set), HLE-Diamond, Agents' Last Exam (leaderboard: Opus 5.5 38.2% pass at max), tau3-bench (its 2.0.0 release says scores are not comparable with 1.x), and the Artificial Analysis Intelligence Index v5.0 (Opus 5.5 58 at max with fallback, GPT-6 Astra 57 and GPT-6.1 Sol 55 at max; the top score, Gemini 4 Carbon's 59, belongs to a model developers cannot use; v4.x scores are not comparable). Treat GPQA Diamond and OSWorld-Verified as saturated, LiveCodeBench as legacy, and SWE-bench Verified as contaminated (repository-perturbation studies show models leaning on memorized repo cues)
-9. **Know the November 2026 landscape** - Claude Opus 5.5 ($4/$20, Anthropic's recommended starting point; fast mode at $8/$40 out of research preview), Claude Sonnet 5.5 ($2/$10, cache reads $0.10), Claude Haiku 5.5 ($0.10/$0.50 up to a 100K-token prompt, $0.50/$2.50 on the whole request above it), Claude Fable 5.1 ($10/$50, with safeguard fallback to Opus 4.8 or Opus 5), and Anthropic API version `2026-10-21` (sampling parameters return 400 on every model); GPT-6 Astra ($10/$50), GPT-6.1 Sol ($2/$10), GPT-6.1 Terra ($1/$5), GPT-6 Luna ($0.10/$0.50), and OpenAI's 12-hour prompt-cache option; Gemini 3.8 Flash (introductory pricing through December 31, 2026), Gemini 4 Argon (GA October 13; $2/$10 through November 30, then $4/$20), Grok 4.7, Muse Spark 1.3; open weights led by DeepSeek V4.1-Flash, GLM-5.3 and MiMo-V2.6-Pro (32, 32 and 30 on Artificial Analysis v5.0), plus Kimi K3, Qwen3.8, Mistral Large 4 and Meta's Muse Spark Open, with license gates on model-as-a-service businesses. Reference the eval-breakout incidents (the July Hugging Face intrusion and METR's investigation), GPT-6 Astra as OpenAI's first Critical-level cyber model, and the EU AI Act calendar (Article 50 live since Aug 2, 2026; marking grace ends Dec 2, 2026; Annex III high-risk from Dec 2, 2027)
+8. **Cite benchmarks specifically, with version, effort level, and who ran them** - Terminal-Bench 4.0 (leaderboard, entries added October 6: Claude Opus 5.5 64.85% and Sonnet 5.5 61.82% at max, GPT-6 Astra and GPT-6.1 Sol tied at 58.18% at max; Anthropic-reported: Opus 5.5 66.4% at xhigh, Sonnet 5.5 70.6%), SWE-Bench Pro v2 (public split saturated at 99.4%; private set Opus 5 81.6%), OSWorld 2.x (binary is primary: Opus 5 44.3% binary vs 77.7% partial on the v2.1 full set), HLE-Diamond, Agents' Last Exam (leaderboard: Opus 5.5 38.2% pass at max), tau3-bench (its 2.0.0 release says scores are not comparable with 1.x), and the Artificial Analysis Intelligence Index v5.0.1 (the November 3 regrade: Opus 5.5 59 at max, GPT-6 Astra 57 and GPT-6.1 Sol 55 at max; the top score, Gemini 4 Carbon's 60 at high, belongs to a model developers cannot use; v5.0 and v4.x scores are not comparable). Treat GPQA Diamond, OSWorld-Verified and ARC-AGI-2 (several frontier models above 89% on ARC Prize's results page) as saturated, LiveCodeBench as legacy, and SWE-bench Verified as contaminated (repository-perturbation studies show models leaning on memorized repo cues)
+9. **Know the November 2026 landscape** - Claude Opus 5.5 ($4/$20, Anthropic's recommended starting point; fast mode at $8/$40 out of research preview), Claude Sonnet 5.5 ($2/$10, cache reads $0.10), Claude Haiku 5.5 ($0.10/$0.50 up to a 100K-token prompt, $0.50/$2.50 on the whole request above it), Claude Fable 5.1 ($10/$50, with safeguard fallback to Opus 4.8 or Opus 5), and Anthropic API version `2026-10-21` (sampling parameters return 400 on every model); GPT-6 Astra ($10/$50), GPT-6.1 Sol ($2/$10), GPT-6.1 Terra ($1/$5), GPT-6 Luna ($0.10/$0.50), GPT-6-Cyber ($20/$100, launched November 5 for Daybreak Red customers, with the access program set per request), and OpenAI's 12-hour prompt-cache option; Anthropic's user profiles (October 20) and message threads beta (November 2); Gemini 3.8 Flash (introductory pricing through December 31, 2026), Gemini 4 Argon (GA October 13; $2/$10 through November 30, then $4/$20), Gemini 2.5 Pro and Flash deprecated on the Gemini API November 2 and scheduled to route to newer models from December 1, Grok 4.7, Muse Spark 1.3; open weights led by Kimi K3.1 Pro (weights public November 4; 46 on Artificial Analysis v5.0.1, whose model page still labeled it proprietary on November 6), then DeepSeek V4.1-Flash-1017, GLM-5.3 and MiMo-V2.6-Pro (33, 32 and 30 at max), plus Kimi K3, Qwen3.8, Mistral Large 4, MiniMax M3.1-Flash and Meta's Muse Spark Open, with license gates on model-as-a-service businesses and, for MiniMax, on any commercial use (Q190, Q191). Reference the eval-breakout incidents (the July Hugging Face intrusion and METR's investigation), GPT-6 Astra as OpenAI's first Critical-level cyber model, and the EU AI Act calendar (Article 50 live since Aug 2, 2026; marking grace ends Dec 2, 2026; Annex III high-risk from Dec 2, 2027)
 
 ---
 
@@ -7342,6 +8049,64 @@ Then I'd sit with two support agents for an afternoon. Say the workflow is: a cu
 - [Anthropic - Expanded Cyber Verification Program (October 6, 2026)](https://www.anthropic.com/news/cyber-verification-program)
 - [Silicon Data - H100 rental index](https://www.silicondata.com/products/silicon-index/h100)
 - [Google - EmbeddingGemma 2 model card](https://huggingface.co/google/embeddinggemma-2)
+
+**November 2026 interview reports** (Q174-Q185):
+
+- [PracHub: Amazon Software Engineer (AWS agentic AI security team) report](https://prachub.com/interview-experiences/amazon-software-engineer-interview-experience-three-rounds-of-graphs-system-design-and-leadership-principles), posted October 14, 2026 (question page https://prachub.com/interview-questions/design-an-ai-agent-security-detection-pipeline-for-1-tb-day-of-streaming-telemetry, posted October 9, 2026)
+- [Aced: OpenAI Staff Security Infrastructure Engineer report](https://www.aced.io/experiences/openai-staff-security-engineer-interview-f477ec), first seen November 6, 2026
+- [PracHub: OpenAI Software Engineer devbox design question](https://prachub.com/interview-questions/design-an-online-devbox-service-for-on-demand-cloud-development-environments), posted October 12, 2026
+- [PracHub: Google Software Engineer onsite report](https://prachub.com/interview-experiences/google-software-engineer-interview-experience-in-person-onsite-with-a-design-round-and-a-train-schedule-question), posted October 10, 2026 (question page https://prachub.com/interview-questions/design-llm-summarization-of-e-commerce-reviews-with-prompt-injection-and-pii-defenses, posted October 6, 2026)
+- [PracHub: Google Software Engineer manufacturing agent question](https://prachub.com/interview-questions/design-an-llm-agent-for-manufacturing-production-status-work-orders-and-quotes), posted October 2, 2026
+- [PracHub: Walmart Global Tech Senior+ MLE agentic search question](https://prachub.com/interview-questions/design-an-agentic-search-experience), posted October 4, 2026 (experience https://prachub.com/interview-experiences/walmart-labs-seniorplus-machine-learning-engineer-interview-experience-a-surprise-agentic-search-design-round, posted October 6, 2026)
+- [Aced: Sierra Agent Strategist report](https://www.aced.io/experiences/sierra-ai-deployment-strategist-interview-aec3c9), first seen November 6, 2026
+- [PracHub: LinkedIn Senior+ MLE job-click prediction question](https://prachub.com/interview-questions/design-a-model-that-predicts-whether-a-member-clicks-a-displayed-job), posted October 1, 2026 (experience https://prachub.com/interview-experiences/linkedin-senior-machine-learning-engineer-interview-experience-debugging-logistic-regression-then-job-click-prediction-design, posted October 3, 2026; SWE variant https://prachub.com/interview-questions/design-a-personalized-job-suggestions-page-for-linkedin-members, posted October 4, 2026)
+- [PracHub: Meta Machine Learning Engineer real-time QA chatbot question](https://prachub.com/interview-questions/design-a-real-time-question-answering-chatbot-training-data-rl-tasks-and-rewards), posted September 25, 2026
+- [Aced: AI engineer interview questions guide (Anthropic MLE model-behavior prompt)](https://www.aced.io/blog/ai-engineer-interview-questions), first seen November 6, 2026
+- [Aced: xAI Member of Technical Staff (ML) report](https://www.aced.io/experiences/x-ai-machine-learning-engineer-interview-861cd7), first seen November 6, 2026
+- [PracHub: Microsoft SDE-2 report](https://prachub.com/interview-experiences/microsoft-software-engineer-interview-experience-sde-2-loop-with-an-ai-assisted-design-round-and-a-linux-cp-deep-dive), posted September 24, 2026
+- [Meta Careers: hiring process page (cited in the Q185 answer, not a candidate report)](https://www.metacareers.com/hiring-process/), first seen November 6, 2026
+
+**November 2026 sources** (Q186-Q193):
+
+- [Anthropic - User profiles](https://platform.claude.com/docs/en/manage-claude/user-profiles), October 20, 2026
+- [Anthropic - Release notes (user profiles, enforcement fields, 128 MB request limit, message threads)](https://platform.claude.com/docs/en/release-notes/overview), October 20 to November 2, 2026
+- [Google Threat Intelligence Group - LLMjacking: monetizing compromised cloud models](https://cloud.google.com/blog/topics/threat-intelligence/llmjacking-monetizing-compromised-cloud-models), November 3, 2026
+- [Anthropic - Message threads](https://platform.claude.com/docs/en/build-with-claude/message-threads), November 2, 2026
+- [Anthropic - Claude Models on Google Cloud (Google managed)](https://platform.claude.com/docs/en/build-with-claude/claude-models-on-google-cloud/google-managed), checked November 6, 2026
+- [Google - Gemini API deprecations](https://aistudio.google.com/docs/deprecations), November 2, 2026
+- [Google Cloud - Vertex AI model versions and lifecycle](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/learn/model-versions), checked November 6, 2026
+- [AWS - Amazon Bedrock legacy model lifecycle](https://docs.aws.amazon.com/bedrock/latest/userguide/model-lifecycle-legacy.html), checked November 6, 2026
+- [Microsoft - Foundry model retirement schedule](https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule), checked November 6, 2026
+- [xAI - Release notes](https://docs.x.ai/docs/release-notes), November 2026
+- [Moonshot - Kimi API pricing and K2 series retirement](https://platform.kimi.ai/docs/pricing/chat), October 31, 2026
+- [OpenAI - GPT-6-Cyber model page](https://developers.openai.com/api/docs/models/gpt-6-cyber), November 5, 2026
+- [OpenAI - Daybreak access programs guide](https://developers.openai.com/api/docs/guides/daybreak), November 5, 2026
+- [Xen Project - XSA-523: arbitrary read/write via grant copy](https://xenbits.xen.org/xsa/advisory-523.html), November 3, 2026
+- [Moonshot AI - Kimi-K3.1-Pro model card](https://huggingface.co/moonshotai/Kimi-K3.1-Pro), November 4, 2026
+- [Moonshot AI - Kimi K3.1-Pro License](https://huggingface.co/moonshotai/Kimi-K3.1-Pro/blob/main/LICENSE), November 4, 2026
+- [MiniMax - MiniMax Community License (M3.1-Flash)](https://huggingface.co/MiniMaxAI/MiniMax-M3.1-Flash/blob/main/LICENSE), October 23, 2026
+- [Meta - Muse Spark Open repository gate (Hugging Face API)](https://huggingface.co/api/models/meta-models/Muse-Spark-Open-816B-A42B), October 15, 2026
+- [Artificial Analysis - Kimi K3.1 Pro providers](https://artificialanalysis.ai/models/kimi-k3-1-pro/providers), October 23, 2026
+- [AWS - Introducing Kimi K3 on Amazon Bedrock](https://aws.amazon.com/blogs/machine-learning/introducing-kimi-k3-on-amazon-bedrock/), September 18, 2026
+- [Artificial Analysis - Intelligence Index v5 announcement](https://artificialanalysis.ai/articles/artificial-analysis-intelligence-index-v5), October 27, 2026
+- [Artificial Analysis - Changelog (methodology v5.0.1)](https://artificialanalysis.ai/changelog), November 3, 2026
+- [Artificial Analysis - Kimi K3.1 Pro model page](https://artificialanalysis.ai/models/kimi-k3-1-pro), checked November 6, 2026
+- [Artificial Analysis - DeepSeek V4.1 Flash 1017](https://artificialanalysis.ai/models/deepseek-v4-1-flash-1017), November 1, 2026
+- [Sun et al. - What Effort Level Should I Choose? (arXiv 2610.34491)](https://arxiv.org/abs/2610.34491), October 25, 2026
+- [Arena - WebDev leaderboard](https://arena.ai/leaderboard/webdev), October 27, 2026
+- [Ricursive Intelligence - Ripple-65B Preview model card](https://huggingface.co/ricursiveAI/Ripple-65B-Preview), November 4, 2026
+- [METR - Time horizons](https://metr.org/time-horizons/), September 8, 2026
+- [LangGraph - GHSA-6hmw-9432-67qq (CVE-2026-115883)](https://github.com/langchain-ai/langgraph/security/advisories/GHSA-6hmw-9432-67qq), October 21, 2026
+- [MCP C# SDK - GHSA-x863-g495-4cjc](https://github.com/modelcontextprotocol/csharp-sdk/security/advisories/GHSA-x863-g495-4cjc), November 3, 2026
+- [Strands Agents - GHSA-4v6f-7vjh-6x4m (CVE-2026-115419)](https://github.com/strands-agents/sdk-python/security/advisories/GHSA-4v6f-7vjh-6x4m), October 22, 2026
+- [MCP Java SDK - GHSA-hp8w-r5wh-cw9q](https://github.com/modelcontextprotocol/java-sdk/security/advisories/GHSA-hp8w-r5wh-cw9q), October 20, 2026
+- [Anthropic - Claude Agent SDK for Python changelog](https://github.com/anthropics/claude-agent-sdk-python/blob/main/CHANGELOG.md), November 3, 2026
+- [Anthropic - Claude Code changelog](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md), October 30 to November 3, 2026
+- [GitHub - Copilot code review: Max effort and approvals](https://github.blog/changelog/2026-10-28-copilot-code-review-merge-with-confidence-with-max-and-approvals), October 28, 2026
+- [GitHub - Copilot assisted permissions generally available](https://github.blog/changelog/2026-10-26-github-copilot-assisted-permissions-generally-available), October 26, 2026
+- [GitHub - Agentic Workflows generally available](https://github.blog/changelog/2026-10-28-github-agentic-workflows-generally-available), October 28, 2026
+- [Kiro - CLI 3.0 changelog](https://kiro.dev/changelog/cli/3-0/), November 3, 2026
+- [Anthropic - How AI agents shape experts' judgment calls](https://www.anthropic.com/research/agents-judgment-calls), October 27, 2026
 
 ---
 

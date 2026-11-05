@@ -112,6 +112,8 @@ class JWTAuthenticator:
 
 Static API keys are the weakest link in an agent fleet, and attackers now hunt them by name. The ChainDrop npm worm (August 2026) harvested OpenAI, Anthropic, Cursor, Codex and Gemini tokens alongside cloud and GitHub credentials. Mandiant described an intrusion in which an attacker took over a live AI coding-assistant session, the assistant recommended an already-poisoned package, and stolen GitHub OAuth tokens let the Shai-Hulud worm spread across about 100 internal repositories. Providers have moved accordingly: OpenAI made mutual TLS and X.509 workload identity federation GA (August 29, 2026), added API key expiration with org- and project-level maximum lifetimes (September 10), and lets admins restrict or disable key creation (September 15).
 
+**Stolen credentials are billed by the hour.** Google Threat Intelligence Group and Mandiant reported on November 3, 2026 that LLMjacking incidents they handled ran up more than $100,000 in fraudulent charges in a single day and up to $1 million cumulatively before access was revoked; one actor made more than 500,000 LLM API calls in under eight hours through a resale service, passing nearly $1 million in token costs to the victim (vendor-reported). The entry point was stolen cloud identity (IAM credentials, service account keys, GitHub PATs, session tokens), not a model bug, and the attackers' habits are detectable: they validated keys with `max_tokens=1` requests, switched on LLM services the victim had never used, and probed exposed Ollama `/api/create` endpoints. That makes per-key quotas and spend caps a security control, not only a FinOps one, and it makes "LLM service enabled in an account that never used it" an alert worth wiring up.
+
 The rules that follow:
 
 - **Prefer workload identity** (mTLS, federated short-lived tokens) for service-to-provider calls. Where keys remain, give each an owner, an expiry and a spend cap.
@@ -221,6 +223,8 @@ When an agent calls tools on a user's behalf, authorization involves three parti
 | The agent's own identity, for headless agents | Workload identity plus the OAuth family, not new protocols | IETF WIMSE adopted draft-ietf-wimse-aims-00 (September 15, 2026); MCP workload identity federation (SEP-1933) is an open draft |
 
 **Approvals are authorization too.** Per-call human approval does not scale, so platforms are moving to policy: Claude Managed Agents' auto permission policy (September 10, 2026) has the server evaluate each agent or MCP tool call and run it, deny it, or pause for approval. Where humans do approve, bind the approval to the exact call: research on approval laundering (arXiv 2609.38983) shows the action a person approves is not always the action a coding-agent harness executes.
+
+**A government checklist for agent identity.** NIST's NCCoE published ten "design tenets for agent identity management systems" on October 27, 2026 (a blog post with no NIST publication number, so a draft starting point rather than a standard). They match the rules in this chapter: a distinct identity per agent; cryptographic linking to the initiating party, with delegated authority that can only narrow; least and zero standing privilege; short-lived, task-specific, revocable authorization with no long-lived bearer tokens; human-in-the-loop triggers that guard against consent fatigue; signed mandates from task originators; the policy decision kept separate from the model's reasoning; deterministic primary access decisions; agent-specific monitoring; and append-only evidence the agent cannot touch. It is a useful review checklist for an agent platform design, and a credible citation in an interview.
 
 **User-delegated model access.** Sign in with ChatGPT (announced at OpenAI DevDay, September 29, 2026; limited trial for selected partners) uses OAuth 2.0 with PKCE and OpenID Connect, and can optionally run eligible Responses API requests on the user's own ChatGPT plan. It is convenient identity, but it concentrates login and AI billing at one model vendor; weigh it like any IdP lock-in decision.
 
@@ -560,6 +564,8 @@ Standards are still settling (DPoP for MCP and workload identity federation are 
 - MCP TypeScript SDK advisory GHSA-6qxp-vccf-f47h (CVE-2026-104850): https://github.com/modelcontextprotocol/typescript-sdk/security/advisories/GHSA-6qxp-vccf-f47h
 - MCP TypeScript SDK advisories GHSA-jm63-cq47-j5jp (CVE-2026-111770, shared transports) and GHSA-rvq5-wwqv-78pq (CVE-2026-111771, token audience): https://github.com/modelcontextprotocol/typescript-sdk/security/advisories
 - Anthropic, expanded Cyber Verification Program (October 6, 2026): https://www.anthropic.com/news/cyber-verification-program
+- Google Threat Intelligence Group, LLMjacking (November 3, 2026): https://cloud.google.com/blog/topics/threat-intelligence/llmjacking-monetizing-compromised-cloud-models
+- NIST NCCoE, design tenets for agent identity management systems (October 27, 2026): https://www.nist.gov/blogs/cybersecurity-insights/design-tenets-agent-identity-management-systems
 - IETF WIMSE, AI Identity Management System (draft-ietf-wimse-aims): https://datatracker.ietf.org/doc/draft-ietf-wimse-aims/
 - OpenAI API changelog (workload identity, key expiry): https://developers.openai.com/api/docs/changelog
 
