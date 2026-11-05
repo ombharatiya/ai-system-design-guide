@@ -237,7 +237,7 @@ Sandboxing isolates the code an agent generates and runs from the host system. T
 
 ## Related Reading
 
-- [Question Bank (155 senior interview questions)](01-question-bank.md)
+- [Question Bank (173 senior interview questions)](01-question-bank.md)
 - [Answer Frameworks](02-answer-frameworks.md)
 - [Common Pitfalls](03-common-pitfalls.md)
 - [Whiteboard Exercises](04-whiteboard-exercises.md)
