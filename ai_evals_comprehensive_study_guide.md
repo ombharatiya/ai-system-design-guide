@@ -20,6 +20,8 @@
 
 **Platform Examples:** This guide uses **Arize Phoenix** (free and self-hosted, source-available under the Elastic License 2.0) and **Langfuse** (open-source, cloud or self-hosted) as primary examples. The methodology is platform-agnostic: adapt it to whichever tool you use.
 
+> **Go further with [AI Evals](https://www.aievals.co):** the author's official site, with courses, free content, agent kits, and certificates for engineers, PMs, and QAs putting these methods into practice.
+
 ---
 
 ## Table of Contents
@@ -3426,6 +3428,10 @@ Start today. Your future self will thank you.
 
 ## Learning Resources
 
+### Courses, Free Content & Certificates
+
+- **AI Evals** (official site of this guide's author): [aievals.co](https://www.aievals.co): courses, free content, agent kits, and certificates
+
 ### Platform Documentation & Learning Hubs
 
 - **Phoenix Docs**: [arize.com/docs/phoenix](https://arize.com/docs/phoenix)
@@ -3480,6 +3486,7 @@ Start today. Your future self will thank you.
 
 ### Contact Me
 - Om Bharatiya: [@ombharatiya](https://twitter.com/ombharatiya)
+- Courses, free content, agent kits, and certificates: [aievals.co](https://www.aievals.co)
 
 ### Reference Work Credits
 This guide was built on the foundation of the following people's work and ideas. Their courses, blogs, and open-source contributions made this guide possible:
