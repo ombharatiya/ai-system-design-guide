@@ -57,7 +57,7 @@ PagedAttention enables effortless sharing of "Common Prefixes."
 
 **How engines find shared prefixes.** vLLM's automatic prefix caching hashes each full block together with the hash of everything before it, so identical prefixes map to identical block hashes; SGLang's RadixAttention keeps the same information in a radix tree. Two production details:
 - **Hashes must be deterministic across nodes** for distributed KV sharing to hit. vLLM v0.29.0 made its prefix-cache root hash deterministic, so you no longer need to pin `PYTHONHASHSEED` across replicas.
-- **Sharing must respect tenancy.** A shared block is also a timing side channel; engines mix a per-tenant `cache_salt` into the hash, and every API path has to apply it.
+- **Sharing must respect tenancy.** A shared block is also a timing side channel; engines mix a per-tenant `cache_salt` into the hash, and every API path has to apply it. vLLM learned this the hard way: tool-continuation turns on the Responses API (`/v1/responses`) dropped the salt until 0.30.0 (GHSA-935w-9g4m-p28p). The current vLLM security floor is set by later advisories, not this one; see [LLM Security](../12-security-and-access/01-llm-security.md).
 
 ---
 

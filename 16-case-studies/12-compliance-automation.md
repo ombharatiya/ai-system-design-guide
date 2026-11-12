@@ -71,7 +71,7 @@ claims = extract_claims(document)
 
 Each claim is then checked independently against relevant regulations.
 
-Generate the claim list with structured outputs (a JSON schema), not by forcing a tool call: on the newest Claude models (Fable 5.1, Opus 5.5, Sonnet 5.5), `tool_choice` set to `any` or a specific tool returns HTTP 400, which breaks extraction code written for older models.
+Generate the claim list with structured outputs (a JSON schema), not by forcing a tool call: on Opus 5.5, Sonnet 5.5, and Fable/Mythos 5.1, `tool_choice` set to `any` or a specific tool returns HTTP 400, which breaks extraction code written for older models (Haiku 5.5 accepts it but skips thinking).
 
 ### 2. Why RAG Over Fine-Tuning for Regulations?
 

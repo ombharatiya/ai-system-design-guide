@@ -59,12 +59,12 @@ Instead of just storing the raw document, we store "Enriched" meta-data.
 
 ## In-Context Reranking
 
-With 1M-token windows now standard on frontier models (Claude Opus 5.5 and Sonnet 5.5, the GPT-6 family at 1.05M, Gemini 3.8 Flash), **Rank-by-Context** is a viable pattern.
+With 1M-token windows now standard on current models (Claude Opus 5.5 and Sonnet 5.5, the GPT-6 and GPT-6.1 families at 1.05M, Gemini 4 Argon, and even the fast tier with Gemini 3.8 Flash and Claude Haiku 5.5, though Haiku bills 5x once a prompt passes 100K tokens), **Rank-by-Context** is a viable pattern.
 1. Retrieve Top 100 docs.
 2. Put all 100 in the context window.
 3. Ask the model: "Read these 100 docs and identify the 5 most relevant. Then, use those 5 to answer."
 - **Win**: This utilizes the model's **Long Context Reasoning** to perform reranking without needing a separate Cross-Encoder model.
-- **Cost check**: 100 docs of 500 tokens is 50K input tokens per query: about $0.10 on a $2-per-1M model such as Claude Sonnet 5.5 or GPT-6 Sol, versus about $0.0025 for the same tokens on Voyage rerank-3 ($0.05 per 1M), a 40x gap before output tokens. Reserve it for low-volume, reasoning-heavy queries, and keep the prompt under long-context price cliffs (272K input on OpenAI, 200K on xAI).
+- **Cost check**: 100 docs of 500 tokens is 50K input tokens per query: about $0.10 on a $2-per-1M model such as Claude Sonnet 5.5 or GPT-6 Sol, versus about $0.0025 for the same tokens on Voyage rerank-3 ($0.05 per 1M), a 40x gap before output tokens. Reserve it for low-volume, reasoning-heavy queries, and keep the prompt under long-context price cliffs (100K on Claude Haiku 5.5, cached tokens included; 272K input on OpenAI; 200K on xAI), or use a flat-priced model such as Claude Sonnet 5.5.
 
 ---
 

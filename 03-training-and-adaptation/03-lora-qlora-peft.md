@@ -82,7 +82,7 @@ Production systems now serve one base model (e.g., Llama 3.3 70B or Qwen3.8-27B)
 # Request 2 -> Base + Legal_Adapter
 # Request 3 -> Base + Medical_Adapter
 ```
-**The Tech**: batched LoRA kernels (Punica's SGMV) let one decode step apply different adapters to different rows of the batch, and S-LoRA's **Unified Paging** manages adapter weights and KV cache in one paged pool, with idle adapters kept in host memory. S-LoRA reported serving thousands of adapters with up to 4x the throughput of HuggingFace PEFT and vLLM at the time. In vLLM, `--enable-lora`, `--max-loras` (adapters resident per batch), and `--max-lora-rank` are the capacity knobs; overhead grows with rank and with the number of distinct adapters per batch, so benchmark your own mix.
+**The Tech**: batched LoRA kernels (Punica's SGMV) let one decode step apply different adapters to different rows of the batch, and S-LoRA's **Unified Paging** manages adapter weights and KV cache in one paged pool, with idle adapters kept in host memory. S-LoRA reported serving thousands of adapters with up to 30x the throughput of HuggingFace PEFT and up to 4x that of vLLM at the time (2023). In vLLM, `--enable-lora`, `--max-loras` (adapters resident per batch), and `--max-lora-rank` are the capacity knobs; overhead grows with rank and with the number of distinct adapters per batch, so benchmark your own mix.
 
 **Check feature interactions before you commit.** LoRA support often lags other serving features: vLLM's adaptive speculative verification, for example, did not support LoRA when it launched in August 2026. If a tenant's adapter silently disables speculative decoding or a fast kernel path, that tenant's latency profile differs from the base model's.
 

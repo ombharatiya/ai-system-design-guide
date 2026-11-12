@@ -133,19 +133,20 @@ flowchart LR
     end
 
     subgraph Sync["Sync Strategy"]
-        C1 --> DELTA[Delta Sync<br/>Change Tokens]
-        C2 --> DELTA
+        C1 --> DELTA[Delta Sync<br/>Graph Change Tokens]
+        C2 --> CQL[CQL lastmodified Watermark<br/>or Webhooks, plus Full Pass]
         C3 --> HASH[Hash-Based<br/>Change Detection]
     end
 
     subgraph Queue["Processing Queue"]
         DELTA --> Q[Message Queue]
+        CQL --> Q
         HASH --> Q
         Q --> WORKER[Processing Workers]
     end
 ```
 
-**Key insight:** SharePoint and Confluence support change tokens (delta sync). File shares require hash comparison. Both feed into a unified processing queue.
+**Key insight:** SharePoint supports change tokens (Microsoft Graph delta queries). Confluence does not, so poll CQL on `lastmodified` since a stored watermark (or subscribe to webhooks) and run a periodic full pass to catch deletions and permission changes. File shares require hash comparison. All three feed a unified processing queue.
 
 ---
 

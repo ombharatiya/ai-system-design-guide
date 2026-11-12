@@ -24,7 +24,7 @@ Production RAG is no longer a weekend project. It is a distributed system with r
 
 ## RAG vs Long Context
 
-With most frontier families supporting 1M-token context windows (Claude Opus 5.5 and Sonnet 5.5, GPT-6 Sol and Astra at 1.05M, Gemini 3.8 Flash, Muse Spark 1.3, and open models such as Xiaomi MiMo-V2.6 and Llama 4 Maverick), the question is no longer "RAG or long context?" but "When does each win?"
+With most frontier families supporting 1M-token context windows (Claude Opus 5.5 and Sonnet 5.5, GPT-6 Sol and Astra at 1.05M, Gemini 4 Argon and the fast-tier Gemini 3.8 Flash, Muse Spark 1.3, and open models such as Xiaomi MiMo-V2.6 and Llama 4 Maverick), the question is no longer "RAG or long context?" but "When does each win?"
 
 ### The Decision Matrix
 
@@ -52,7 +52,7 @@ With most frontier families supporting 1M-token context windows (Claude Opus 5.5
 
 | Dimension | RAG | Long Context (1M tokens) |
 |-----------|-----|--------------------------|
-| **Avg Query Cost** | ~$0.001-0.015 (5K context tokens, GPT-6 Luna to Claude Sonnet 5.5) | ~$0.20-0.25 input with a warm Claude cache; $2-4 uncached |
+| **Avg Query Cost** | ~$0.001-0.015 (5K context tokens, GPT-6 Luna or Claude Haiku 5.5 to Claude Sonnet 5.5) | ~$0.10-0.25 input with a warm Claude cache (Sonnet 5.5 to Fable 5.1); $2-4 uncached |
 | **Avg Latency (p50)** | ~1s | ~30-45s |
 | **Precision on Specific Facts** | High (targeted retrieval) | Degrades in middle |
 | **Cross-Document Synthesis** | Weak (limited context) | Strong (sees everything) |
@@ -72,16 +72,18 @@ Cheaper cache reads moved the line for **stable** corpora. On the same model, a 
 corpus_tokens x cache_read_multiplier  <  retrieved_context_tokens
 ```
 
-| Model (list prices, Oct 1, 2026) | Cache read | Corpus that costs the same as a 5K-token RAG context |
+| Model (list prices, Nov 2, 2026) | Cache read | Corpus that costs the same as a 5K-token RAG context |
 |----------------------------------|------------|------------------------------------------------------|
 | Claude Fable 5.1 | 0.025x ($0.25 per 1M) | ~200K tokens |
 | Claude Opus 5.5 | 0.05x ($0.20 per 1M) | ~100K tokens |
+| Claude Sonnet 5.5 | 0.05x ($0.10 per 1M, since Oct 7) | ~100K tokens |
 | GPT-6.1 Sol | 0.05x ($0.10 per 1M) | ~100K tokens |
-| Most other Claude and OpenAI models | 0.1x | ~50K tokens |
+| GPT-6.1 Terra | 0.05x ($0.05 per 1M) | ~100K tokens |
+| Most other Claude and OpenAI models, including Claude Haiku 5.5 | 0.1x | ~50K tokens |
 
 What the formula leaves out:
-- **Cache writes and TTLs.** Claude charges 1.25x for 5-minute writes and 2x for 1-hour writes (Opus 5.5: $5 and $8 per 1M); OpenAI charges 1.25x on GPT-5.6 and later with a fixed 30-minute TTL. A corpus queried less often than the TTL pays the write again and again. Gemini's explicit caches read at 0.1x on Gemini 3.8 Flash but also bill storage by the hour ($0.50 per 1M tokens per hour through December 31, 2026, $1.00 from January 1, 2027), so a warm 200K-token corpus costs $0.10 to $0.20 an hour before a single read.
-- **Long-context surcharges.** OpenAI bills the whole request at long-context rates once input passes 272K tokens, and xAI doubles all tokens at 200K and above. Anthropic prices flat to 1M on Claude 4.6 and later.
+- **Cache writes and TTLs.** Claude charges 1.25x for 5-minute writes and 2x for 1-hour writes (Opus 5.5: $5 and $8 per 1M); OpenAI charges 1.25x on GPT-5.6 and later for its 30-minute cache and 2.5x for the 12-hour option added October 20, 2026. A corpus queried less often than the TTL pays the write again and again; the 12-hour write pays for itself only if the corpus is reread across the hours the shorter TTL would have expired. Gemini 4 Argon has no explicit caching at all, only implicit. Gemini's explicit caches read at 0.1x on Gemini 3.8 Flash but also bill storage by the hour ($0.50 per 1M tokens per hour through December 31, 2026, $1.00 from January 1, 2027), so a warm 200K-token corpus costs $0.10 to $0.20 an hour before a single read.
+- **Long-context surcharges.** OpenAI bills the whole request at long-context rates once input passes 272K tokens, and xAI doubles all tokens at 200K and above. Anthropic prices flat to 1M on Claude 4.6 and later except Claude Haiku 5.5, which bills the whole request at 5x once the prompt passes 100K tokens, counting cache reads and writes. A cached corpus above 100K on Haiku 5.5 therefore pays the high tier on every query, which can flip the break-even back to retrieval.
 - **Quality and latency.** A cheap cache read does not fix lost-in-the-middle or the prefill time of a very long prompt, and it only helps if the corpus fits.
 
 Recompute this per model instead of quoting fixed thresholds. The practical change is at the small end: a 100K-200K-token handbook or policy set that rarely changes is now often cheaper and simpler as a cached prefix than as an index.
@@ -773,7 +775,7 @@ def plan_retrieval_budget(query: str, max_budget_tokens: int = 4000):
 
 ### Adaptive Effort as a Managed Feature
 
-Managed search services now ship this escalation pattern as configuration. Azure AI Search knowledge bases went GA in REST API 2026-04-01 (extractive retrieval; query planning and answer synthesis remain preview), and the 2026-08-01-preview API adds `retrievalReasoningEffort: "auto"`: run a lightweight retrieval pass first and escalate to LLM query planning, up to medium effort, only when grounding is insufficient. The same preview streams retrieve results over server-sent events and lets you bypass reranking per knowledge source. If you build the router yourself, copy the shape: the cheap path must be the default, and the escalation trigger must be a measured grounding signal, not a guess about query complexity.
+Managed search services now ship this escalation pattern as configuration. Azure AI Search knowledge bases went GA in REST API 2026-04-01 (extractive retrieval; query planning and answer synthesis remain preview), and the 2026-08-01-preview API adds an `auto` effort (`"retrievalReasoningEffort": {"kind": "auto"}`, which needs a model on the knowledge base and returns 400 on earlier API versions): run a lightweight retrieval pass first and escalate to LLM query planning, up to medium effort, only when grounding is insufficient. The same preview streams retrieve results over server-sent events and lets you bypass reranking per knowledge source. If you build the router yourself, copy the shape: the cheap path must be the default, and the escalation trigger must be a measured grounding signal, not a guess about query complexity.
 
 ---
 
@@ -813,7 +815,7 @@ Total (optimized) ~$0.0002-0.002    (5-10x reduction)
              +----------+----------+----------+
 ```
 
-Costs are per request at 2.6K input and 300 output tokens, list prices on October 1, 2026, before reasoning tokens. Note where the spread is: Claude Opus 5.5 ($4 / $20) is only 2x Sonnet 5.5 ($2 / $10), while Sonnet 5.5 or GPT-6 Sol is 20x GPT-6 Luna. Most of the routing value is now at the small/mid boundary, so spend classifier effort there; the mid/large boundary barely pays for its misroutes.
+Costs are per request at 2.6K input and 300 output tokens, at November 2, 2026 list prices (unchanged since October 1), before reasoning tokens. Note where the spread is: Claude Opus 5.5 ($4 / $20) is only 2x Sonnet 5.5 ($2 / $10), while Sonnet 5.5 or GPT-6 Sol is 20x GPT-6 Luna. Most of the routing value is now at the small/mid boundary, so spend classifier effort there; the mid/large boundary barely pays for its misroutes.
 
 ### Progressive Detail Pattern
 
@@ -884,7 +886,7 @@ class CostGuard:
 
 ### Build vs Buy: Managed RAG Unit Prices
 
-Managed retrieval now publishes per-query prices, which turns build-versus-buy into arithmetic. Cloudflare AI Search went GA on October 1, 2026: Workers AI, Vectorize, R2 and Browser Run underneath, vector and keyword search in parallel with fusion and optional reranking, optional OCR for scanned PDFs, and image retrieval through Qwen3-VL-Embedding. Billing starts November 1, 2026:
+Managed retrieval now publishes per-query prices, which turns build-versus-buy into arithmetic. Cloudflare AI Search went GA on October 1, 2026: Workers AI, Vectorize, R2 and Browser Run underneath, vector and keyword search in parallel with fusion and optional reranking, optional OCR for scanned PDFs, and image retrieval through Qwen3-VL-Embedding. On November 2, 2026, Cloudflare postponed billing from November 1 to December 1, 2026 (prices and included usage unchanged, no charge for earlier usage) and changed the default sync interval from 6 hours to 24 hours. Set the interval explicitly (anything from 15 minutes to 24 hours) if your freshness SLO is tighter than a day, or new documents can stay unsearchable until the next sync. The meters:
 
 | Item | Price | Free per month (every Workers plan) |
 |------|-------|-------------------------------------|
@@ -1193,7 +1195,7 @@ class IndexMaintenanceScheduler:
 
 ### Memory Tiers and Quantization
 
-At 1,536 float32 dimensions a vector is 6 KB, so a billion chunks is about 6 TB before the graph. Rotation-based low-bit quantization is the main lever, and it is **opt-in or preview, not a default**: Qdrant added Hadamard-rotated TurboQuant in 1.18 and a 4-bit-only Turbo4 storage type in 1.19 (9x smaller than float32 plus a 4-bit copy, at the cost of peak recall, because the originals are gone); Weaviate 1.39 previews 4-bit Rotational Quantization (6,144 bytes to 784 for a 1,536-dim vector). Qdrant 1.19 also replaced `on_disk` / `always_ram` with one `memory` setting (pinned, cached or cold) across vectors, HNSW, sparse and payload indexes.
+At 1,536 float32 dimensions a vector is 6 KB, so a billion chunks is about 6 TB before the graph. Rotation-based low-bit quantization is the main lever, and it is **opt-in or preview, not a default**: Qdrant added Hadamard-rotated TurboQuant in 1.18, a 4-bit-only Turbo4 storage type in 1.19 (9x smaller than float32 plus a 4-bit copy, at the cost of peak recall, because the originals are gone), and `turbo8` and `turbo16` datatypes in 1.20; Weaviate 1.39 previews 4-bit Rotational Quantization (6,144 bytes to 784 for a 1,536-dim vector), and 1.40 adds a centered RQ4 variant. Qdrant 1.19 also replaced `on_disk` / `always_ram` with one `memory` setting (pinned, cached or cold) across vectors, HNSW, sparse and payload indexes.
 
 The production pattern: quantized vectors pinned in RAM for candidate search, full-precision originals cold on disk for rescoring the top candidates, and ANN recall measured against exact kNN after every quantization change (see [RAG Evaluation Patterns](13-rag-evaluation-patterns.md#separate-the-embedder-from-the-index)).
 
@@ -1308,7 +1310,7 @@ A mandatory `tenant_id` filter stops cross-tenant *results*. It does not stop cr
 | Channel | How it leaks | Mitigation |
 |---------|--------------|------------|
 | **Shared BM25 statistics** | In a pooled index, IDF is computed over every tenant's documents, so one tenant's vocabulary shifts another's ranking and scores reflect corpus-wide term frequencies | Per-tenant IDF (Qdrant 1.19 added it for sparse/BM25 search), or a siloed lexical index |
-| **Inference prefix cache** | On self-hosted engines a shared prefix cache is a timing oracle for whether another tenant sent the same prefix | Per-tenant cache salt on every code path. vLLM GHSA-935w-9g4m-p28p (fixed in 0.30.0) was one path that dropped the salt; run vLLM 0.30.0 or later |
+| **Inference prefix cache** | On self-hosted engines a shared prefix cache is a timing oracle for whether another tenant sent the same prefix | Per-tenant cache salt on every code path. vLLM GHSA-935w-9g4m-p28p (fixed in 0.30.0) was one path that dropped the salt; run vLLM 0.32.0 or later, the current security floor (it also fixes CVE-2026-115912 and CVE-2026-115915) |
 | **Semantic response cache** | An answer built from Tenant A's documents is served to Tenant B's similar query | Key the cache by tenant and ACL set, never globally |
 | **Engine vulnerabilities** | Bugs reachable by any role allowed to build indexes | pgvector 0.8.7 (October 1, 2026) fixes CVE-2026-103484, an IVFFlat build overflow that can lead to code execution (0.8.6 and below). Do not grant index creation to app roles, and confirm your managed Postgres has shipped the patch |
 

@@ -63,8 +63,8 @@ flowchart TB
 
 | Option | Examples | HIPAA posture | Cost | Watch for |
 |--------|----------|---------------|------|-----------|
-| Cloud streaming STT under a BAA | OpenAI `gpt-live-transcribe` ($0.017/min); AssemblyAI Universal-3.5 Pro Realtime ($0.45/hr); ElevenLabs Scribe v2 Realtime ($0.39/hr) | BAA plus zero retention. OpenAI's file-transcription endpoint retains no data, but streaming runs on a separate Realtime endpoint, so confirm its retention; ElevenLabs signs a BAA only on Enterprise and requires zero retention | Per minute, no GPUs | Confirm the exact endpoint is in BAA scope; streaming redaction gaps (AssemblyAI redacts final turns only, and no audio) |
-| Medical-tuned cloud STT | ElevenLabs Scribe v2 Medical (GA September 11, 2026); Deepgram `nova-3-medical` (clinical), with `nova-3-pharma` (September 17, 2026) for medication-name-heavy workflows | Same BAA requirement | Per minute | Better clinical vocabulary; validate on your own ward recordings |
+| Cloud streaming STT under a BAA | OpenAI `gpt-live-transcribe` ($0.017/min); AssemblyAI Universal-3.6 Pro Realtime ($0.45/hr, September 2026; it replaced Universal-3.5 Pro Realtime); ElevenLabs Scribe v2 Realtime ($0.39/hr) | BAA plus zero retention. OpenAI's file-transcription endpoint retains no data, but streaming runs on a separate Realtime endpoint, so confirm its retention; ElevenLabs signs a BAA only on Enterprise and requires zero retention | Per minute, no GPUs | Confirm the exact endpoint is in BAA scope; streaming redaction gaps (AssemblyAI redacts final turns only, and no audio) |
+| Medical-tuned cloud STT | ElevenLabs Scribe v2 Medical (GA September 11, 2026); Deepgram `nova-3-medical` (clinical), with `nova-3-pharma` (September 17, 2026) for medication-name-heavy workflows; AssemblyAI Medical Mode (`"domain": "medical-v1"`, +$0.15/hr on Universal-3.6 Pro Realtime, about 20% fewer missed clinical entities, vendor-reported) | Same BAA requirement | Per minute | Better clinical vocabulary; validate on your own ward recordings |
 | On-prem streaming model | NVIDIA `nemotron-3.5-asr-streaming-0.6b` (OpenMDW license, commercial use allowed; chunk size selectable from 80 to 1,120 ms) | No audio leaves the network | GPU fleet plus operations; cheap only at high utilization | You own updates, scaling, failover, and the accuracy eval |
 
 **Our choice:** medical cloud STT under a BAA with zero retention by default, and the on-prem streaming model for sites whose security policy forbids audio egress or whose ward connectivity is unreliable. Both sit behind one interface, so a site can switch without touching the rest of the pipeline. The on-prem model's chunk size is the latency dial: smaller chunks cut delay and cost accuracy.
@@ -185,7 +185,7 @@ The constraint says "real-time," but only one path needs to be real time. Splitt
 
 | Path | Budget | What sets it |
 |------|--------|--------------|
-| Live transcript on the nurse's screen | Partials under 500 ms | Streaming STT partials. Measure p95, not median: AssemblyAI publishes end-of-turn (endpointing) latency of P50 546 ms and P95 1,024 ms for its realtime model (vendor-reported), so a 500 ms requirement has to apply to partial transcripts, not finalized text |
+| Live transcript on the nurse's screen | Partials under 500 ms | Streaming STT partials. Measure p95, not median: for Universal-3.6 Pro Realtime (September 2026), AssemblyAI reports streaming latency of about 150 ms P50 and 240 ms P90 after VAD, but a median end-of-turn latency of 537 ms across 12,460 English voice-agent conversations (vendor-reported), so a 500 ms requirement has to apply to partial transcripts, not finalized text |
 | Draft note ready after the encounter ends | Under 60 seconds | Diarization, NER, LLM structuring, and grounding checks run once on the full transcript |
 | Nurse review and sign | Human time | The review screen, not the model, is the bottleneck |
 

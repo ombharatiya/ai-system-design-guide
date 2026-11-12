@@ -20,6 +20,8 @@
 
 **Platform Examples:** This guide uses **Arize Phoenix** (free and self-hosted, source-available under the Elastic License 2.0) and **Langfuse** (open-source, cloud or self-hosted) as primary examples. The methodology is platform-agnostic: adapt it to whichever tool you use.
 
+> **Go further with [AI Evals](https://www.aievals.co):** the author's official site, with courses, free content, agent kits, and certificates for engineers, PMs, and QAs putting these methods into practice.
+
 ---
 
 ## Table of Contents
@@ -213,7 +215,7 @@ ASSISTANT RESPONSE:
 
 All of these support the same core concepts: traces, spans, datasets, evaluations, and experiments. The methodology in this guide works with any of them.
 
-**Treat vendor risk as a selection criterion.** Ownership and terms in this category changed repeatedly in 2026. Dynatrace agreed to buy Arize, Phoenix's maintainer, for $915M (announced August 13). Langfuse has been part of ClickHouse since January. OpenAI is shutting down its hosted Evals platform (read-only from October 31, gone November 30) and points users to Promptfoo, which it owns. Since September 14, LangSmith SaaS keeps extended-retention traces for at most 180 days. The defense is the same for all of them: instrument with OpenTelemetry (OpenInference, or Langfuse's OTel-based SDK) so you can repoint traces at a different backend, and copy any trace you rely on as ground truth into a versioned dataset you control.
+**Treat vendor risk as a selection criterion.** Ownership and terms in this category changed repeatedly in 2026. Dynatrace completed its $915M acquisition of Arize, Phoenix's maintainer, on October 1. Langfuse has been part of ClickHouse since January. OpenAI shuts down its hosted Evals platform on November 30 and points users to Promptfoo, which is now part of OpenAI (still MIT). Since September 14, LangSmith SaaS keeps extended-retention traces for at most 180 days, and since October 1 it bills usage in LangChain Standard Units (1 LSU = $1) instead of per run and uptime. The defense is the same for all of them: instrument with OpenTelemetry (OpenInference, or Langfuse's OTel-based SDK) so you can repoint traces at a different backend, and copy any trace you rely on as ground truth into a versioned dataset you control.
 
 ### Setting Up Phoenix (Free, Self-Hosted)
 
@@ -283,8 +285,10 @@ Langfuse provides tracing, evaluation, datasets, experiments, and prompt managem
 #### Install and Configure
 
 ```bash
-pip install langfuse openai
+pip install "langfuse>=4,<5" openai  # samples here target SDK v4
 ```
+
+Pin the major version. Langfuse shipped Python SDK v5 on October 14, 2026, and a bare `pip install langfuse` now installs it (5.2.0 on November 5, Python 3.11 or later). v5 needs Langfuse Cloud or a self-hosted server at v4.59.0 or newer and removes several v4 calls, including `api.scores_v3.get_many_v3()` (now `api.scores.get_many()`), `api.trace.get/list`, `api.legacy.*` and `set_current_trace_io()`; port with the [v4 to v5 upgrade guide](https://langfuse.com/docs/observability/sdk/upgrade-path/python-v4-to-v5).
 
 ```python
 # Set environment variables (or pass to constructor)
@@ -1183,7 +1187,7 @@ with ThreadPoolExecutor(max_workers=20) as executor:
     results = list(executor.map(run_judge, all_traces))
 ```
 
-**Pin the judge, not just the prompt.** These examples use `gpt-4o`, and the plain OpenAI version sets `temperature=0`, because that model still accepts sampling parameters. Newer models increasingly do not: the Claude API returns a 400 for non-default `temperature` or `top_p` on Opus 4.7 and later, Anthropic's Python SDK 1.0 (August 20, 2026) removed those parameters from the Messages method signatures (older models still take them through `extra_body`), Google deprecated them in the Gemini API (July 21, 2026), and GPT-6 Astra accepts no custom `temperature`, `top_p` or logprobs. On these models, reproducibility comes from pinning the exact model ID and reasoning effort, logging both with every judge run, and re-measuring TPR/TNR on your test set whenever either changes. Judge models also retire on a schedule. `claude-sonnet-4-5-20250929` leaves the Claude API on November 30, 2026, and Claude Haiku 4.5 leaves Microsoft Foundry on November 15, so a judge validated on either needs re-validation on its replacement before then.
+**Pin the judge, not just the prompt.** These examples use `gpt-4o`, and the plain OpenAI version sets `temperature=0`, because that model still accepts sampling parameters. Newer models increasingly do not: since Anthropic API version `2026-10-21`, which all eight of its new SDK and CLI majors (Python and TypeScript included) send by default, any `temperature`, `top_p`, or `top_k` returns a 400 on every Claude model, even at the default value (under earlier versions Claude 4.7 and later models already rejected non-default values); Google deprecated the same parameters in the Gemini API (July 21, 2026); and GPT-6 Astra accepts no custom `temperature`, `top_p` or logprobs. On these models, reproducibility comes from pinning the exact model ID and reasoning effort, logging both with every judge run, and re-measuring TPR/TNR on your test set whenever either changes. Judge models also retire on a schedule. `claude-sonnet-4-5-20250929` leaves the Claude API on November 30, 2026, and Microsoft Foundry lists November 15 for Claude Haiku 4.5. The `gpt-4o` in these examples has a date too: OpenAI shuts down the remaining dated GPT-4o and GPT-4o mini snapshots (`gpt-4o-2024-08-06`, `gpt-4o-2024-11-20`, `gpt-4o-mini-2024-07-18`) and fine-tunes of them on January 14, 2027, naming `gpt-6-luna` as the replacement. A judge validated on any of these needs re-validation on its replacement before its date.
 
 **Example result:** Raw pass rate on 1000 traces = 84.4%
 
@@ -1784,7 +1788,7 @@ start = end - timedelta(days=7)
 
 # Fetch spans by name with the v2 observations API (SDK v4). The v1 trace
 # endpoints behind langfuse.api.trace.list()/get() are deprecated, and
-# Langfuse Cloud serves them only until November 16, 2026.
+# Langfuse Cloud serves them only until November 16, 2026; SDK v5 removed them.
 for state_name in STATES:
     cursor = None
     while True:
@@ -2372,11 +2376,11 @@ Not every eval needs the best model:
 |---|---|---|
 | Frontier: GPT-6 Astra ($10/$50), Claude Opus 5.5 ($4/$20) | ~$12-30 | Complex subjective judgments, safety-critical, setting the ceiling |
 | Mid: GPT-6.1 Sol, Claude Sonnet 5.5 (both $2/$10) | ~$6 | Most production judges once validated against the ceiling |
-| Small: GPT-6 Luna ($0.10/$0.50), Claude Haiku 4.5 ($1/$5) | ~$0.30-3 | Clear-cut criteria, well-defined rubrics |
-| Decision model: TypeSafe Jev (early access, $0.042 per 1M input) | ~$0.08-0.35 | Binary checklist criteria at high volume; returns a score, no written rationale |
+| Small: GPT-6 Luna, Claude Haiku 5.5 (both $0.10/$0.50; Haiku 5.5 up to a 100K-token prompt) | ~$0.30 | Clear-cut criteria, well-defined rubrics |
+| Decision model: TypeSafe Jev (early access, $0.042 per 1M input) or OpenAI Decisions API (GA, $0.10 per 1M input) | ~$0.08-0.35 | Binary checklist criteria at high volume; returns a score, no written rationale |
 | Code-based | $0 | Format checks, pattern matching, validation |
 
-Costs assume about 2K input and 200 output tokens per judgment at October 2026 list prices (USD per 1M input/output tokens in parentheses; Jev meters input only). The Jev range runs from list price to the $0.00035 per call LangChain measured in its integration. Reasoning tokens bill as output, so a judge running at high effort can cost several times the figure shown. Set effort explicitly and measure.
+Costs assume about 2K input and 200 output tokens per judgment at November 2026 list prices (USD per 1M input/output tokens in parentheses; Jev and the Decisions API meter input only). The older Claude Haiku 4.5 ($1/$5) runs about $3 per 1K, ten times Haiku 5.5, though Haiku 5.5's tokenizer counts about 30% more tokens for the same text. The Jev range runs from list price to the $0.00035 per call LangChain measured in its integration. Reasoning tokens bill as output, so a judge running at high effort can cost several times the figure shown. Set effort explicitly and measure.
 
 **Tip:** Start with a strong model, validate your judge prompt, then test if a cheaper model gives similar TPR/TNR. Often it does.
 
@@ -2435,7 +2439,7 @@ def cached_eval(trace, eval_fn):
 
 ### Strategy 5: Use Prompt Caching and Batch Pricing
 
-Judge prompts are mostly fixed text: definitions, criteria and few-shot examples, with a small trace-specific tail. Put the fixed part first so provider prompt caching applies. Cache reads bill at 0.05x of list input on Claude Opus 5.5 ($0.20 per 1M) and GPT-6.1 Sol ($0.10), and at 0.1x on most other current models (Claude Sonnet 5.5 and GPT-6 Sol: $0.20). Both vendors charge 1.25x list input for the cache write (Anthropic's 5-minute tier; OpenAI's cache TTL is fixed at 30 minutes on GPT-5.6 and later). Offline eval runs rarely need answers within seconds, so send them through batch APIs at half of list: Opus 5.5 batch is $2/$10 and GPT-6 Sol Batch/Flex is $1/$5 per 1M.
+Judge prompts are mostly fixed text: definitions, criteria and few-shot examples, with a small trace-specific tail. Put the fixed part first so provider prompt caching applies. Cache reads bill at 0.05x of list input on Claude Opus 5.5 ($0.20 per 1M), Claude Sonnet 5.5 ($0.10, cut from $0.20 on October 7, 2026), GPT-6.1 Sol ($0.10), and GPT-6.1 Terra ($0.05), and at 0.1x on most other current models (GPT-6 Sol: $0.20; Claude Haiku 5.5 and GPT-6 Luna: $0.01). Cache writes cost 1.25x list input on Anthropic's 5-minute tier and OpenAI's 30-minute cache (GPT-5.6 and later), 2x on Anthropic's 1-hour tier, and 2.5x on OpenAI's 12-hour option (October 20, 2026). An eval run that finishes inside 30 minutes should not pay for a 12-hour write. Offline eval runs rarely need answers within seconds, so send them through batch APIs at half of list: Opus 5.5 batch is $2/$10 and GPT-6 Sol Batch/Flex is $1/$5 per 1M.
 
 ### Latency Considerations for Real-Time Guardrails
 
@@ -2470,7 +2474,7 @@ phoenix serve
 
 **Langfuse:**
 ```bash
-pip install langfuse openai
+pip install "langfuse>=4,<5" openai  # samples target v4; v5 removed some APIs
 # Sign up at cloud.langfuse.com or self-host
 ```
 
@@ -2681,7 +2685,7 @@ Use your platform's built-in UI (Phoenix or Langfuse both have dashboards), or b
 
 - **judgy** - Statistical bias correction for LLM judges: [github.com/ai-evals-course/judgy](https://github.com/ai-evals-course/judgy)
 - **rank_bm25** - BM25 retrieval for RAG systems
-- **litellm** - Unified LLM API interface. Pin the version: PyPI releases 1.82.7 and 1.82.8 were compromised (malware advisory GHSA-92x9-889m-jgmw). If you run the LiteLLM proxy, deploy a release that fixes CVE-2026-37004 (unauthenticated RCE, fixed in 1.83.7), CVE-2026-49468 (authentication bypass, fixed in 1.84.0) and CVE-2026-84377 (an authenticated user can redirect calls via `api_base` and exfiltrate stored provider keys; fixed only in specific patch releases such as 1.96.2, with `allow_client_side_credentials=false` as the workaround)
+- **litellm** - Unified LLM API interface. Never install 1.82.7, 1.82.8 or 1.107.0: all three were compromised (malware advisory GHSA-92x9-889m-jgmw), 1.107.0 with its container images on October 21, 2026. Take 1.108.0 (November 4) rather than anything on the 1.107 line, and do not treat a passing `cosign verify` as proof: the poisoned 1.107.0 images carry a valid signature from LiteLLM's old, likely exposed signing key (replaced October 23), so re-pin verification policies to the new key and check digests against LiteLLM's compromised-build list. Pin packages by hash and proxy images by digest. If you run the LiteLLM proxy, run 1.100.4, 1.101.3, 1.102.2, 1.103.1 or later on your line (CVE-2026-114612, CVSS 9.9, exploitable in the default configuration from 1.91.0); Enterprise-licensed proxies need 1.103.10, 1.104.8, 1.105.6 or 1.106.5 (GHSA-w4c7-34wj-hqm8, CVSS 10.0). Keep `allow_client_side_credentials=false` so callers cannot redirect stored provider keys through `api_base`. See [Securing the Gateway](11-infrastructure-and-mlops/03-ai-gateways-and-model-routing.md#securing-the-gateway)
 
 ### Key Principles (Revisited)
 
@@ -3035,13 +3039,13 @@ Return your evaluation as JSON:
 
 ### 9. Model Selection for Judges
 
-| Model Tier | Examples (list USD per 1M input/output, October 2026) | When to Use |
+| Model Tier | Examples (list USD per 1M input/output, November 2026) | When to Use |
 |------------|------------|-----------------|
 | Frontier | Claude Opus 5.5 ($4/$20), GPT-6 Astra ($10/$50) | High-stakes evals, complex reasoning, setting the performance ceiling |
 | Mid | Claude Sonnet 5.5, GPT-6.1 Sol (both $2/$10) | Most production judges once validated against the ceiling |
-| Fast, low-cost | GPT-6 Luna ($0.10/$0.50), Gemini 3.8 Flash ($0.75/$3.75 introductory through Dec 31, then $1.50/$7.50), Claude Haiku 4.5 ($1/$5) | Cost-sensitive, high-volume evals with clear rubrics |
+| Fast, low-cost | GPT-6 Luna ($0.10/$0.50), Gemini 3.8 Flash ($0.75/$3.75 introductory through Dec 31, then $1.50/$7.50), Claude Haiku 5.5 ($0.10/$0.50 up to a 100K-token prompt, $0.50/$2.50 above) | Cost-sensitive, high-volume evals with clear rubrics |
 | Open weights, self-hosted | Qwen3.8-27B (Apache 2.0), IBM Granite 4.2 30B (Apache 2.0), GLM-5.3-Flash (MIT, 320B total / 18B active) | Data that cannot leave your network |
-| Decision model | TypeSafe Jev (early access) | Binary checklist criteria at very high volume; no written rationale, no abstention |
+| Decision model | TypeSafe Jev (early access), OpenAI Decisions API (GA October 22, 2026) | Binary checklist criteria at very high volume; no written rationale, no abstention; calibrate thresholds on your own labels |
 
 Agreement with human labels varies more by task than by tier, so the only accuracy number that counts is the TPR/TNR you measure on your own test set. Where you can, pick a judge from a different model family than the system it grades (see self-preference bias above).
 
@@ -3219,7 +3223,7 @@ langfuse = get_client()
 end = datetime.now(timezone.utc)
 
 # v2 observations API (SDK v4). The v1 endpoints behind langfuse.api.trace.list()
-# and .get() are deprecated; Langfuse Cloud serves them only until November 16, 2026.
+# and .get() are deprecated (SDK v5 removed them); Langfuse Cloud serves them only until November 16, 2026.
 # Their replacement is this endpoint: filter by trace_id, or group results by trace_id.
 observations = langfuse.api.observations.get_many(
     trace_id="trace_id",
@@ -3424,6 +3428,10 @@ Start today. Your future self will thank you.
 
 ## Learning Resources
 
+### Courses, Free Content & Certificates
+
+- **AI Evals** (official site of this guide's author): [aievals.co](https://www.aievals.co): courses, free content, agent kits, and certificates
+
 ### Platform Documentation & Learning Hubs
 
 - **Phoenix Docs**: [arize.com/docs/phoenix](https://arize.com/docs/phoenix)
@@ -3434,7 +3442,7 @@ Start today. Your future self will thank you.
 
 ### Research & Thought Leadership
 
-- **OpenAI Evals Platform**: being retired. Existing evals go read-only October 31, 2026 and the dashboard and API shut down November 30, 2026; see the [deprecations page](https://developers.openai.com/api/docs/deprecations). OpenAI's migration guide points to [Promptfoo](https://www.promptfoo.dev/).
+- **OpenAI Evals Platform**: being retired. The dashboard and API shut down November 30, 2026 (a read-only step was scheduled for October 31), so export now; see the [deprecations page](https://developers.openai.com/api/docs/deprecations). OpenAI's migration guide points to [Promptfoo](https://www.promptfoo.dev/).
 - **OpenAI Cookbook** (practical examples & guides): [cookbook.openai.com](https://cookbook.openai.com/)
 - **OpenAI Research**: [openai.com/research](https://openai.com/research)
 - **Anthropic Research**: [anthropic.com/research](https://www.anthropic.com/research)
@@ -3454,7 +3462,7 @@ Start today. Your future self will thank you.
 | **Arize Phoenix** | Observability & evals | ELv2 | [GitHub](https://github.com/Arize-ai/phoenix) · [Docs](https://arize.com/docs/phoenix) |
 | **Promptfoo** | CLI/CI evals, red teaming | MIT (OpenAI-owned) | [GitHub](https://github.com/promptfoo/promptfoo) · [Docs](https://www.promptfoo.dev/docs/intro/) |
 | **Langfuse** | Custom pipelines & tracing | MIT | [GitHub](https://github.com/langfuse/langfuse) · [Docs](https://langfuse.com/docs) |
-| **RAGAS** | RAG-specific evaluation | Apache 2.0 | [GitHub](https://github.com/explodinggradients/ragas) · [Docs](https://docs.ragas.io/) |
+| **RAGAS** | RAG-specific evaluation (no commits since February 24, 2026; v0.4.3 from January 13, 2026 is latest, so pin it) | Apache 2.0 | [GitHub](https://github.com/vibrantlabsai/ragas) · [Docs](https://docs.ragas.io/) |
 | **Comet Opik** | LLM tracing & evaluation | Apache 2.0 | [GitHub](https://github.com/comet-ml/opik) · [Site](https://www.comet.com/site/products/opik/) |
 | **judgy** | Statistical bias correction | Open | [GitHub](https://github.com/ai-evals-course/judgy) |
 | **Braintrust** | Experimentation & logging | Partial | [Docs](https://www.braintrust.dev/docs) |
@@ -3467,7 +3475,7 @@ Start today. Your future self will thank you.
 |---------|-------|-------------|----------|-----------------|
 | **Anthropic** | Safety / Red Teaming | Partial | Frontier risks | Constitutional classifiers, multi-attempt adversarial testing |
 | **OpenAI** | Preparedness / Business | Promptfoo (MIT) | Enterprise context | SME probing, contextual evals; hosted Evals platform shuts down Nov 30, 2026 |
-| **Arize** | Observability | Phoenix (ELv2) | Production scale | OTel-native, data lake integration; Dynatrace agreed to acquire Arize (Aug 2026) |
+| **Arize** | Observability | Phoenix (ELv2) | Production scale | OTel-native, data lake integration; part of Dynatrace since October 1, 2026 |
 | **RAGAS** | RAG-specific | Yes (Apache 2.0) | RAG pipelines | Reference-free metrics, synthetic test data generation |
 | **Maxim** | Agentic Systems | No | Multi-agent apps | Simulation framework, no-code evaluation |
 | **Langfuse** | Custom Pipelines | Yes (MIT) | Data sovereignty | Self-hostable, full control over data |
@@ -3478,6 +3486,7 @@ Start today. Your future self will thank you.
 
 ### Contact Me
 - Om Bharatiya: [@ombharatiya](https://twitter.com/ombharatiya)
+- Courses, free content, agent kits, and certificates: [aievals.co](https://www.aievals.co)
 
 ### Reference Work Credits
 This guide was built on the foundation of the following people's work and ideas. Their courses, blogs, and open-source contributions made this guide possible:

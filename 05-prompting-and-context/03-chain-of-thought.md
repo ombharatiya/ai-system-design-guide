@@ -1,6 +1,6 @@
 # Chain-of-Thought (CoT)
 
-Chain-of-Thought (CoT) is the technique of encouraging an LLM to generate intermediate reasoning steps before providing a final answer. It has evolved from a simple prompt phrase into the core architectural feature of reasoning models: first OpenAI o1 and DeepSeek-R1, and today GPT-6 Astra and GPT-6.1 Sol, Claude Opus 5.5 and Fable 5.1, Gemini 3.8 Flash, and DeepSeek V4.1-Flash, all of which reason before answering under an effort or thinking-level control.
+Chain-of-Thought (CoT) is the technique of encouraging an LLM to generate intermediate reasoning steps before providing a final answer. It has evolved from a simple prompt phrase into the core architectural feature of reasoning models: first OpenAI o1 and DeepSeek-R1, and today GPT-6 Astra and GPT-6.1 Sol, Claude Opus 5.5 and Fable 5.1, Gemini 4 Argon and Gemini 3.8 Flash, and DeepSeek V4.1-Flash, all of which reason before answering under an effort or thinking-level control.
 
 ## Table of Contents
 
@@ -33,15 +33,15 @@ Standard LLMs are "Next Token Predictors." For complex math or logic, a single p
 
 On reasoning models, these prompts are mostly redundant: the model already thinks before it answers. Set the effort level instead, and state the success criteria the answer must meet.
 
-On the newest Claude models (Fable 5.1 and 5, Opus 5.5 and 5, and Sonnet 5.5) they can also fail outright. A prompt that asks the model to write its reasoning into the output, such as a `<thinking>` or scratchpad section filled in before the answer or a `reasoning` field in JSON, can be declined under the `reasoning_extraction` refusal category, and a refusal in that category that arrives before any output is billed. Ask for a short explanation or the evidence behind the answer instead, and read summarized thinking blocks when you need to see how the model reasoned.
+On the newest Claude models (Fable 5.1 and 5, Opus 5.5 and 5, Sonnet 5.5, and Haiku 5.5) they can also fail outright. A prompt that asks the model to write its reasoning into the output, such as a `<thinking>` or scratchpad section filled in before the answer or a `reasoning` field in JSON, can be declined under the `reasoning_extraction` refusal category, and a refusal in that category that arrives before any output is billed. Ask for a short explanation or the evidence behind the answer instead, and read summarized thinking blocks when you need to see how the model reasoned.
 
 ---
 
 ## The Rise of "Thinking" Models
 
-Models like **GPT-6 Astra and GPT-6.1 Sol**, **Claude Opus 5.5 and Fable 5.1**, **Gemini 3.8 Flash**, and **DeepSeek V4.1-Flash** have CoT "baked in" via Reinforcement Learning (RL). See [RLVR and Reasoning Models](../03-training-and-adaptation/08-rlvr-and-reasoning-models.md) for how the training works.
+Models like **GPT-6 Astra and GPT-6.1 Sol**, **Claude Opus 5.5 and Fable 5.1**, **Gemini 4 Argon and Gemini 3.8 Flash**, and **DeepSeek V4.1-Flash** have CoT "baked in" via Reinforcement Learning (RL). See [RLVR and Reasoning Models](../03-training-and-adaptation/08-rlvr-and-reasoning-models.md) for how the training works.
 
-1. **Effort replaces the token budget**: The model has a dedicated thinking phase, controlled by an effort level rather than a raw token count. OpenAI exposes `reasoning.effort` (`low` to `max` on GPT-6 Astra and GPT-6.1 Sol), Anthropic exposes adaptive thinking plus `effort` (fixed `budget_tokens` now returns a 400 on Opus 4.7 and later), and Gemini 3.8 Flash uses `thinking_level`. API details are in [Context Engineering](05-context-engineering.md#reasoning-effort-and-thinking-controls).
+1. **Effort replaces the token budget**: The model has a dedicated thinking phase, controlled by an effort level rather than a raw token count. OpenAI exposes `reasoning.effort` (`low` to `max` on GPT-6 Astra and GPT-6.1 Sol), Anthropic exposes adaptive thinking plus `effort` (fixed `budget_tokens` now returns a 400 on Opus 4.7 and later), and Gemini 4 Argon and Gemini 3.8 Flash use `thinking_level`. API details are in [Context Engineering](05-context-engineering.md#reasoning-effort-and-thinking-controls).
 2. **Hidden CoT**: No major vendor returns the raw chain of thought. OpenAI returns optional summaries and encrypted reasoning items; Anthropic returns summarized or empty ("omitted", the default on its newest models) thinking blocks, bound to the producing model and conversation. Thinking is billed as output tokens whether or not you can read it. One driver is **distillation defense**: Anthropic disclosed in February 2026 that competitors ran 16M+ exchanges through about 24,000 fraudulent accounts asking Claude to write out its reasoning, and its September 2026 threat report described nearly 200M exchanges across five campaigns.
 3. **Scaling Law**: These models follow the **Inference Scaling Law**: the longer they "think," the better they solve hard problems, with diminishing returns per token. Experimental reasoning models from OpenAI and Google DeepMind reached gold-medal level at IMO 2025.
 

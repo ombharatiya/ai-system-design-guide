@@ -222,7 +222,7 @@ Reasoning models are the wrong tool for keystroke-level completions: thinking to
 class InlineCompletion:
     """
     Sub-200ms FIM completions from a small self-hosted model inside the
-    customer VPC. Served by vLLM (pin >= 0.30.0) with speculative decoding
+    customer VPC. Served by vLLM (pin >= 0.32.0) with speculative decoding
     set at server start, e.g.
     vllm serve <checkpoint> --speculative-config '{"method": "eagle3", ...}'
     """
@@ -241,7 +241,7 @@ class InlineCompletion:
         return resp.choices[0].text
 ```
 
-**Base model and license.** Candidates are small permissively licensed models such as IBM Granite 4.2 (3B and 8B dense, Apache 2.0), or Qwen3.8-27B (Apache 2.0) if the latency budget allows. Read the license before the benchmark: Qwen3.8-Flash-Next ships under Qwen Community License 1.0, which requires a separate license for any coding-assistant business regardless of revenue, and that is exactly this product. On the serving side, speculative decoding has moved past Medusa: vLLM supports EAGLE-3, MTP, draft-model and DFlash methods, and Inco AI reports 2.7x to 3.4x speedups for DFlash 2 on Qwen3.8-27B (vendor-reported).
+**Base model and license.** Candidates are small permissively licensed models such as IBM Granite 4.2 (3B and 8B dense, Apache 2.0), or Qwen3.8-27B (Apache 2.0) if the latency budget allows. Read the license before the benchmark: Qwen3.8-Flash-Next ships under Qwen Community License 1.0, which requires a separate license for any coding-assistant business regardless of revenue, and that is exactly this product. On the serving side, speculative decoding has moved past Medusa (vLLM removed Medusa and the MLP speculator outright in v0.33.0, November 2026, so an old `medusa` config fails on upgrade): vLLM supports EAGLE-3, MTP, draft-model and DFlash methods, and Inco AI reports 2.7x to 3.4x speedups for DFlash 2 on Qwen3.8-27B (vendor-reported).
 
 ### Generation Service (Agentic Refactors)
 
@@ -262,7 +262,7 @@ class AgenticGeneration:
 ```
 
 > [!TIP]
-> **Production choice (October 2026).** Claude Sonnet 5.5 ($2 / $10) is the default for in-IDE agentic work. On Terminal-Bench 4.0, Anthropic reports 70.6% for Sonnet 5.5 and 66.4% for Opus 5.5 (xhigh effort); both are vendor-reported, and neither model appears on the tbench.ai leaderboard, whose September 21, 2026 update tops out at 58.18% (GPT-6 Astra, max effort). The 2025 "toggle thinking" pattern does not carry over: `thinking: {type: "disabled"}` returns 400 on Sonnet 5.5, so effort is the dial, with `between_tools` as the lowest thinking setting. Price capability per task, not per token: on DeepSWE v1.1, GPT-6 Astra (xhigh), Gemini 3.8 Flash (high) and Claude Opus 5 (max) tie at 74% pass@1, at $4.43, $2.36 and $11.84 per task.
+> **Production choice (November 2026).** Claude Sonnet 5.5 ($2 / $10) is the default for in-IDE agentic work. On the tbench.ai Terminal-Bench 4.0 leaderboard (entries added October 6, 2026), Opus 5.5 leads at 64.85% and Sonnet 5.5 follows at 61.82%, both at max effort, ahead of GPT-6 Astra and GPT-6.1 Sol tied at 58.18%. Anthropic's own runs report 70.6% for Sonnet 5.5 and 66.4% for Opus 5.5 at xhigh (vendor-reported), the reverse order, so bake both off on your repository. The 2025 "toggle thinking" pattern does not carry over: `thinking: {type: "disabled"}` returns 400 on Sonnet 5.5, so effort is the dial, with `between_tools` as the lowest thinking setting. Price capability per task, not per token: on DeepSWE v1.1, GPT-6 Astra (xhigh), Gemini 3.8 Flash (high) and Claude Opus 5 (max) tie at 74% pass@1, at $4.43, $2.36 and $11.84 per task.
 
 ### Model Provider Strategy
 
@@ -480,16 +480,16 @@ class CompletionCache:
 | Security (0 high severity) | 100% | 99.8% |
 | Acceptance rate | > 30% | 34% |
 
-### Cost Analysis (October 2026)
+### Cost Analysis (November 2026)
 
 | Request type | Assumption | Cost per 1M requests | Notes |
 |--------------|------------|----------------------|-------|
-| **Inline completion, self-hosted 8B model** | ~2K in / 30 out; ~15 completions/s per H100 within the 200ms SLO | ~$50 | H100 at $2.77 per GPU-hour (Silicon Data index, October 1, 2026). Measure your own throughput; prefix caching across keystrokes raises it |
+| **Inline completion, self-hosted 8B model** | ~2K in / 30 out; ~15 completions/s per H100 within the 200ms SLO | ~$55 | H100 at $2.93 per GPU-hour (Silicon Data index, November 1, 2026). Measure your own throughput; prefix caching across keystrokes raises it |
 | **Inline completion via API (GPT-6 Luna)** | Same tokens at $0.10 / $0.50 per 1M | ~$215 | Overflow path when the self-hosted pool saturates; not available to code-stays-in-VPC tenants |
 | **Multi-line generation (Claude Sonnet 5.5)** | 8K in / 500 out, up-front thinking off (`between_tools`) to hold the 3s budget | ~$21,000 | $0.021 per request; letting it think ~1K tokens adds about $0.01 and seconds of latency |
-| **Agentic refactor (Claude Sonnet 5.5)** | ~750K in at 90% cache hits, ~6K out | ~$390,000 | $0.39 per task; derivation in the [Autonomous Coding Agent cost breakdown](07-autonomous-coding-agent.md#cost-breakdown) |
+| **Agentic refactor (Claude Sonnet 5.5)** | ~750K in at 90% cache hits, ~6K out | ~$330,000 | $0.33 per task; derivation in the [Autonomous Coding Agent cost breakdown](07-autonomous-coding-agent.md#cost-breakdown) |
 
-*Blended (98% completions, 2% agentic refactors): about $7,850 per 1M requests, and over 99% of it is the agentic tasks. The completion fleet is a rounding error; the agent's prompt-cache hit rate is the budget. At a 50% hit rate the same refactor costs about $1.08, nearly three times as much.*
+*Blended (98% completions, 2% agentic refactors): about $6,650 per 1M requests, and over 99% of it is the agentic tasks. The completion fleet is a rounding error; the agent's prompt-cache hit rate is the budget. At a 50% hit rate the same refactor costs about $1.05, more than three times as much.*
 
 ---
 

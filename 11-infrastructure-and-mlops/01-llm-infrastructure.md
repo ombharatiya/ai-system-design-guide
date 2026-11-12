@@ -68,7 +68,7 @@ def should_use_api(requirements: dict) -> bool:
 | Ollama | Low | Good | Development, small scale |
 | llama.cpp | Low | Good | CPU inference, edge |
 
-**Pin and patch the engine.** Serving engines are now a CVE-dense dependency. vLLM published 20+ advisories between August 11 and September 28, 2026, including a model-load RCE that ran a malicious repo's processor code even with `trust_remote_code=False` (CVE-2026-90553) and a single unauthenticated request that kills the engine for every tenant (CVE-2026-93592), both fixed in 0.28.0. Baseline on vLLM 0.30.0 or later. SGLang's critical advisories CVE-2026-7301, 7302 and 7304 list affected versions up to 0.5.12 with no patched version recorded, so pin 0.5.13 or later, verify against the advisories, and keep its ZMQ sockets inside the pod. Version and feature detail lives in [Serving Infrastructure](../04-inference-optimization/06-serving-infrastructure.md); the security view is in [LLM Security](../12-security-and-access/01-llm-security.md#securing-the-ai-stack-itself).
+**Pin and patch the engine.** Serving engines are now a CVE-dense dependency. vLLM published 20+ advisories between August 11 and September 28, 2026, including a model-load RCE that ran a malicious repo's processor code even with `trust_remote_code=False` (CVE-2026-90553) and a single unauthenticated request that kills the engine for every tenant (CVE-2026-93592), both fixed in 0.28.0, and October added another batch, including image decoding that could reach Ghostscript (CVE-2026-115915). Baseline on vLLM 0.32.0 or later, after checking its breaking defaults (CORS closed by default, Python 3.11, `max_tokens` as an upper bound), and on 0.33.0 (November 2) for any host that loads third-party repositories, since it fixes a crafted-repo directory read (GHSA-qrj2-j723-m6w8); 0.33.0 ships CUDA 13.0-only builds, so older fleets need driver 580 or newer first. SGLang has critical advisories with no patched version recorded, including two from October (CVE-2026-111391 and CVE-2026-93034), and the current v0.5.23 (November 2) fixes neither, so run 0.5.23, set its new `SGLANG_ZMQ_ALLOWED_PEERS` allowlist, leave `DUMPER_SERVER_PORT` unset, and keep its ZMQ, dist-init and debug endpoints inside the pod. Ollama belongs on developer machines only, on 0.35.0 or later, which fixes the `/api/pull` path traversal (CVE-2026-103663) that can end in root code execution; never expose that endpoint either way. Version and feature detail lives in [Serving Infrastructure](../04-inference-optimization/06-serving-infrastructure.md); the security view is in [LLM Security](../12-security-and-access/01-llm-security.md#securing-the-ai-stack-itself).
 
 **Mirror the weights you serve.** Most open-weight pipelines pull checkpoints from Hugging Face, which NVIDIA confirmed on September 3, 2026 it is acquiring for $12.93B (no closing date disclosed). Regardless of how that deal closes, serving from a mirrored, reviewed internal registry removes a supply-chain and availability dependency and is the control that blunts malicious-repo attacks like CVE-2026-90553.
 
@@ -255,13 +255,24 @@ class AsyncLLMProcessor:
 
 ```python
 class CostTracker:
-    # USD per 1M tokens, standard-tier list prices as of October 2026.
+    # USD per 1M tokens, standard-tier list prices as of November 2026.
     # Load these from config in production: rates, cache multipliers and tiers change often.
     PRICING = {
         "claude-opus-5-5": {"input": 4.00, "cached_input": 0.20, "output": 20.00},
-        "claude-sonnet-5-5": {"input": 2.00, "cached_input": 0.20, "output": 10.00},
+        "claude-sonnet-5-5": {"input": 2.00, "cached_input": 0.10, "output": 10.00},
+        "claude-haiku-5-5": {"input": 0.10, "cached_input": 0.01, "output": 0.50},
         "gpt-6-sol": {"input": 2.00, "cached_input": 0.20, "output": 10.00},
+        "gpt-6.1-terra": {"input": 1.00, "cached_input": 0.05, "output": 5.00},
         "gpt-6-luna": {"input": 0.10, "cached_input": 0.01, "output": 0.50},
+    }
+    
+    # Whole-request repricing once the prompt (cached tokens included) passes a
+    # threshold: (threshold, input and cache multiplier, output multiplier).
+    LONG_CONTEXT = {
+        "claude-haiku-5-5": (100_000, 5.0, 5.0),  # $0.50 / $2.50 above 100K
+        "gpt-6-sol": (272_000, 2.0, 1.5),         # $4 / $15 above 272K
+        "gpt-6.1-terra": (272_000, 2.0, 1.5),     # $2 / $7.50 above 272K
+        "gpt-6-luna": (272_000, 2.0, 1.5),        # $0.20 / $0.75 above 272K
     }
     
     def calculate_cost(
@@ -272,13 +283,17 @@ class CostTracker:
         cached_tokens: int = 0
     ) -> float:
         # Expects disjoint counts from normalize_usage, never a raw provider total.
-        # Omitted for brevity: cache-write premiums, service-tier multipliers, and
-        # long-context rates (OpenAI bills the whole request higher above 272K input)
+        # Omitted for brevity: cache-write premiums and service-tier multipliers.
         pricing = self.PRICING[model]
-        input_cost = (
+        in_mult, out_mult = 1.0, 1.0
+        if model in self.LONG_CONTEXT:
+            threshold, lc_in, lc_out = self.LONG_CONTEXT[model]
+            if uncached_tokens + cached_tokens > threshold:
+                in_mult, out_mult = lc_in, lc_out
+        input_cost = in_mult * (
             uncached_tokens * pricing["input"] + cached_tokens * pricing["cached_input"]
         ) / 1_000_000
-        output_cost = (output_tokens / 1_000_000) * pricing["output"]
+        output_cost = out_mult * (output_tokens / 1_000_000) * pricing["output"]
         return input_cost + output_cost
     
     @staticmethod
@@ -430,7 +445,14 @@ alerts:
     condition: gpu_memory_utilization > 0.95
     for: 5m
     severity: warning
+
+  - name: generation_probe_failing
+    condition: synthetic_generation_success_rate < 1.0
+    for: 2m
+    severity: critical
 ```
+
+The last alert is the one teams skip. An engine's `/health` endpoint proves the HTTP process is alive, not that it generates: a vLLM advisory fixed in 0.31.0 (GHSA-4xqp-c3mv-qff7) let one request kill the engine's input thread while `/health` kept returning 200 and every generation hung. Run a synthetic few-token generation against each replica on a short interval with a hard timeout, wire it to readiness so the load balancer drains a hung replica, and restart on repeated failure.
 
 ---
 
@@ -478,11 +500,11 @@ A model that disappears on schedule is an outage you can see coming, and the cal
 
 | Risk | 2026 example | Control |
 |------|--------------|---------|
-| Same model, different retirement dates per platform | Claude Sonnet 4 retired on the Claude API on June 15 but reaches Bedrock EOL on October 14; Claude Opus 4.1 retired on the Claude API on August 5 but runs on Bedrock until January 8, 2027, at higher extended-access prices from October 8 | Key the model registry on (model, platform), not model alone |
+| Same model, different retirement dates per platform | Claude Sonnet 4.5 retires on the Claude API and Foundry on November 30, 2026, while Bedrock moved it to Legacy on October 8 with end of life on April 8, 2027; Claude Opus 4.1 retired on the Claude API on August 5 but runs on Bedrock until January 8, 2027, at higher extended-access prices from October 8. The same Gemini IDs differ too: Vertex AI retires `gemini-3.6-flash` on November 19, 2026 and `gemini-3.7-flash` on January 28, 2027 (replacement `gemini-3.8-flash`, no routing described), while `gemini-3.5-flash` stays on Vertex until "May 19, 2027 or later" | Key the model registry on (model, platform), not model alone |
 | Idle standby loses access | Bedrock models in Legacy block new customers, and existing customers may lose access after 15 days of inactivity | Exercise DR and seasonal models on a schedule, not only during an incident |
-| Short notice windows | Bedrock models launched from September 7, 2026 get a Legacy notice of 6 months or 45 days; Anthropic gives 60 days; OpenAI states 6 months for GA models, 3 for specialized variants and as little as 2 weeks for previews, yet retired `gpt-5.4-cyber` on October 1 with 20 days' notice | Track notice class per model; do not plan on the stated minimum; keep a qualified fallback ready |
+| Short notice windows | Bedrock models launched from September 7, 2026 get a Legacy notice of 6 months or 45 days; Anthropic gives 60 days; OpenAI states 6 months for GA models, yet its October 14 notice gave GPT-4o, GPT-4o mini, GPT-4.1 and GPT-4.1 mini snapshots, and fine-tunes of them, about 3 months (shutdown January 14, 2027), and it retired `gpt-5.4-cyber` on October 1 with 20 days' notice | Track notice class per model; do not plan on the stated minimum; keep a qualified fallback ready |
 | Open-weight hosts drop models | Groq retired Llama 3.3 70B and Llama 3.1 8B for free and developer tiers on August 16 with 60 days' notice | Route open-weight models across at least two hosts |
-| Alias rerouting | DeepSeek announced on September 10 that `deepseek-v4-pro` would route to V4.1-Flash from September 14, then reversed the plan a day later | Pin dated snapshots; alert when a response's model ID changes |
+| Alias rerouting | Since October 8, Google routes `gemini-3.7-flash` requests to `gemini-3.8-flash` and `gemini-3.5-flash` requests to `gemini-3.6-flash`, so the string keeps working while the model behind it changes; DeepSeek announced and then reversed a `deepseek-v4-pro` reroute in September | Pin dated snapshots; alert when a response's model ID changes |
 
 ### Graceful Degradation
 
@@ -524,7 +546,7 @@ The hardware picture moved faster in 2026 than at any earlier point in the AI bu
 
 ### NVIDIA: Vera Rubin NVL72 and Blackwell Ultra
 
-**Vera Rubin NVL72** is the new flagship. NVIDIA announced the full-production ramp on May 31, 2026, and by its August 26 earnings report Rubin racks were running at CoreWeave, Google Cloud, Microsoft Azure, OCI and Nebius ([NVIDIA Vera Rubin NVL72](https://www.nvidia.com/en-us/data-center/vera-rubin-nvl72/)). The **B300** ("Blackwell Ultra") was announced in March 2025 with partner systems from the second half of 2025 ([NVIDIA newsroom announcement](https://nvidianews.nvidia.com/news/nvidia-blackwell-ultra-ai-factory-platform-paves-way-for-age-of-ai-reasoning)), and NVIDIA called it its leading architecture across all customer categories by the quarter ended October 26, 2025 ([Q3 FY2026 CFO commentary](https://s201.q4cdn.com/141608511/files/doc_financials/2026/Q326/Q3FY26-CFO-Commentary.pdf)). It is now the volume workhorse.
+**Vera Rubin NVL72** is the new flagship. NVIDIA announced the full-production ramp on May 31, 2026, by its August 26 earnings report Rubin racks were running at CoreWeave, Google Cloud, Microsoft Azure, OCI and Nebius ([NVIDIA Vera Rubin NVL72](https://www.nvidia.com/en-us/data-center/vera-rubin-nvl72/)), and on October 27 Oracle Cloud Infrastructure made Vera Rubin NVL72 and Vera CPU instances generally available ([NVIDIA and Oracle](https://nvidianews.nvidia.com/news/nvidia-and-oracle-expand-nvidia-vera-rubin-to-multi-gigawatt-scale-and-bring-nvidia-vera-cpu-to-oracle-cloud-infrastructure)). The **B300** ("Blackwell Ultra") was announced in March 2025 with partner systems from the second half of 2025 ([NVIDIA newsroom announcement](https://nvidianews.nvidia.com/news/nvidia-blackwell-ultra-ai-factory-platform-paves-way-for-age-of-ai-reasoning)), and NVIDIA called it its leading architecture across all customer categories by the quarter ended October 26, 2025 ([Q3 FY2026 CFO commentary](https://s201.q4cdn.com/141608511/files/doc_financials/2026/Q326/Q3FY26-CFO-Commentary.pdf)). It is now the volume workhorse.
 
 | Spec | Vera Rubin NVL72 | B300 / GB300 NVL72 |
 |------|------------------|---------------------|
@@ -533,13 +555,13 @@ The hardware picture moved faster in 2026 than at any earlier point in the AI bu
 | Total HBM per rack | 20.7 TB at ~1,400 TB/s | ~20 TB at up to 576 TB/s |
 | Aggregate NVLink bandwidth per rack | 216 TB/s | ~130 TB/s |
 | Peak FP4 per rack | 3,600 PFLOPS NVFP4 inference (50 per GPU) | 1,440 PFLOPS sparse, 1,080 dense (~15 per GPU dense) |
-| Status | Full-production ramp since May 31, 2026; first clouds live | Shipping since H2 2025; NVIDIA's leading architecture by its October 2025 quarter |
+| Status | Full-production ramp since May 31, 2026; generally available on OCI since October 27, 2026 | Shipping since H2 2025; NVIDIA's leading architecture by its October 2025 quarter |
 
 Same 288 GB per GPU, far more bandwidth: Rubin's gain shows up in decode-heavy and long-context serving more than in model capacity per GPU.
 
 The strategic pitch is "AI factories": the NVL72 is sold as the smallest unit of a coherent, NVLink-domain inference and training cell rather than as individual cards. For frontier model training and the largest reasoning-model inference workloads, NVL72-class racks (GB300 today, Rubin as it ramps) are the default.
 
-Read the cost claims with the operating point attached. NVIDIA claims Rubin delivers one-tenth the cost per million tokens of GB200 NVL72 (vendor figure). SemiAnalysis's AgentX benchmark on DeepSeek V4 Pro shows how much the answer depends on the SLO and ownership model: about 67x GB300's throughput per TCO at 170 tok/s per user under ownership costs, but only about 62% more tokens than GB300 for the same 3-year rental cost at an 80 tok/s P90 target (analyst figures). Compare accelerators on a throughput-versus-interactivity Pareto curve at your SLO, never on a batch-1 headline.
+Read the cost claims with the operating point attached. NVIDIA claims Rubin delivers one-tenth the cost per million tokens of GB200 NVL72 (vendor figure). SemiAnalysis's AgentX benchmark on DeepSeek V4 Pro shows how much the answer depends on the SLO and ownership model: about 67x GB300's throughput per TCO at 170 tok/s per user under ownership costs, but only about 62% more tokens than GB300 for the same 3-year rental cost at an 80 tok/s P90 target (analyst figures). The first independent measurement is more sobering still: Artificial Analysis's AA-AgentPerf agentic benchmark (October 15) put Rubin at only **1.14x to 1.45x** GB300's peak throughput per megawatt depending on the model (1.14x on DeepSeek V4 Pro, 1.45x on DeepSeek V4.1 Flash), with the large leads appearing only at high per-user speeds. Treat any big multiple as one point on a curve. Compare accelerators on a throughput-versus-interactivity Pareto curve at your SLO, never on a batch-1 headline.
 
 The trade-off has stayed the same: highest absolute performance, highest absolute price, deepest software lock-in. CUDA, NCCL, and TensorRT-LLM all assume NVIDIA. If you architect around them, you have committed.
 
@@ -571,11 +593,11 @@ The design question is whether the KV transfer erases the win. Llama-3.1-70B in 
 | Memory bandwidth | 23.3 TB/s per GPU |
 | Peak FP4 | ~40 PFLOPS MXFP4 per GPU; 2.9 exaFLOPS per Helios rack |
 | Rack solution | **Helios**: 72 MI455X GPUs, 18 EPYC Venice CPUs, Pensando networking |
-| Software | ROCm 7.x with PyTorch / vLLM / SGLang first-class support |
+| Software | ROCm 10.x (10.0.0 August 26, 2026; 10.1.0 October 5 with PyTorch 2.14.0) with PyTorch / vLLM / SGLang support; vLLM 0.33.0 builds against ROCm 10.0 by default. Check AMD's compatibility matrix for MI455X status, since the 10.0 hardware table lists MI355X |
 
-The 432 GB per GPU is the headline: 50% above the 288 GB on both B300 and Rubin, while bandwidth and FP4 compute are near Rubin parity. For MoE serving (where the limiting factor is keeping expert weights resident) and for KV-cache-heavy long-context workloads, that memory advantage is real. AMD has also closed most of the software gap; ROCm 7.x is no longer the disqualifier it was in 2023, and quantized checkpoints now port across vendors (SGLang requantizes NVFP4 checkpoints to MXFP4 at load on AMD).
+The 432 GB per GPU is the headline: 50% above the 288 GB on both B300 and Rubin, while bandwidth and FP4 compute are near Rubin parity. For MoE serving (where the limiting factor is keeping expert weights resident) and for KV-cache-heavy long-context workloads, that memory advantage is real. AMD has also closed most of the software gap; ROCm (now 10.x, after a jump from 7.14 in August 2026) is no longer the disqualifier it was in 2023, and quantized checkpoints now port across vendors (SGLang requantizes NVFP4 checkpoints to MXFP4 at load on AMD).
 
-The frontier labs have committed. AMD said Helios is in production (July 23, 2026); OpenAI expects to bring Helios online from Q4 2026, and Anthropic agreed on July 22 to deploy up to 2 GW of MI450-series GPUs, with the first gigawatt from H1 2027. The catch is **deployment maturity at scale**: those deployments land from late 2026 into 2027, so plan on AMD as 2027 second-source capacity rather than today's bulk. Hyperscalers (Meta, Microsoft, Oracle Cloud) are running mixed fleets.
+The frontier labs have committed. AMD said Helios is in production (July 23, 2026), and Anthropic agreed on July 22 to deploy up to 2 GW of MI450-series GPUs, with the first gigawatt from H1 2027. In its Q3 2026 remarks (November 3), AMD said it started shipping MI455X in volume during the quarter and that lead customers including Anthropic, Meta, Microsoft, OpenAI and Oracle brought their first Helios racks online quickly; data center revenue was a record $8.5B, and AMD expects Helios deployments to rise substantially in Q4 as HPE, Dell, Lenovo, Supermicro and other OEM and ODM partners begin shipping systems (company-reported). The catch is still **deployment maturity at scale**: first racks at a handful of lead customers are not bulk capacity for everyone else, so plan on OEM-supplied AMD capacity from late 2026 and real volume in 2027. Hyperscalers (Meta, Microsoft, Oracle Cloud) are running mixed fleets.
 
 ### Google TPU and Custom Inference Silicon
 
@@ -583,7 +605,7 @@ Google, OpenAI and Meta now split training silicon from inference silicon, and A
 
 | Owner | Part | Status | Notes |
 |-------|------|--------|-------|
-| Google | TPU7x (Ironwood) | GA March 31, 2026 | TPU 8t (training) and 8i (inference) announced April 2026, no availability dates |
+| Google | TPU7x (Ironwood) | GA March 31, 2026 | TPU 8t (training) and 8i (inference) announced April 2026. On October 27, 2026 Oracle and Google announced that OCI will offer both starting in calendar 2027 (scheduled), the first hyperscale cloud outside Google to offer TPUs; no pricing or regions disclosed |
 | OpenAI (with Broadcom) | Jalapeño | Shipping late 2026, volume 2027 (announced) | Inference-only; 13.4 PFLOPS MXFP4 and 216 GB HBM4 per chip (The Register, Hot Chips) |
 | Meta | MTIA 400 | Disclosed at Hot Chips, August 2026 | Training-first; 12 PFLOPS MXFP4, 288 GB HBM3e (The Register); inference-focused MTIA 450 expected 2027 |
 | AMD (Taalas) | Hardwired-model ASICs | Acquisition announced August 6, 2026; close expected Q4 pending approval | Weights etched into silicon: Taalas HC1 served Llama 3.1 8B at about 17,000 tok/s (vendor figure); anything beyond a LoRA-sized change needs a chip re-spin |
@@ -617,7 +639,7 @@ What changed in the market around it:
 - **AWS partnered with Cerebras** two months before the IPO ([Amazon announcement](https://press.aboutamazon.com/aws/2026/3/aws-and-cerebras-collaboration-aims-to-set-a-new-standard-for-ai-inference-speed-and-performance-in-the-cloud)). The announced offering is a cross-chip split sold through Bedrock (Trainium prefill, CS-3 decode), promised "in the next couple of months", and AWS said open-weight models and Amazon Nova would follow on Cerebras hardware later in 2026. Check current Bedrock availability before designing around it.
 - The Cerebras Cloud API has been used as a quick second source for teams whose primary stack is GPU-based and want a latency edge without porting.
 
-Since the IPO, wafer-scale has stopped being the only route to extreme per-user speed. OpenAI previews **GPT-5.6 Sol Ultrafast** on Cerebras at up to 750 output tok/s for select customers (pipelined across CS-3 systems at layer boundaries), but NVIDIA says GPT-6 Astra's Ultrafast tier runs on Blackwell GPUs, and in an Artificial Analysis run NVIDIA's LPX served Gemma 4 31B at 100K context at about 3,400 output tok/s against 882 tok/s for Cerebras (per The Register). Cerebras introduced the **CS-4** on August 18, 2026 (three WSE-3 Turbo processors per system) and said first shipments would begin in Q3 2026; it has also announced CS-5 for 2027. Confirm actual delivery before planning around either. Treat "fastest tokens per user" as a contested, separately priced tier, not a single-vendor niche.
+Since the IPO, wafer-scale has stopped being the only route to extreme per-user speed. OpenAI previewed **GPT-5.6 Sol Ultrafast** on Cerebras at up to 750 output tok/s for select customers (pipelined across CS-3 systems at layer boundaries), but NVIDIA says GPT-6 Astra's Ultrafast tier runs on Blackwell GPUs (Ultrafast has since opened to all API users on GPT-6.1 Sol), and in an Artificial Analysis run NVIDIA's LPX served Gemma 4 31B at 100K context at about 3,400 output tok/s against 882 tok/s for Cerebras (per The Register). Cerebras introduced the **CS-4** on August 18, 2026 (three WSE-3 Turbo processors per system) and said first shipments would begin in Q3 2026; it has also announced CS-5 for 2027. Confirm actual delivery before planning around either. Treat "fastest tokens per user" as a contested, separately priced tier, not a single-vendor niche.
 
 The IPO is structurally important because it changes the financing thesis: there is now a public-market path for a non-NVIDIA inference vendor, which makes it cheaper for the next entrants to raise.
 
@@ -648,9 +670,9 @@ The capacity story is no longer just about chips; it is about the buildings arou
 - **Stargate** (OpenAI's infrastructure platform with Oracle and SoftBank) reached nearly **7 GW** of planned capacity and over **$400B** of planned investment when five new US sites joined the Abilene, Texas flagship in September 2025, against a **$500B, 10 GW** target ([OpenAI announcement](https://openai.com/index/five-new-stargate-sites/)).
 - Across all partners, Sam Altman put OpenAI's data center commitments at about **$1.4 trillion over eight years** (November 2025, [TechCrunch](https://techcrunch.com/2025/11/06/sam-altman-says-openai-has-20b-arr-and-about-1-4-trillion-in-data-center-commitments/)).
 
-The architectural implication for senior engineers: **announced gigawatts are not deliverable gigawatts**. A Jefferies estimate (via The Register, September 30, 2026) puts US datacenter deployments at about 16-18 GW in 2026, with a practical ceiling in the low 20s of GW for 2027, capped by advanced packaging and power. Micron says HBM and DRAM demand exceeds supply through 2028 (per The Register), so memory, not logic, gates accelerator supply and makes host-DRAM KV offload tiers more expensive.
+The architectural implication for senior engineers: **announced gigawatts are not deliverable gigawatts**. A Jefferies estimate (via The Register, September 30, 2026) puts US datacenter deployments at about 16-18 GW in 2026, with a practical ceiling in the low 20s of GW for 2027, capped by advanced packaging and power. Micron says HBM and DRAM demand exceeds supply through 2028 (per The Register), so memory, not logic, gates accelerator supply and makes host-DRAM KV offload tiers more expensive. Local politics is now a constraint too: on November 3, 2026, AI data-center development was on local ballots 41 times in 10 states and voters sided with the industry only once (Scientific American's tally), with Wells, Maine approving a retroactive 180-day moratorium and Emporia, Kansas a construction ban. If you plan to build your own GPU capacity, site approval belongs on the critical path.
 
-The squeeze shows in rental prices. Silicon Data's B200 index was up 27.6% year to date entering September and stood at $5.86 per GPU-hour on October 1, 2026 (H100: $2.77). Per-token API prices kept falling over the same period (GPT-6 Sol launched on September 22 at $2/$10 per 1M tokens, against $5/$30 list for GPT-5.6 Sol), so in 2026 the self-host break-even moved toward APIs for teams that rent their GPUs. Multi-vendor and multi-region capacity contracts matter more than they did when GPUs were getting cheaper every quarter.
+The squeeze shows in rental prices. Silicon Data's B200 index was up 27.6% year to date entering September, then read $6.50 per GPU-hour on November 1, 2026 and $6.70 on November 5, about 14% above its October 7 reading of $5.88 (November 5 readings for the other parts: B300 flat at $7.56, H200 $3.51, H100 $2.97; read the daily table, because the index pages' FAQ shows stale "current" prices). Per-token API prices kept falling over the same period (GPT-6 Sol launched on September 22 at $2/$10 per 1M tokens against $5/$30 list for GPT-5.6 Sol, and in October Claude Haiku 5.5 arrived at $0.10/$0.50 and GPT-6.1 Terra at $1/$5), so in 2026 the self-host break-even moved toward APIs for teams that rent their GPUs. Multi-vendor and multi-region capacity contracts matter more than they did when GPUs were getting cheaper every quarter.
 
 ### A Three-Tier Fleet Strategy
 
@@ -685,8 +707,8 @@ The framing that matters in 2026: **no senior architect designs a serious AI pro
 ### Take-Aways for Capacity Planning
 
 - Plan around **memory per accelerator** as much as FLOPS. MoE serving is bottlenecked on expert residency, and memory is now the supply constraint as well.
-- Treat **CUDA lock-in as a real cost**. ROCm 7.x is good enough for most production serving. Neuron is good enough for Anthropic and any team willing to do the porting work. Open RISC-V is good enough for cost-sensitive inference.
-- The hyperscaler choice now drives the chip choice as much as the other way around. AWS = Trainium + NVIDIA, with Cerebras announced. Microsoft = NVIDIA + Maia. Google = TPU7x + NVIDIA (among the first Vera Rubin clouds). Oracle = NVIDIA at scale. The labs build their own: OpenAI runs NVIDIA, expects AMD Helios online from Q4 2026, and plans its own Jalapeño from late 2026 (announced).
+- Treat **CUDA lock-in as a real cost**. ROCm 10.x is good enough for most production serving. Neuron is good enough for Anthropic and any team willing to do the porting work. Open RISC-V is good enough for cost-sensitive inference.
+- The hyperscaler choice now drives the chip choice as much as the other way around. AWS = Trainium + NVIDIA, with Cerebras announced. Microsoft = NVIDIA + Maia. Google = TPU7x + NVIDIA (among the first Vera Rubin clouds). Oracle = NVIDIA at scale (generally available Vera Rubin NVL72 since October 27), plus Google TPU 8t and 8i from 2027 (scheduled), so from 2027 TPU access no longer implies Google Cloud. The labs build their own: OpenAI runs NVIDIA, has its first AMD Helios racks online (per AMD, November 3), and plans its own Jalapeño from late 2026 (announced).
 - **API $/token keeps falling** (for constant capability, a16z's [LLMflation analysis](https://a16z.com/llmflation-llm-inference-cost/) measured about 10x per year through 2024), but **GPU-hours got more expensive in 2026**. On September 7, a 12-month B200 term priced at $5.39 per GPU-hour against $5.73 for 3 months (Silicon Data), so longer terms are now the cheaper way to rent, the opposite of the old "wait for spot to fall" assumption.
 - **Evaluate hardware on Pareto curves under agentic traffic** (multi-turn, long context, high prefix reuse), at your interactivity SLO. MLPerf Inference v6.1 (September 16, 2026) added end-to-end RAG and edge agentic benchmarks for the same reason.
 
@@ -707,7 +729,7 @@ The framing that matters in 2026: **no senior architect designs a serious AI pro
 - Queue-based processing for async workloads
 
 **Cost optimization is critical at this scale:**
-- Route 60-70% of simple queries to a small model (GPT-6 Luna, Claude Haiku 4.5)
+- Route 60-70% of simple queries to a small model (GPT-6 Luna, or Claude Haiku 5.5 with prompts kept under its 100K-token price threshold)
 - Keep the static prefix stable for provider prompt caching, and add semantic caching (30%+ hit rate target)
 - Use batch or Flex tiers for non-urgent requests (50% discount)
 - At this volume, self-hosting becomes cost-competitive for the high-volume narrow tasks
@@ -751,7 +773,7 @@ At 1M queries with 2K input and 2K output tokens each, a $2/$10 mid-tier model (
 - API for spikes and specialized models
 - API as fallback for self-hosted failures
 
-The hidden costs of self-hosting: GPU procurement/rental, engineering time for ops, model updates, monitoring infrastructure, and patching a serving engine that now ships security advisories every few weeks. Factor in at least 1-2 dedicated engineers for infrastructure. The 2026 market also moved against renters: GPU-hour prices rose while small API models fell to $0.10/$0.50 per 1M tokens (GPT-6 Luna), which undercuts most self-hosted open-weight serving for routing and classification. Today the self-host case rests on data control, latency, or customization more often than on price."
+The hidden costs of self-hosting: GPU procurement/rental, engineering time for ops, model updates, monitoring infrastructure, and patching a serving engine that now ships security advisories every few weeks. Factor in at least 1-2 dedicated engineers for infrastructure. The 2026 market also moved against renters: GPU-hour prices rose while small API models fell to $0.10/$0.50 per 1M tokens (GPT-6 Luna, Claude Haiku 5.5), which undercuts most self-hosted open-weight serving for routing and classification. Today the self-host case rests on data control, latency, or customization more often than on price."
 
 ### Q: How would you evaluate a new accelerator or serving platform for your fleet?
 
@@ -760,7 +782,7 @@ The hidden costs of self-hosting: GPU procurement/rental, engineering time for o
 "I would not start from the vendor's headline tokens per second, which is usually a batch-1 number nobody sees in production. I would:
 
 1. **Replay my own traffic shape.** Agentic workloads are multi-turn, long-context and prefix-heavy, so I would use a trace replay or an agentic benchmark such as SemiAnalysis's AgentX rather than a synthetic single-turn load.
-2. **Plot the Pareto curve** of total throughput against per-user interactivity, and read it at my SLO. The same Rubin-versus-GB300 comparison came out at about 67x per TCO at 170 tok/s per user under ownership costs and about 1.6x on 3-year rental at 80 tok/s P90 (analyst figures). The operating point decides the answer.
+2. **Plot the Pareto curve** of total throughput against per-user interactivity, and read it at my SLO. The same Rubin-versus-GB300 comparison came out at about 67x per TCO at 170 tok/s per user under ownership costs and about 1.6x on 3-year rental at 80 tok/s P90 (analyst figures), and Artificial Analysis's independent AA-AgentPerf run measured only 1.14x to 1.45x peak throughput per megawatt. The operating point and the cost basis decide the answer.
 3. **Check memory first:** weights plus KV cache at my concurrency, expert residency for MoE, and for disaggregated setups the KV transfer cost between pools (about 3 GB per 10K-token prompt on a 70B BF16 model).
 4. **Price the software path.** Kernel maturity can flip results: NVIDIA's own Dynamo recipe for one model ran BF16 80% faster than NVFP4 on Marlin kernels. I would test with the engine version I would actually run.
 5. **Assess supply and lock-in:** delivery dates, rental term structure, second-source options, and how much CUDA-specific code I would be committing to.
@@ -779,8 +801,15 @@ Then I would run a shadow slice of production on it before any capacity commitme
 - NVIDIA Vera Rubin NVL72: https://www.nvidia.com/en-us/data-center/vera-rubin-nvl72/
 - NVIDIA Groq 3 LPX: https://nvidianews.nvidia.com/news/nvidia-groq-3-lpx-now-in-full-production-with-world-class-speed-for-agentic-ai
 - SemiAnalysis, Vera Rubin NVL72 agentic inference: https://newsletter.semianalysis.com/p/vera-rubin-nvl72-agentic-inference
+- Artificial Analysis, Vera Rubin NVL72 on AA-AgentPerf: https://artificialanalysis.ai/articles/vera-rubin-nvl72-agentperf
+- vLLM advisory GHSA-4xqp-c3mv-qff7 (engine hang behind a healthy `/health`): https://github.com/vllm-project/vllm/security/advisories/GHSA-4xqp-c3mv-qff7
 - Amazon Bedrock model lifecycle: https://docs.aws.amazon.com/bedrock/latest/userguide/model-lifecycle.html
-- Silicon Data B200 rental index: https://www.silicondata.com/products/silicon-index/b200
+- Vertex AI model versions and retirement dates: https://docs.cloud.google.com/vertex-ai/generative-ai/docs/learn/model-versions
+- AMD ROCm release notes: https://rocm.docs.amd.com/en/latest/about/release-notes.html
+- AMD Q3 2026 prepared remarks (November 3, 2026): https://newsroom.amd.com/documents/2026/11/84f4476b-f064-4f0f-957c-fe484853e178.pdf?download=1
+- Oracle and Google, TPUs on Oracle Cloud Infrastructure (October 27, 2026): https://www.googlecloudpresscorner.com/2026-10-27-Oracle-Brings-Google-TPUs-to-Oracle-Cloud-Infrastructure
+- Scientific American, 2026 data-center ballot results: https://www.scientificamerican.com/article/2026-election-results-show-widespread-opposition-to-ai-data-centers/
+- Silicon Data rental indexes: https://www.silicondata.com/products/silicon-index/b200 (also /b300, /h200, /h100)
 - OpenAI Pricing: https://developers.openai.com/api/docs/pricing
 - Anthropic Pricing: https://platform.claude.com/docs/en/about-claude/pricing
 

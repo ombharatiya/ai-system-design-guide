@@ -48,7 +48,7 @@ Loss = KL_Div(Teacher_Logits / T, Student_Logits / T)
 *Where T is the Temperature (typically 2.0 - 5.0).*
 
 ### 3. On-Policy Distillation
-The student samples its own completions and the teacher scores every token, combining RL's on-policy relevance with SFT's dense signal. It became a popular cheap path to reasoning models in 2025-2026, but its mechanism is now contested: an August 2026 paper (arXiv:2608.31046, revised in September, single group) reports the teacher signal is noisy and that most of the gain comes from suppressing low-probability tokens, which a teacher-free method matched and beat. Run a teacher-free baseline before paying for a large teacher. Details in [RLVR and Reasoning Models](08-rlvr-and-reasoning-models.md#distillation-the-cheaper-path).
+The student samples its own completions and the teacher scores every token, combining RL's on-policy relevance with SFT's dense signal. It became a popular cheap path to reasoning models in 2025-2026, but its mechanism is now contested: an August 2026 paper (arXiv:2608.31046, revised in September, single group) reports the teacher signal is noisy and that most of the gain comes from suppressing low-probability tokens, which a teacher-free method matched and beat. Run a teacher-free baseline before paying for a large teacher. Also gate on out-of-distribution tasks: a November 2026 study of on-policy distillation for post-RL consolidation (arXiv:2611.05609, Qwen3 models) found students reached 96 to 103% of teachers' in-distribution scores while OOD scores stayed 2.45 to 16.25% below the base model they started from, and covering both teacher capability and data removed that forgetting in their experiments. Details in [RLVR and Reasoning Models](08-rlvr-and-reasoning-models.md#distillation-the-cheaper-path).
 
 ---
 
@@ -58,7 +58,7 @@ The student samples its own completions and the teacher scores every token, comb
 Student matches the teacher's text responses.
 - **Pros**: Easy to implement via API.
 - **Cons**: Only learns behavioral surface patterns. Closed APIs increasingly return summarized or encrypted reasoning, so raw chain-of-thought is usually not available to distill.
-- **Platform risk**: Vendor-hosted distillation pipelines are shrinking. OpenAI's stored-completions-to-fine-tune path depends on two products being wound down: Evals goes read-only October 31, 2026 and shuts down November 30, and self-serve fine-tuning stops accepting new jobs from active customers on January 6, 2027 (see [Fine-Tuning Strategies](02-fine-tuning-strategies.md#where-fine-tuning-runs)). Keep the dataset, eval suite, and student training on infrastructure you control.
+- **Platform risk**: Vendor-hosted distillation pipelines are shrinking. OpenAI's stored-completions-to-fine-tune path depends on two products being wound down: Evals was scheduled to go read-only on October 31, 2026 and shuts down November 30, and self-serve fine-tuning stops accepting new jobs from active customers on January 6, 2027, while GPT-4o and GPT-4.1 fine-tunes stop serving on January 14, 2027 (see [Fine-Tuning Strategies](02-fine-tuning-strategies.md#where-fine-tuning-runs)). Keep the dataset, eval suite, and student training on infrastructure you control.
 
 ### Feature/Hidden State Distillation
 Student matches the inner **Hidden States** (vector representations) of the teacher.

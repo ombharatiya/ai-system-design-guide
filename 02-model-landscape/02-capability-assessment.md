@@ -5,7 +5,7 @@ This chapter covers how to evaluate and compare model capabilities for your spec
 ## Table of Contents
 
 - [Why Benchmarks Are Not Enough](#why-benchmarks-are-not-enough)
-- [Reading a Vendor Benchmark Table](#reading-a-vendor-benchmark-table-october-2026)
+- [Reading a Vendor Benchmark Table](#reading-a-vendor-benchmark-table-november-2026)
 - [Evaluation Dimensions](#evaluation-dimensions)
 - [Reasoning Calibration & Efficiency](#reasoning-calibration)
 - [Internal Elo-based Evaluation](#internal-elo-based-evaluation)
@@ -48,20 +48,22 @@ in my harness, finish my team's real tasks without supervision?"
 
 **Rule of thumb:** Use benchmarks for initial filtering, then conduct your own evaluation.
 
-### Reading a Vendor Benchmark Table (October 2026)
+### Reading a Vendor Benchmark Table (November 2026)
 
-Every score needs six labels before it means anything: **benchmark version, harness, effort level, who ran it (leaderboard or vendor), fallback state, and metric**. Add **cost per task** whenever two scores are close. September 2026 launches show why:
+Every score needs six labels before it means anything: **benchmark version, harness, effort level, who ran it (leaderboard or vendor), fallback state, and metric**. Add **cost per task** whenever two scores are close. September and October 2026 launches show why:
 
 | Claim you will see | What was actually measured |
 |--------------------|----------------------------|
-| "Opus 5.5 scores 66.4% on Terminal-Bench 4.0" | Anthropic's own run at xhigh effort (vendor-reported, SE ±2.6). The tbench.ai leaderboard's September 21 update predates Opus 5.5; its top entry is GPT-6 Astra at 58.18% (max) |
+| "Opus 5.5 scores 66.4% on Terminal-Bench 4.0" | Anthropic's own run at xhigh effort (vendor-reported, SE ±2.6). On the tbench.ai leaderboard (entries added October 6), Opus 5.5 is first at 64.85% (max) and Sonnet 5.5 second at 61.82% (max), ahead of GPT-6 Astra and GPT-6.1 Sol (tied at 58.18%). Anthropic's own runs reverse the Claude order (Sonnet 5.5 70.6%, Opus 5.5 66.4%) |
 | "Astra 57.9%" vs "Astra 58.2%" on Terminal-Bench 4.0 | OpenAI's figure is high effort; 58.18% is the leaderboard's max-effort run |
 | "Fable 5.1 55.8%" vs "Fable 5.1 57.9%" | Anthropic's own run vs the leaderboard max-effort entry (57.88%), which xAI quoted in its Grok 4.7 table |
 | "GPT-6 Astra 99.9% on ARC-AGI-3" | ARC Prize's Provider Adapter harness, high effort, $18,817. Its Standard harness at max effort scored 62.7% for $26,098 |
 | "Opus 5.5 81.8% on OSWorld 2.1" | Partial-credit metric, vendor run. On the official leaderboard's v2.1 full set (September 17), Opus 5 at max effort scores 44.33% binary and 77.67% partial; that update predates Opus 5.5 |
 | HLE with tools: Astra ahead, or Opus 5.5 ahead? | Both. HLE-Diamond (1,000 cleaned questions): Astra 82.9%, Opus 5.5 73.9%. Anthropic's full-HLE table: Opus 5.5 67.7%, Astra 57.2%. Dataset and runner flip the order |
 | "Three models tie at 74% on DeepSWE v1.1" | Same pass rate at $2.36 per task (Gemini 3.8 Flash, high), $4.43 (GPT-6 Astra, xhigh) and $11.84 (Claude Opus 5, max) |
-| "Opus 5.5 leads the AA Intelligence Index at 58" | Index v4.3.2, max effort, with safeguard fallback. Scores from before v4.3 (launched September 7) are on a different scale and cannot be compared |
+| "Opus 5.5 scores 58 on the AA Intelligence Index" vs "59" | 58 is Index v5.0 (announced October 27), max effort, with safeguard fallback; 59 is v5.0.1 (November 3), which regraded every model on CritPt v2 and put Gemini 4 Carbon, which developers cannot call, at 60. v4.x scores are on a different scale and cannot be compared, even when a number happens to match |
+| "Sonnet 5.5 scores 54" vs "Sonnet 5.5 scores 41" | Both AA v5.0: 54 at max effort, 41 at high. One effort setting moved it 13 points; GPT-6.1 Terra moves from 51 at max to 38 at its default `medium` |
+| "Haiku 5.5 scores 72.4% on OSWorld 2.1" | Anthropic's offline subset with partial credit, vendor-reported. Not the leaderboard's binary metric, and not comparable with full-set scores |
 
 The rule that follows: **only same-harness, same-effort, same-runner numbers are comparable.** A vendor number is a claim about the vendor's best configuration, not a prediction for yours. The [benchmarks chapter](../14-evaluation-and-observability/03-benchmarks-and-leaderboards.md#harness-and-scaffold-variance) covers harness variance in more depth.
 
@@ -117,7 +119,7 @@ Thinking is now a dial, not a switch. Claude Opus 5.5 cannot disable thinking, S
 | **High** | 93% | 88% | 12.5s | 2,800 |
 | **Max** | 94% | 89% | 31s | 7,000 |
 
-Defaults move under you: Opus 5.5 defaults to `medium` where Opus 5 used `high`, GPT-6.1 Sol defaults to `medium`, and Sonnet 5.5 defaults to `high` on the API but medium in Claude Code. Pin effort explicitly in both evals and production. A max-effort eval does not predict a medium-effort deployment.
+Defaults move under you: Opus 5.5 and Haiku 5.5 default to `medium` where Opus 5 used `high`, GPT-6.1 Sol and GPT-6.1 Terra default to `medium`, and Sonnet 5.5 defaults to `high` on the API but medium in Claude Code. Pin effort explicitly in both evals and production. A max-effort eval does not predict a medium-effort deployment.
 
 ### Reasoning Calibration
 
@@ -126,22 +128,22 @@ Models often spend 2000+ "thinking" tokens on a question that could be answered 
 
 **Principal-level Nuance:**
 Evaluate models based on **Logic Efficiency**: `Accuracy / (Inference Tokens)`.
-Production systems use **Model Arbitration**: a small, cheap model (GPT-6 Luna, Gemini 3.8 Flash at low thinking, Claude Haiku 4.5) classifies the query and picks the effort level, or the model, for the main call. On models where thinking cannot be turned off, the arbiter's job is choosing `low` versus `high`, which still avoids the 10x latency and cost penalty on simple queries.
+Production systems use **Model Arbitration**: a small, cheap model (GPT-6 Luna, Claude Haiku 5.5 on prompts under 100K tokens, Gemini 3.8 Flash at low thinking) classifies the query and picks the effort level, or the model, for the main call. On models where thinking cannot be turned off, the arbiter's job is choosing `low` versus `high`, which still avoids the 10x latency and cost penalty on simple queries.
 
 Measure **tokens per task**, not just accuracy. Models differ several-fold here: Artificial Analysis measured GPT-6 Astra using about a third of GPT-5.6 Sol's tokens per coding task, while Muse Spark 1.3 became more verbose than 1.2, so its cost per task rose even though its per-token price did not change.
 
 ### Dimension 4: Context Recall
 
-With 1M-token windows now standard (Claude 4.6 and later, GPT-6 at 1.05M, Gemini 3.8 Flash at 1,048,576), simple "needle-in-a-haystack" is no longer enough. We now measure **Contextual Reasoning** across the window.
+With 1M-token windows now standard (Claude 4.6 and later, GPT-6 at 1.05M, Gemini 3.8 Flash and Gemini 4 Argon at 1,048,576), simple "needle-in-a-haystack" is no longer enough. We now measure **Contextual Reasoning** across the window.
 
 | Metric | Measurement | Target |
 |--------|-------------|--------|
 | **Window Recall** | Factual recall at 90% window depth | > 98% |
 | **Cross-Doc Reasoning** | Logic linking Doc A (pos 10k) to Doc B (pos 900k) | > 90% |
 | **Contextual Noise Resistance** | Accuracy when 90% of window is irrelevant "filler" | > 95% |
-| **Long-Output Coherence** | Consistency across 64K-128K generated tokens (current output caps are 128K on Claude 5.x and GPT-6 models, 65,536 on Gemini 3.8 Flash; Google says the announced Gemini 4 Argon raises its limit to 1M) | Task-specific |
+| **Long-Output Coherence** | Consistency across 64K-128K generated tokens (current output caps are 128K on Claude 5.x and GPT-6 models and 65,536 on Gemini 3.8 Flash; Gemini 4 Argon defaults to 65,536 and reaches about 1M only through its long-decode continuation protocol) | Task-specific |
 
-Record cost alongside recall. On OpenAI models a prompt above 272K tokens bills the whole request at long-context rates, so a model that recalls well at 800K may still lose to RAG on price. The same applies to output: a 1M-token output limit would let one call replace a chunked generation loop, but only after you have measured coherence and cost at that length.
+Record cost alongside recall. On OpenAI models a prompt above 272K tokens bills the whole request at long-context rates, and on Claude Haiku 5.5 a prompt above 100K bills it at 5x, so a model that recalls well at 800K may still lose to RAG on price, and a cheap model can stop being cheap at 101K. The same applies to output: Argon's long decode lets one logical call replace a chunked generation loop, but only after you have measured coherence and cost at that length.
 
 ---
 
@@ -340,7 +342,7 @@ Exact match: FAIL (but clearly correct)
 
 **Problem:** Running each test once ignores model randomness.
 
-**Solution:** Run each case at least three times at the production effort setting and report confidence intervals. Temperature is no longer a lever on most frontier models: the Claude API returns 400 on non-default sampling values for Opus 4.7 and later, Anthropic's Python SDK 1.0 removed `temperature` from Messages methods, Google deprecated it in the Gemini API, and GPT-6 Astra does not accept it. Variance is something you measure, not something you tune away.
+**Solution:** Run each case at least three times at the production effort setting and report confidence intervals. Temperature is no longer a lever on most frontier models: Claude API version `2026-10-21`, which all eight of Anthropic's new SDK and CLI majors send by default, returns 400 on any `temperature`, `top_p`, or `top_k` on every model (earlier versions reject non-default values on Claude 4.7 and later); Google deprecated temperature in the Gemini API; and GPT-6 Astra does not accept it. Variance is something you measure, not something you tune away.
 
 ### Pitfall 5: Cost Blindness
 
@@ -364,7 +366,7 @@ def quality_adjusted_cost(model_results):
 
 **Problem:** The eval ran at max effort, in a vendor harness, with safeguard fallback to another model, or against a model that has since changed under the same ID.
 
-**Solution:** Match effort, harness, tools and fallback settings to production, and re-run evals on provider-side changes, not only on model-ID changes. OpenAI fixed an image-understanding bug in GPT-6 Sol and Luna on September 25, 2026 without changing the model ID and told customers to rerun image evals. DeepSeek's legacy `deepseek-v4-flash` names now serve V4.1-Flash.
+**Solution:** Match effort, harness, tools and fallback settings to production, and re-run evals on provider-side changes, not only on model-ID changes. OpenAI fixed an image-understanding bug in GPT-6 Sol and Luna on September 25, 2026 without changing the model ID and told customers to rerun image evals. DeepSeek's legacy `deepseek-v4-flash` names now serve V4.1-Flash, and `deepseek-flash` moved to the V4.1-Flash-1017 build on October 17. Google has served `gemini-3.7-flash` requests with Gemini 3.8 Flash since October 8, so an eval pinned to 3.7 Flash now measures a different model.
 
 ### Pitfall 7: Eval Awareness
 
@@ -482,7 +484,7 @@ class ModelABTest:
         }
 ```
 
-Route on a stable unit (user or conversation ID), not a request ID, when the models carry state across turns. On Claude Fable 5.1, Opus 5.5 and Sonnet 5.5, thinking blocks are bound to the model that produced them, so flipping a conversation between arms mid-stream silently drops reasoning.
+Route on a stable unit (user or conversation ID), not a request ID, when the models carry state across turns. On Claude Fable 5.1, Opus 5.5, Sonnet 5.5 and Haiku 5.5, thinking blocks are bound to the model that produced them (and on Sonnet 5.5 and Haiku 5.5 to the producing account), so flipping a conversation between arms mid-stream silently drops reasoning.
 
 ### Metrics to Track
 
@@ -571,11 +573,12 @@ Both are real; they measure different systems. ARC Prize verified both for GPT-6
 - Artificial Analysis Intelligence Index methodology: https://artificialanalysis.ai/methodology/intelligence-benchmarking
 - ARC Prize, GPT-6 Astra on ARC-AGI-3: https://arcprize.org/blog/astra
 - OSWorld 2.0 leaderboard (XLANG): https://osworld-v2.xlang.ai/
+- Terminal-Bench 4.0 leaderboard: https://www.tbench.ai/leaderboard/terminal-bench/4.0
 - "Maintaining Benchmarks Against Increasingly Capable Agents" (arXiv 2609.34262)
 - "JEV vs. LLMs as Rubric Judges" (arXiv 2609.29769)
 - HELM: https://crfm.stanford.edu/helm/
 - LMSys Evaluation: https://github.com/lm-sys/FastChat/tree/main/fastchat/llm_judge
-- OpenAI Evals (open-source framework; the hosted Evals platform goes read-only October 31, 2026 and shuts down November 30): https://github.com/openai/evals
+- OpenAI Evals (open-source framework; the hosted Evals platform shuts down November 30, 2026): https://github.com/openai/evals
 
 ---
 

@@ -24,7 +24,7 @@ Models like Claude Opus 5.5 (1M), Claude Sonnet 5.5 (1M), GPT-6.1 Sol (1.05M), a
 **Insight**: "Context is the new RAG."
 For stable corpora that fit comfortably in the window (a few hundred thousand tokens, roughly a few hundred pages), it is often more accurate and simpler to put the whole corpus in context than to run an external vector database. This is called **"In-Context RAG."** It does not scale to document collections measured in thousands of files, and recall still degrades with length (see context rot below).
 
-**Run the numbers before choosing.** For a 500K-token corpus on Claude Opus 5.5 ($4 input, $0.20 cache read per 1M): about $2.00 per request uncached, about $0.10 per request once cached, after a one-time $2.50 cache write. A RAG call that sends 10K retrieved tokens to the same model costs about $0.04 in input. So cached long context is now within about 2.5x of RAG on input cost (as long as traffic keeps the cache warm), and the decision turns on recall quality, latency, and how often the corpus changes. Watch the pricing cliffs: OpenAI bills the whole request at long-context rates once input passes 272K tokens, and xAI doubles all tokens at 200K and above, while Anthropic stays flat to 1M.
+**Run the numbers before choosing.** For a 500K-token corpus on Claude Opus 5.5 ($4 input, $0.20 cache read per 1M): about $2.00 per request uncached, about $0.10 per request once cached, after a one-time $2.50 cache write. A RAG call that sends 10K retrieved tokens to the same model costs about $0.04 in input. So cached long context is now within about 2.5x of RAG on input cost (as long as traffic keeps the cache warm), and the decision turns on recall quality, latency, and how often the corpus changes. Watch the pricing cliffs: OpenAI bills the whole request at long-context rates once input passes 272K tokens, and xAI doubles all tokens at 200K and above. Anthropic stays flat to 1M on Opus 5.5 and Sonnet 5.5, but Claude Haiku 5.5 (October 7, 2026) bills the whole request at 5x once the prompt passes 100K tokens, counting cache reads and writes toward that length, so cheap in-context RAG on Haiku stops being cheap at exactly the corpus sizes where it is tempting.
 
 ---
 
@@ -34,7 +34,7 @@ Prompt engineering writes one good instruction. **Context engineering** curates 
 
 ### Context Rot: Why Context Is a Finite Resource
 
-A 1M-token window does not mean you should fill it. Models suffer **context rot**: accuracy degrades as the token count grows, because attention scales with n-squared pairwise relationships and training data skews toward shorter sequences. Treat context as a budget with diminishing returns, not free space. The job is to keep the **smallest high-signal set of tokens** that still lets the model act correctly.
+A 1M-token window does not mean you should fill it. Models suffer **context rot**: accuracy degrades as the token count grows, because attention scales with n-squared pairwise relationships and training data skews toward shorter sequences. Treat context as a budget with diminishing returns, not free space. The job is to keep the **smallest high-signal set of tokens** that still lets the model act correctly. The serving bill agrees: arXiv 2611.05306 ("You don't need long context", November 3, 2026) reports that serving Qwen 3 Coder Next with a 256K window instead of 16K costs 7x more per generated token, while frequent compaction kept frontier models accurate on SWE-bench Verified with at most one action per context (Claude Opus 4.5 70.2% vs 70.0% with full history, GPT-5.6 Sol 82.4% vs 84.4%).
 
 ### The Five Core Techniques
 
@@ -49,6 +49,8 @@ A 1M-token window does not mean you should fill it. Models suffer **context rot*
 ### Compaction
 
 When the history grows large, pass it back to the model to summarize, preserving the load-bearing details (architectural decisions, unresolved bugs, key constraints) and dropping redundant tool output. Claude Code uses this pattern: it continues with the compressed summary plus the most recently accessed files. **Tune for recall first** (keep everything that matters), then improve precision (cut redundancy).
+
+Compaction can also happen in cache space rather than in text. arXiv 2610.28577 ("Cache Engineering for Agents", October 20, 2026) lets an agent drop cached tokens from future attention and re-rotate retained key positions without rewriting the transcript or re-prefilling; a rolling drop of old tool responses beat threshold-triggered summarization by 1.7 points on average at 27.7% lower cost (author-reported). The catch for infrastructure: after a drop, identical token sequences can map to different cache states, so a prefix match alone is no longer a correct cache key (see [KV Cache and Context Caching](../04-inference-optimization/02-kv-cache-and-context-caching.md)).
 
 Providers now run compaction for you. The Claude API offers server-side compaction (beta) that summarizes automatically near a threshold, and on-demand compaction (beta, September 14, 2026, header `compact-2026-09-04`) that returns a signed compaction block you send back in place of the messages it summarizes. On-demand compaction can keep the most recent turns word for word after the summary, and thinking in those kept turns stays valid on models that bind thinking to the conversation. Prefer these on the newest Claude models, because a hand-rolled summary that rewrites history invalidates thinking blocks (next section).
 
@@ -115,7 +117,7 @@ for block in response.content:
 
 **Key parameters:**
 - `effort`: `low` to `max`. Defaults differ by model: `medium` on Opus 5.5, `high` on Sonnet 5.5 and Fable 5.1. Set it explicitly.
-- Fixed `budget_tokens` is gone: it returns a 400 on Opus 4.7 and later, Sonnet 5 and 5.5, and Fable 5 and 5.1, and is deprecated on Opus 4.6 and Sonnet 4.6. Haiku 4.5 still uses it.
+- Fixed `budget_tokens` is gone: it returns a 400 on Opus 4.7 and later, Sonnet 5 and 5.5, Fable 5 and 5.1, and Haiku 5.5, and is deprecated on Opus 4.6 and Sonnet 4.6. Haiku 4.5 still uses it.
 - Thinking cannot be disabled on Opus 5.5; on Sonnet 5.5, `{"type": "disabled"}` returns a 400 and the lowest setting is `{"type": "between_tools"}`, accepted only at `high` effort or below.
 - Thinking tokens bill at the output rate whatever the `display` setting: 10K thinking tokens cost about $0.20 on Opus 5.5 ($20 per 1M output) and $0.10 on Sonnet 5.5.
 - Streaming works; with the default `display: "omitted"`, thinking blocks stream with empty text, which looks like a long pause in a UI.
@@ -200,12 +202,12 @@ Almost all major providers (OpenAI, Anthropic, Google, DeepSeek) support **Prefi
 
 | Provider | Cache write | Cache read | Mechanics |
 |----------|-------------|------------|-----------|
-| **Anthropic** | 1.25x (5-minute TTL) or 2x (1-hour TTL) | 0.1x on most models; 0.05x on Opus 5.5 ($0.20 per 1M); 0.025x on Fable 5.1 ($0.25 per 1M) | Explicit `cache_control` breakpoints or top-level auto-caching |
-| **OpenAI** (GPT-5.6 and later) | 1.25x | 0.1x; 0.05x on GPT-6.1 Sol | Automatic above 1,024 tokens; TTL fixed at 30 minutes |
+| **Anthropic** | 1.25x (5-minute TTL) or 2x (1-hour TTL) | 0.1x on most models; 0.05x on Opus 5.5 ($0.20 per 1M) and Sonnet 5.5 ($0.10 per 1M, cut from $0.20 on October 7, 2026); 0.025x on Fable 5.1 ($0.25 per 1M) | Explicit `cache_control` breakpoints or top-level auto-caching; on Haiku 5.5, cached tokens count toward its 100K long-context threshold |
+| **OpenAI** (GPT-5.6 and later) | 1.25x (30-minute TTL) or 2.5x (12-hour TTL, since October 20, 2026) | 0.1x; 0.05x on GPT-6.1 Sol and GPT-6.1 Terra | Automatic above 1,024 tokens; choose the 30-minute or 12-hour TTL |
 | **Google** (Gemini 3.8 Flash) | No separate write price; explicit caches bill storage at $0.50 per 1M tokens per hour ($1.00 from January 1, 2027) | 0.1x ($0.075 per 1M at the introductory rate, $0.15 from January 1, 2027) | Implicit caching is automatic above 4,096 tokens; explicit caches give you control over contents and lifetime, but an idle one can cost more in storage than it saves |
 | **DeepSeek** (V4.1-Flash) | No surcharge (a miss bills at the normal input price) | about 2% of the cache-miss price | Automatic; peak and off-peak pricing |
 
-- **The Crossover**: with a 1.25x write and a 0.1x or cheaper read, the cache pays for itself on the first hit; a 2x one-hour write pays off from the second hit. If you reuse a large context (e.g., a codebase) more than once inside the TTL, caching wins.
+- **The Crossover**: with a 1.25x write and a 0.1x or cheaper read, the cache pays for itself on the first hit; a 2x one-hour write pays off from the second hit, and so, narrowly, does a 2.5x twelve-hour write. Buy the long TTL for prefixes reused across hours (a nightly batch, a codebase agents return to), not for chat sessions that end in minutes. If you reuse a large context (e.g., a codebase) more than once inside the TTL, caching wins.
 - **Make the hit rate observable**: cache diagnostics went GA on the OpenAI Responses API (September 8, 2026) and the Claude API (September 23, 2026). Track hit rate as an SLO.
 
 **The Architectural Choice**: Design your system to keep the "System Prompt + Tools + Base Knowledge" static to maintain a near-100% cache hit rate. Silent invalidators are the usual culprits: a timestamp in the system prompt, unsorted JSON, a tool list that varies per request.

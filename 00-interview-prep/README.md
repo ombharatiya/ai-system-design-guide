@@ -1,8 +1,12 @@
 # AI System Design Interview Preparation
 
-Interview prep for senior and staff AI engineering roles: 147 system design questions (including a dedicated Voice AI set), answer frameworks with a worked mock-interview transcript, common pitfalls, ten whiteboard exercises, behavioral prep, a quick-answer FAQ, and October 2026 hiring trends.
+Interview prep for senior and staff AI engineering roles: 193 system design questions (including a dedicated Voice AI set and a set built from recent candidate interview reports), answer frameworks with a worked mock-interview transcript, common pitfalls, ten whiteboard exercises, behavioral prep, a quick-answer FAQ, and November 2026 hiring trends.
 
-> **What's new (October 2026):** the question bank gained seven September-2026 questions (operating an agent on a model rated Critical for cyber, full-duplex voice front ends that delegate to a backend model, providers removing sampling parameters and forced tool calls, managed agent platforms, reading benchmark claims against public leaderboards, open-weight license gates, and patching a self-hosted inference stack) plus a new twelve-question [Voice AI](01-question-bank.md#voice-ai-questions) section covering architecture choice, latency budgets, turn-taking on phone audio, per-minute cost, evaluation, and calling compliance. The bank now runs continuously Q1-Q147, and the whiteboard set gained a tenth exercise on inference batching.
+> **What's new (November 6, 2026):** the question bank now runs continuously Q1-Q193. Twelve more questions from candidate interview reports, [Q174-Q185](01-question-bank.md#questions-from-recent-interview-reports), cover agents over security telemetry, a permission-matched code explorer, devbox platforms, review ingestion under prompt injection, an agent over manufacturing systems, agentic retail search, scoping a cancellation agent with a PM, a 20-minute job-click model, RL for a fresh-answer chatbot, overconfident answers in high-risk domains, distillation limits, and a design round where using an AI assistant is required. A new [November 2026 section](01-question-bank.md#advanced-questions---november-2026), Q186-Q193, covers per-end-customer enforcement isolation, server-side message threads, a multi-vendor deprecation program, cyber access programs, open-weight license review, reading a regraded leaderboard, tenant isolation that fails open, and agent approval controls. The job market chapter adds new loop formats and interviewer signals, and the FAQ is current to November 6.
+>
+> Earlier in November, the bank gained eighteen questions built from candidate interview reports posted mostly between June and November 2026, [Q156-Q173](01-question-bank.md#questions-from-recent-interview-reports): design-doc review, model distribution and GPU scheduling, provider-side chat serving, KV caches and tokenizers from scratch, agents without a framework, AI-assisted coding and PR-review rounds, launch readiness, safety and mission screens, and forward deployed decomposition. The job market chapter now summarizes the loop formats candidates report by company, and the behavioral chapter covers the new "how do you use AI" and safety-screen themes. Earlier in November the bank gained eight October-2026 questions, [Q148-Q155](01-question-bank.md#advanced-questions---october-2026), covering agents that silence or outwait their own monitors, incident pipelines that separate prompt-injected from self-directed actions, an AI gateway as a supply-chain target, fine-tunes that lose their base model, prices set by prompt length and calendar, decision models, rolling an API-version change through a shared gateway, and patch SLAs once AI shrinks the patch gap. That update also gave the job market chapter November 1 compensation data, Indeed's record 7.3% AI share of US postings, the Anthropic S-1, and a caveat on reports that Anthropic dropped its coding interview (one hiring manager's practice, not company policy), and brought the FAQ up to October's model releases (Claude Haiku 5.5, GPT-6.1 Terra, and Gemini 4 Argon GA).
+>
+> **October 2026:** the question bank gained seven September-2026 questions (operating an agent on a model rated Critical for cyber, full-duplex voice front ends that delegate to a backend model, providers removing sampling parameters and forced tool calls, managed agent platforms, reading benchmark claims against public leaderboards, open-weight license gates, and patching a self-hosted inference stack) plus a new twelve-question [Voice AI](01-question-bank.md#voice-ai-questions) section covering architecture choice, latency budgets, turn-taking on phone audio, per-minute cost, evaluation, and calling compliance. The bank now runs continuously Q1-Q147, and the whiteboard set gained a tenth exercise on inference batching.
 
 ## Before You Start
 
@@ -37,7 +41,9 @@ mindmap
       Answer Frameworks
       Whiteboard exercises
     Staff or Principal
-      Advanced sets Q50 to Q135
+      Advanced sets Q50 to Q135 and Q148 to Q155
+      Reported rounds Q156 to Q185
+      November 2026 Q186 to Q193
       Behavioral STAR-L
       Eval and memory exercises
     Voice AI roles
@@ -58,12 +64,12 @@ mindmap
 
 | File | Purpose |
 |------|---------|
-| [01-question-bank.md](01-question-bank.md) | 147 interview questions (Q1-Q147, continuously numbered), drawn from reported loops, job postings, and current releases and incidents, grouped by topic, with model answers and follow-ups (through September 2026), including a twelve-question Voice AI section. |
+| [01-question-bank.md](01-question-bank.md) | 193 interview questions (Q1-Q193, continuously numbered), drawn from reported loops, job postings, and current releases and incidents, grouped by topic, with model answers and follow-ups (through November 2026), including a twelve-question Voice AI section. |
 | [02-answer-frameworks.md](02-answer-frameworks.md) | Five structured answer frameworks (SPIDER, ETA, tradeoff, debugging, STAR-L) plus a worked 45-minute SPIDER mock-interview transcript. |
 | [03-common-pitfalls.md](03-common-pitfalls.md) | Patterns that kill staff-level offers: hand-waving on tradeoffs, missing observability, ignoring failure modes. |
 | [04-whiteboard-exercises.md](04-whiteboard-exercises.md) | Ten system design exercises with worked solutions, including evaluation pipeline design, agent memory, and inference batching. The closest simulation of a real loop. |
 | [05-behavioral-for-ai-roles.md](05-behavioral-for-ai-roles.md) | Behavioral prep for AI-specific scenarios, including customer-facing deployment rounds in FDE loops and the past-project technical deep dive, with six worked STAR-L examples, compensation and leveling questions, and an out-loud practice guide. |
-| [06-job-market-trends-2026.md](06-job-market-trends-2026.md) | Role taxonomy, comp ranges (with re-swept levels.fyi rows marked), entry-level and layoff data, per-company AI-in-interview policies, and emerging titles (FDE, AI Eval Engineer, AI Reliability Engineer, MCP Engineer). |
+| [06-job-market-trends-2026.md](06-job-market-trends-2026.md) | Role taxonomy, comp ranges (with the date each levels.fyi row was checked), entry-level and layoff data, per-company AI-in-interview policies, and emerging titles (FDE, AI Eval Engineer, AI Reliability Engineer, MCP Engineer). |
 | [07-faq.md](07-faq.md) | Short, direct answers to the most-asked questions about AI engineering, RAG, agents, models, eval, inference, memory, and security. Useful for quick reference and for newcomers to the field. |
 
 ## Practice With a Real Interviewer
@@ -84,5 +90,5 @@ If you want those reps, Om offers 1:1 mock AI system design interviews, reviews 
 - The files are designed to be read in order; jumping straight to questions without absorbing answer frameworks leaves answers unstructured.
 - Whiteboard exercises (file 04) are the closest simulation to real interviews; do at least three before any loop.
 - Behavioral prep (file 05) is what separates staff candidates from senior candidates; do not skip it.
-- The October 2026 job market chapter (file 06) is a moat: candidates who know the current hiring market can ask better questions and tailor stories.
+- The November 2026 job market chapter (file 06) is a moat: candidates who know the current hiring market can ask better questions and tailor stories.
 - Recheck this folder monthly; new question batches are added as hiring trends shift.

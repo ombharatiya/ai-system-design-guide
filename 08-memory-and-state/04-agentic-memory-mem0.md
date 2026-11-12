@@ -126,7 +126,7 @@ We use **Thresholded Relevance**. Mem0 returns a relevance score for every recal
 - [Mem0: Building Production-Ready AI Agents with Scalable Long-Term Memory (arXiv 2504.19413)](https://arxiv.org/abs/2504.19413)
 - [Mem0 v2.0.0 release notes](https://github.com/mem0ai/mem0/releases/tag/v2.0.0)
 - [Mem0 releases (v2.2.1, September 25, 2026)](https://github.com/mem0ai/mem0/releases)
-- [Letta repository (MemFS)](https://github.com/letta-ai/letta)
+- [Letta Code repository (MemFS, git-tracked memory)](https://github.com/letta-ai/letta-code); the retired V1 server lives on the archive branch of [letta-ai/letta](https://github.com/letta-ai/letta).
 - [Zep: A Temporal Knowledge Graph Architecture for Agent Memory (arXiv 2501.13956)](https://arxiv.org/abs/2501.13956)
 - [MemTrapBench (arXiv 2608.20202)](https://arxiv.org/abs/2608.20202)
 

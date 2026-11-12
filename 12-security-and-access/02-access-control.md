@@ -112,6 +112,8 @@ class JWTAuthenticator:
 
 Static API keys are the weakest link in an agent fleet, and attackers now hunt them by name. The ChainDrop npm worm (August 2026) harvested OpenAI, Anthropic, Cursor, Codex and Gemini tokens alongside cloud and GitHub credentials. Mandiant described an intrusion in which an attacker took over a live AI coding-assistant session, the assistant recommended an already-poisoned package, and stolen GitHub OAuth tokens let the Shai-Hulud worm spread across about 100 internal repositories. Providers have moved accordingly: OpenAI made mutual TLS and X.509 workload identity federation GA (August 29, 2026), added API key expiration with org- and project-level maximum lifetimes (September 10), and lets admins restrict or disable key creation (September 15).
 
+**Stolen credentials are billed by the hour.** Google Threat Intelligence Group and Mandiant reported on November 3, 2026 that LLMjacking incidents they handled ran up more than $100,000 in fraudulent charges in a single day and up to $1 million cumulatively before access was revoked; one actor made more than 500,000 LLM API calls in under eight hours through a resale service, passing nearly $1 million in token costs to the victim (vendor-reported). The entry point was stolen cloud identity (IAM credentials, service account keys, GitHub PATs, session tokens), not a model bug, and the attackers' habits are detectable: they validated keys with `max_tokens=1` requests, switched on LLM services the victim had never used, and probed exposed Ollama `/api/create` endpoints. That makes per-key quotas and spend caps a security control, not only a FinOps one, and it makes "LLM service enabled in an account that never used it" an alert worth wiring up.
+
 The rules that follow:
 
 - **Prefer workload identity** (mTLS, federated short-lived tokens) for service-to-provider calls. Where keys remain, give each an owner, an expiry and a spend cap.
@@ -200,7 +202,7 @@ class ModelAccessControl:
         ]
 ```
 
-Model access is now gated on the vendor side too: Anthropic's docs limit Mythos 5.1 to Project Glasswing participants (its Life Sciences and Cyber Verification Programs are named as further routes), OpenAI's `gpt-rosalind-research` is trusted-access only, and Gemini 3.8 Flash Cyber is available only through Google's Fairwind Program. The model registry behind this check should record, per model and platform, which models the organization is entitled to, their data-retention terms, and their retirement dates, so routing and fallback can never pick a model a tenant may not use.
+Model access is now gated on the vendor side too. Anthropic's Cyber Verification Program (expanded October 6, 2026, with Project Glasswing folded in) has three tiers (Defense, Red Team, Specialized); Mythos 5.1 is available in every tier, admins assign the program to specific workspaces, and enrollment requires data retention, so the entitlement and the retention term change together. OpenAI's `gpt-rosalind-research` is trusted-access only, and Gemini 3.8 Flash Cyber is available only through Google's Fairwind Program. The model registry behind this check should record, per model and platform, which models and access programs the organization is entitled to, their data-retention terms, and their retirement dates, so routing and fallback can never pick a model a tenant may not use.
 
 ---
 
@@ -214,13 +216,15 @@ When an agent calls tools on a user's behalf, authorization involves three parti
 
 | Need | Mechanism | Status |
 |------|-----------|--------|
-| A token usable only at one server | Audience binding (RFC 8707 resource indicators) | Part of the MCP authorization spec |
+| A token usable only at one server | Audience binding (RFC 8707 resource indicators) | Part of the MCP authorization spec, but the TypeScript SDK accepted tokens issued for other services (CVE-2026-111771); the fix in `sdk` 1.32.0 and `server` 2.3.0 is opt-in, so set `expectedResource` and return `AuthInfo.resource` |
 | A stolen token is useless on its own | DPoP sender-constrained tokens (RFC 9449) | Shipped in the MCP TypeScript client 2.1.0 (September 23, 2026); the spec profile (SEP-1932) is still an open draft |
 | Least privilege per tool | Per-tool step-up scope challenges (HTTP 403 `insufficient_scope`) | Shipped in the MCP TypeScript server 2.1.0 |
 | Enterprise IdP controls which servers an agent may use | ID-JAG grant behind MCP Enterprise-Managed Authorization | Shipped in MCP; the IETF draft is at -04, not yet an RFC |
 | The agent's own identity, for headless agents | Workload identity plus the OAuth family, not new protocols | IETF WIMSE adopted draft-ietf-wimse-aims-00 (September 15, 2026); MCP workload identity federation (SEP-1933) is an open draft |
 
 **Approvals are authorization too.** Per-call human approval does not scale, so platforms are moving to policy: Claude Managed Agents' auto permission policy (September 10, 2026) has the server evaluate each agent or MCP tool call and run it, deny it, or pause for approval. Where humans do approve, bind the approval to the exact call: research on approval laundering (arXiv 2609.38983) shows the action a person approves is not always the action a coding-agent harness executes.
+
+**A government checklist for agent identity.** NIST's NCCoE published ten "design tenets for agent identity management systems" on October 27, 2026 (a blog post with no NIST publication number, so a draft starting point rather than a standard). They match the rules in this chapter: a distinct identity per agent; cryptographic linking to the initiating party, with delegated authority that can only narrow; least and zero standing privilege; short-lived, task-specific, revocable authorization with no long-lived bearer tokens; human-in-the-loop triggers that guard against consent fatigue; signed mandates from task originators; the policy decision kept separate from the model's reasoning; deterministic primary access decisions; agent-specific monitoring; and append-only evidence the agent cannot touch. It is a useful review checklist for an agent platform design, and a credible citation in an interview.
 
 **User-delegated model access.** Sign in with ChatGPT (announced at OpenAI DevDay, September 29, 2026; limited trial for selected partners) uses OAuth 2.0 with PKCE and OpenID Connect, and can optionally run eligible Responses API requests on the user's own ChatGPT plan. It is convenient identity, but it concentrates login and AI billing at one model vendor; weigh it like any IdP lock-in decision.
 
@@ -310,7 +314,9 @@ class TenantIsolatedCache:
         )
 ```
 
-Cache isolation also reaches into the inference engine. A shared prefix cache is a timing side channel: if tenant B's request returns faster because tenant A already cached the same prefix, B learns something about A's prompt. vLLM isolates tenants with a per-request `cache_salt`, and in September 2026 a regression on one code path (tool-continuation turns on its Harmony `/v1/responses` endpoint dropped the salt) reopened the oracle until 0.30.0. Pass a per-tenant salt on every request, test each endpoint for it, and when many tenants share one provider account, keep tenant-specific content after the shared cacheable prefix.
+Cache isolation also reaches into the inference engine. A shared prefix cache is a timing side channel: if tenant B's request returns faster because tenant A already cached the same prefix, B learns something about A's prompt. vLLM isolates tenants with a per-request `cache_salt`, and in September 2026 a regression on one code path (tool-continuation turns on its Harmony `/v1/responses` endpoint dropped the salt) reopened the oracle until 0.30.0 (the current vLLM floor is 0.32.0; see [Securing the AI Stack Itself](01-llm-security.md#securing-the-ai-stack-itself)). Pass a per-tenant salt on every request, test each endpoint for it, and when many tenants share one provider account, keep tenant-specific content after the shared cacheable prefix.
+
+The same failure shows up in protocol servers. In the MCP TypeScript SDK, an HTTP server that created one transport or server instance at startup and shared it across clients could deliver one client's responses to another (CVE-2026-111770, CVSS 7.7, `@modelcontextprotocol/server` 2.0.0 to 2.2.x), because messages were matched to connections only by JSON-RPC id and every SDK client numbers its requests from 0. The SDK's own README examples showed the shared pattern. Version 2.3.0 refuses it, so upgrading breaks those apps until each request or session gets its own server and transport. Any per-connection state in a multi-tenant server, not only caches, needs a tenant or session key.
 
 ---
 
@@ -525,6 +531,7 @@ The key principle: tenant_id is a mandatory filter at every data access point, n
 **Keys we hold, not just keys we issue:**
 - For our own calls to model providers, prefer workload identity (mTLS or federated tokens) over static keys, and give any remaining key an owner, an expiry and a spend cap
 - LLM API keys are now standard loot for supply-chain worms, so keep them out of developer machines, agent sessions and CI logs
+- A gateway concentrates them: the poisoned LiteLLM releases of October 21, 2026 harvested provider keys and the proxy's master and virtual keys, so I need to be able to rotate everything the gateway holds in one step
 
 The key principle: never store raw keys, support rotation, implement least privilege."
 
@@ -534,7 +541,7 @@ The key principle: never store raw keys, support rotation, implement least privi
 
 "I design against the confused deputy, because the agent holds credentials for five servers and any one of them could be malicious or compromised.
 
-**Bind credentials to issuer and audience.** Each token is audience-bound to its server (RFC 8707), and each stored credential is tagged with the authorization server that issued it and never sent anywhere else. That exact gap was CVE-2026-104850 in the MCP TypeScript SDK in September 2026 (the Python SDK had the same flaw): a malicious server could name its own authorization server and collect refresh tokens and client secrets. Upgrading the SDK is not enough; machine-to-machine clients need an explicit expected issuer, and pre-upgrade credentials must be re-tagged or cleared.
+**Bind credentials to issuer and audience.** Each token is audience-bound to its server (RFC 8707), and each stored credential is tagged with the authorization server that issued it and never sent anywhere else. That exact gap was CVE-2026-104850 in the MCP TypeScript SDK in September 2026 (the Python SDK had the same flaw): a malicious server could name its own authorization server and collect refresh tokens and client secrets. Upgrading the SDK is not enough; machine-to-machine clients need an explicit expected issuer, and pre-upgrade credentials must be re-tagged or cleared. On the server side, audience binding only helps if the server checks it: the TypeScript SDK's October fix (CVE-2026-111771) is opt-in, so every server I run sets `expectedResource`.
 
 **Make stolen tokens less useful.** Short lifetimes, and DPoP sender-constrained tokens where the client and server support them.
 
@@ -555,6 +562,10 @@ Standards are still settling (DPoP for MCP and workload identity federation are 
 - RFC 8707, Resource Indicators for OAuth 2.0: https://www.rfc-editor.org/rfc/rfc8707
 - RFC 9449, OAuth 2.0 Demonstrating Proof of Possession (DPoP): https://www.rfc-editor.org/rfc/rfc9449
 - MCP TypeScript SDK advisory GHSA-6qxp-vccf-f47h (CVE-2026-104850): https://github.com/modelcontextprotocol/typescript-sdk/security/advisories/GHSA-6qxp-vccf-f47h
+- MCP TypeScript SDK advisories GHSA-jm63-cq47-j5jp (CVE-2026-111770, shared transports) and GHSA-rvq5-wwqv-78pq (CVE-2026-111771, token audience): https://github.com/modelcontextprotocol/typescript-sdk/security/advisories
+- Anthropic, expanded Cyber Verification Program (October 6, 2026): https://www.anthropic.com/news/cyber-verification-program
+- Google Threat Intelligence Group, LLMjacking (November 3, 2026): https://cloud.google.com/blog/topics/threat-intelligence/llmjacking-monetizing-compromised-cloud-models
+- NIST NCCoE, design tenets for agent identity management systems (October 27, 2026): https://www.nist.gov/blogs/cybersecurity-insights/design-tenets-agent-identity-management-systems
 - IETF WIMSE, AI Identity Management System (draft-ietf-wimse-aims): https://datatracker.ietf.org/doc/draft-ietf-wimse-aims/
 - OpenAI API changelog (workload identity, key expiry): https://developers.openai.com/api/docs/changelog
 

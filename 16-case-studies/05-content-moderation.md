@@ -434,12 +434,12 @@ The engineering consequence: image and video transcoders in the ingestion path, 
 | False positive rate | 15% | 4.2% | 72% reduction |
 | Moderator efficiency | 50/day | 200/day | 4x increase |
 
-### Cost Analysis (October 2026, per Day at 10M Posts)
+### Cost Analysis (November 2026, per Day at 10M Posts)
 
 | Component | Calculation | Daily Cost | Notes |
 |-----------|-------------|------------|-------|
 | Tier 1 filters | 10M × ~$0.00001 | ~$100 | CPU hash and pattern matching |
-| Tier 2 classifiers | 9.5M × ~$0.0002 | ~$1,900 | About 28 self-hosted H100s around the clock at $2.77 per GPU-hour (Silicon Data index, October 1, 2026), sized for peak load |
+| Tier 2 classifiers | 9.5M × ~$0.0002 | ~$2,000 | About 28 self-hosted H100s around the clock at $2.93 per GPU-hour (Silicon Data index, November 1, 2026), sized for peak load |
 | Tier 3 LLM review | 1M × ~$0.005 | ~$5,000 | Gemini 3.8 Flash, ~2.5K in (policy prompt plus image) / ~150 out at the January 2027 list price ($1.50 / $7.50); about half at the introductory price |
 | Human review | 100K × $0.50 | ~$50,000 | 500 moderators × 200 decisions/day |
 | **Total** | | **~$57,000/day** | Human review is ~88% |

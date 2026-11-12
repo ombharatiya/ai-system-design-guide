@@ -68,7 +68,7 @@ async def generate(prompt: str) -> str:
 - Provider outage = complete system failure. Outages are routine, not rare: Anthropic logged at least 12 major or critical incidents between August 16 and September 29, 2026, and one OpenAI incident on September 29 degraded the API, ChatGPT, and Codex together for about 5 hours 20 minutes
 - Rate limits affect all traffic
 - No price negotiation leverage
-- Locked into one model family, and into that vendor's retirement calendar (OpenAI retires the `gpt-5-2025-08-07` and `o3-2025-04-16` snapshots on December 11, 2026)
+- Locked into one model family, and into that vendor's retirement calendar (OpenAI retires the `gpt-5-2025-08-07` and `o3-2025-04-16` snapshots on December 11, 2026, and its October 14 notice gave five `gpt-4o` and `gpt-4.1` family snapshots, fine-tunes included, about three months before a January 14, 2027 shutdown)
 
 **Solution:**
 ```python
@@ -401,7 +401,7 @@ response = await llm.generate(
 )
 ```
 
-Do not reach for the older trick of forcing a tool call to get JSON. A `tool_choice` of `any` or a named tool now returns a 400 on Claude Fable 5.1, Opus 5.5, and Sonnet 5.5; use structured outputs, or `auto` with strict tool schemas.
+Do not reach for the older trick of forcing a tool call to get JSON. A `tool_choice` of `any` or a named tool now returns a 400 on Claude Fable/Mythos 5.1, Opus 5.5, and Sonnet 5.5, and Haiku 5.5 accepts it but skips thinking; use structured outputs, or `auto` with strict tool schemas.
 
 ---
 
@@ -576,9 +576,9 @@ response = await llm.generate(prompt, model=ALIAS)  # effort left at the default
 ```
 
 **Why it fails:**
-- Defaults change without a code change on your side. In September 2026 Codex CLI switched its default to GPT-6.1 Sol (rust-v0.159.1), and Claude Code moved its default Opus to Opus 5.5 (2.1.280) and its default Sonnet to Sonnet 5.5 (2.1.284); the openai-agents SDK had already moved its default to `gpt-5.6-luna` in 0.20.0
+- Defaults change without a code change on your side. In September 2026 Codex CLI switched its default to GPT-6.1 Sol (rust-v0.159.1), and Claude Code moved its default Opus to Opus 5.5 (2.1.280) and its default Sonnet to Sonnet 5.5 (2.1.284); the openai-agents SDK had already moved its default to `gpt-5.6-luna` in 0.20.0. Then on October 16, Claude Code 2.1.302 changed a permission default: `claude -p` and Agent SDK sessions that set no permission mode now start in `default` mode on third-party providers, with telemetry off, or on a fresh install, so a CI job that relied on the previous default runs under different permissions unless it sets the mode explicitly
 - Settings change inside a model family: Opus 5.5 lowered the default effort from `high` to `medium`
-- Even a fixed model ID can change: OpenAI fixed an image-input bug in GPT-6 Sol and Luna on September 25, 2026 under the same IDs, so image evals run before the fix had to be rerun
+- Even a fixed model ID can change: OpenAI fixed an image-input bug in GPT-6 Sol and Luna on September 25, 2026 under the same IDs, so image evals run before the fix had to be rerun, and on October 8 Google began routing `gemini-3.7-flash` requests to `gemini-3.8-flash`, so the old string kept working while the model behind it changed
 
 **Solution:**
 ```python

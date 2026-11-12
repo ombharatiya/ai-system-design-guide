@@ -32,7 +32,7 @@ The model predicts the next token given the context. This simple objective, at s
 The focus has shifted from "More Data" to "Better Curriculum."
 
 ### Token Budgets at the Frontier
-Disclosed pretraining budgets for open models sit in the 15T to 36T+ range: Llama 3 used about 15T tokens, DeepSeek-V3 14.8T, Qwen3 about 36T, and Meta says the Llama 4 mixture was more than 30T. Closed labs (OpenAI, Anthropic, Google) do not publish token counts, so treat any specific figure for GPT, Claude, or Gemini as a guess. At this scale, **Deduplication** and **Quality Filtering** are the primary differentiators.
+Disclosed pretraining budgets for open models now run from about 15T to 45T tokens: Llama 3 used about 15T, DeepSeek-V3 14.8T, Qwen3 about 36T, Meta says the Llama 4 mixture was more than 30T, and Thinking Machines Lab's Inkling (July 2026) was pretrained on 45T multimodal tokens (vendor-reported). Closed labs (OpenAI, Anthropic, Google) do not publish token counts, so treat any specific figure for GPT, Claude, or Gemini as a guess. At this scale, **Deduplication** and **Quality Filtering** are the primary differentiators.
 
 ### Data Mixture Standard
 | Component | Percentage | Purpose |

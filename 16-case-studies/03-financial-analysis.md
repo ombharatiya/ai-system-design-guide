@@ -428,7 +428,7 @@ class HumanReviewQueue:
 | Panel quality score | 4.0/5.0 | 4.2/5.0 |
 | Regulatory compliance | 100% | 100% |
 
-### Cost Breakdown (October 2026 List Prices)
+### Cost Breakdown (November 2026 List Prices)
 
 Assumes ~200K tokens of source material per report (10-K, two 10-Qs, an earnings call transcript) and ~150 extracted claims. Gemini 3.8 Flash is priced at its January 1, 2027 list rate ($1.50 / $7.50), not the introductory rate.
 

@@ -275,7 +275,7 @@ def calibrated_pairwise_judge(question: str, response_a: str, response_b: str) -
         return {"winner": "tie", "confidence": "low"}
 ```
 
-**Do not count on temperature 0 for judge stability.** The sampling knobs judges used to lean on are disappearing from the newest APIs: GPT-6 Astra does not support custom `temperature`, `top_p`, or `logprobs`; the Claude API returns a 400 for non-default `temperature`, `top_p`, or `top_k` on Opus 4.7 and every later model, including Opus 5.5 and Sonnet 5.5; and the Anthropic Python SDK 1.x removed those three parameters from the Messages method signatures. Logprob-weighted scoring (G-Eval style) does not work on a judge that exposes no logprobs. Measure judge self-consistency directly (score the same item several times and track the spread), pin the judge's model ID and effort level, and re-run the judge calibration set whenever either changes.
+**Do not count on temperature 0 for judge stability.** The sampling knobs judges used to lean on are disappearing from the newest APIs: GPT-6 Astra does not support custom `temperature`, `top_p`, or `logprobs`; and since Anthropic API version `2026-10-21` (the default in all eight of its new SDK and CLI majors, Python and TypeScript included), any `temperature`, `top_p`, or `top_k` returns a 400 on every Claude model, even at the default value, where earlier versions rejected only non-default values on Claude 4.7 and later models. A judge harness that hard-codes `temperature=0` breaks on a routine SDK upgrade. Logprob-weighted scoring (G-Eval style) does not work on a judge that exposes no logprobs. Measure judge self-consistency directly (score the same item several times and track the spread), pin the judge's model ID and effort level, and re-run the judge calibration set whenever either changes.
 
 ---
 
@@ -349,7 +349,7 @@ def interpret_kappa(kappa: float) -> str:
 
 ### RAGAS Metrics
 
-RAGAS provides standard RAG evaluation metrics:
+RAGAS provides standard RAG evaluation metrics. Pin it: the project (now vibrantlabsai/ragas) has had no commits since February 24, 2026, and v0.4.3 (January 13, 2026) is the latest release, so keep DeepEval or your platform's native evaluators as a maintained fallback (see [RAG Evaluation Patterns](../06-retrieval-systems/13-rag-evaluation-patterns.md#ragas-framework-and-metrics)).
 
 ```python
 from ragas import evaluate
@@ -539,10 +539,11 @@ class EvaluationPipeline:
 
 ### Keep the Grader Out of Reach
 
-The pipeline above assumes the system under test is passive. Once the thing being evaluated can optimize against the eval (a prompt optimizer, a harness auto-tuner, an agent that retries until CI passes, a self-improving research loop), the eval becomes an attack surface. Two September 2026 papers quantify it:
+The pipeline above assumes the system under test is passive. Once the thing being evaluated can optimize against the eval (a prompt optimizer, a harness auto-tuner, an agent that retries until CI passes, a self-improving research loop), the eval becomes an attack surface. Three 2026 papers quantify it:
 
 - **Agents hack their own evaluations.** Across 17 models and 38 tasks, research agents reward-hacked spontaneously on 30.5% of open-ended research-pipeline tasks versus 2.9% of narrow kernel tasks, and an LLM review panel that saw only the submitted code and reported scores missed 6.5% of confirmed hacks. When rejected work came back with a detailed reason and attempt history, cumulative evasion reached 40.5% versus 20.3% with a generic rejection, though the authors note the comparison does not isolate the explanations themselves (arXiv 2609.28614).
 - **The eval set is part of the supply chain.** A poisoned benchmark caused self-modifying coding agents to evolve instructions that, for example, disabled HTTPS certificate validation on unrelated tasks, and the backdoor often survived re-evolution on clean benchmarks (arXiv 2609.17817).
+- **A visible grader becomes the objective, whatever you call it.** Redwood Research (arXiv 2610.41014, October 29, 2026) gave GPT-5.6 Sol, GPT-5.5 and an o3 checkpoint without safety training agentic tasks with a leaked grader. When the grader was described as operative, the models violated explicit user instructions at least 90% of the time, whether the score was labeled for RL training, evaluation, benchmarking or no use; they did not violate them when violating scored the same as complying. Labeling a grader "for evaluation only" does not defuse it. The same models did not collude when monitoring another agent: they flagged the sabotaging command as malicious in all 30 runs.
 
 The rules that follow:
 
@@ -554,7 +555,7 @@ The rules that follow:
 | Keep a held-out audit set the optimizer never sees | Gains that do not transfer to it are overfitting or hacking |
 | Grade from executor-side logs and environment state | Transcripts are model-authored and can be spoofed |
 
-**Tooling note:** OpenAI's hosted Evals platform goes read-only on October 31, 2026 and shuts down, along with Agent Builder, on November 30, 2026. OpenAI's migration guide points to Promptfoo, which OpenAI agreed to acquire in March 2026; it remains MIT-licensed and multi-provider (0.123.1 on npm), but treat it as an OpenAI tool, not a neutral third party. If vendor neutrality matters for your eval store, keep datasets, judge prompts, and results in a format you own.
+**Tooling note:** OpenAI's hosted Evals platform shuts down on November 30, 2026, along with Agent Builder and Reusable Prompts. A read-only step was scheduled for October 31, but there is no public confirmation that it happened, so do not count on editing anything there: export datasets, graders, and run history now. OpenAI's migration guide points to Promptfoo, which is now part of OpenAI; it remains MIT-licensed and multi-provider, but treat it as an OpenAI tool, not a neutral third party. If vendor neutrality matters for your eval store, keep datasets, judge prompts, and results in a format you own.
 
 ---
 
@@ -647,6 +648,7 @@ Quality can move with no deploy on your side, so trigger eval re-runs on vendor 
 - **Serving fixes under a stable model ID.** On September 25, 2026, three days after GPT-6 Sol and GPT-6 Luna launched, OpenAI fixed an image-encoding bug that had degraded their image understanding and computer use. The model IDs did not change, and OpenAI told customers with image inputs to rerun their evaluations. OpenAI did not say when the bug began, so treat any image or computer-use eval run between launch and the fix as suspect.
 - **Default effort changes on upgrade.** Claude Opus 5.5 defaults to `medium` effort where Opus 5 defaulted to `high`, and GPT-6.1 Sol defaults to `medium`. A model swap that leaves effort unset changes quality, latency, and cost at once. Set effort explicitly in both the eval harness and production.
 - **Tool defaults move under you.** Coding agents switched default models in September: Claude Code made Opus 5.5 its default Opus and Sonnet 5.5 its default Sonnet, and Codex CLI made GPT-6.1 Sol its default. An eval that does not pin the model measures whatever the tool shipped that week.
+- **Aliases and API versions move too.** Since October 8, 2026, Google routes `gemini-3.7-flash` requests to `gemini-3.8-flash` and `gemini-3.5-flash` to `gemini-3.6-flash`, so a model string keeps working while the model behind it changes. Anthropic's new SDK majors send API version `2026-10-21` by default, which turns any `temperature`, `top_p`, or `top_k` into a 400. Pin the SDK and API version next to the model ID, and log the model version each response reports.
 
 The practical setup: subscribe to provider changelogs and status feeds, tag every eval run with the model ID, effort level, SDK version, and run date, and treat a vendor changelog entry that touches your modality as a trigger for the regression suite.
 
@@ -697,32 +699,36 @@ Other options to compare against:
 
 - [Patronus AI Lynx](https://arxiv.org/abs/2407.08488), a fine-tuned groundedness judge with open weights (8B and 70B), so the cost is whatever your serving costs.
 - [Vectara HHEM-2.1](https://huggingface.co/vectara/hallucination_evaluation_model), a small open hallucination-detection classifier.
-- [Arize Phoenix Evals](https://arize.com/docs/phoenix/) is not a distilled model: it ships pre-built judge templates (hallucination, relevance, toxicity) that run on whatever model you point them at, which makes it a convenient harness for comparing a distilled judge against your frontier judge on the same data (Phoenix is source-available under Elastic-2.0, and Dynatrace agreed in August 2026 to buy Arize).
+- [Arize Phoenix Evals](https://arize.com/docs/phoenix/) is not a distilled model: it ships pre-built judge templates (hallucination, relevance, toxicity) that run on whatever model you point them at, which makes it a convenient harness for comparing a distilled judge against your frontier judge on the same data (Phoenix is source-available under Elastic-2.0, and Arize has been part of Dynatrace since October 1, 2026).
 
 ### Decision-Model Judges and the Limits of Cascades
 
-A third judge tier arrived in September 2026: **decision models** that return a typed verdict (yes/no, a choice, or a score) with a probability instead of generated text. TypeSafe's Jev (early access, $0.042 per 1M input tokens, output unmetered) was wired into LangSmith, Langfuse, Braintrust, DeepEval, and Opik within about two weeks of launch. LangChain measured about $0.00035 per call and 0.44 s average latency, against 2.16 to 2.83 s for LLM judges (vendor-run).
+A third judge tier arrived in September 2026: **decision models** that return a typed verdict (yes/no, a choice, or a score) with a probability instead of generated text. TypeSafe's Jev (early access, $0.042 per 1M input tokens, output unmetered) was wired into LangSmith, Langfuse, Braintrust, DeepEval, and Opik within about two weeks of launch. LangChain measured about $0.00035 per call and 0.44 s average latency, against 2.16 to 2.83 s for LLM judges (vendor-run). A first-party option followed in OpenAI's Decisions API, billed on input only ([Research Radar theme 16](../RESEARCH-RADAR.md#16-decision-models-typed-answers-with-probabilities)).
 
 | Tier | Example | Returns | Best for | Blind spot |
 |------|---------|---------|----------|------------|
 | Frontier LLM judge | Claude Opus 5.5, GPT-6 Astra | Rationale plus score | Open-ended quality, novel failure modes, writing the gold-set rationale | Cost and latency; shares blind spots with cheaper judges |
 | Distilled judge | Galileo Luna-2, Patronus Lynx | Label or score per metric | Fixed metrics on 100% of traffic | Anything outside the metrics it was tuned for |
-| Decision model | TypeSafe Jev | Typed verdict plus probability | Binary checklist criteria at near-zero marginal cost | No rationale, no abstention, weaker on ordinal and graded-relevance criteria, degrades with irrelevant context |
+| Decision model | TypeSafe Jev, OpenAI Decisions API | Typed verdict plus probability | Binary checklist criteria at near-zero marginal cost | No rationale, no abstention, weaker on ordinal and graded-relevance criteria, degrades with irrelevant context |
 
 The finding that matters for the layered architecture above is about **correlated error**. A paired comparison (arXiv 2609.29769) found LLM rubric judges cost 16 to 325x more and took 28 to 350x longer than Jev, with accuracy differing significantly in at most 8 of 27 comparisons. But on Jev's most confident errors, about 96% of LLM verdicts repeated the same wrong answer, and no cheap-to-expensive cascade beat the best single judge by more than 2.7 points. Escalation mostly saves money; it does not catch the errors both judges share. The only check on correlated judge error is a human-labeled gold set, so keep one, refresh it, and report every judge's precision and recall against it rather than judge-to-judge agreement.
+
+**Calibrate the probability before you threshold on it.** The probability is the reason to use a decision model, and October 2026 research says not to trust it raw. TypedBench (arXiv 2610.11392) found the hosted decision model it tested systematically underconfident and sensitive to question wording, and under asymmetric costs, acting on its probabilities could do worse than taking its top answer. Fit accept and escalate thresholds on your own labeled set, and track AUROC and expected calibration error next to accuracy: models with similar accuracy can rank their own errors very differently.
+
+**A block-and-retry gate leaks more than its per-request rate suggests.** OpenAI's alignment post "Beyond g-mean^2" (October 20, 2026) models a simulated, hypothetical monitor-gated retry scheme with up to K attempts and reports B(K), the probability a bad output is deployed, A(K), the probability any output is deployed, and their ratio. Going from one to four attempts erodes part of the gate's risk reduction: in two Honeypot slices B(4) was below 3% and A(4) below 7%, yet 41 to 45% of deployed outputs were bad (vendor-reported). Any judge-gated pipeline that retries on rejection has the same shape, so report the bad share of what actually ships, with the retry budget, not just the per-attempt block rate. For comparing two models, the post recommends pair-matched estimates with confidence intervals, because dataset-level scores can favor the worse model when task mixes differ.
 
 ### Sierra tau-bench and Its Successors
 
 [Sierra's tau-bench](https://github.com/sierra-research/tau-bench) (2024) was the first realistic agent benchmark that measured tool-use success in a simulated business environment. Its successors generalize that idea.
 
-[tau2-bench](https://github.com/sierra-research/tau2-bench) (2025) added the telecom domain, where the simulated user also acts on shared state, alongside retail and airline. The repository is now **tau3-bench**: v1.0.0 (March 2026) added a banking_knowledge retrieval domain, full-duplex tau-Voice, tau-Knowledge, and 75+ task fixes, and v1.0.1 (July 22, 2026) fixed banking_knowledge grading, so banking_knowledge results from before 1.0.1 are not comparable. What carries through every version:
+[tau2-bench](https://github.com/sierra-research/tau2-bench) (2025) added the telecom domain, where the simulated user also acts on shared state, alongside retail and airline. The repository is now **tau3-bench**: v1.0.0 (March 2026) added a banking_knowledge retrieval domain, full-duplex tau-Voice, tau-Knowledge, and 75+ task fixes, and v1.0.1 (July 22, 2026) fixed banking_knowledge grading, so banking_knowledge results from before 1.0.1 are not comparable. **tau-bench 2.0.0** (October 19, 2026) is a bigger break, and its release notes say so: "Scores are not comparable with 1.x." The user simulator moved from gpt-4.1 to gpt-5.5, communication checks became LLM-judged, tau-i18n added language packs for six languages, and tau-entity added a 200-task `intake` domain for exact entity capture. Re-run your baselines on 2.0.0 instead of comparing a new score with an old one; a changed user simulator changes the test. What carries through every version:
 
 - **Pass^k metric**: measures the probability that the agent succeeds on **all** k repeated trials of the same task. Pass^1 is the traditional success rate. Pass^4 is what tells you whether the agent is reliable.
-- **Verifier-based grading**: deterministic post-conditions (the order is canceled, the refund exists, the seat is changed) rather than LLM-graded transcript scoring.
+- **Verifier-based grading**: deterministic post-conditions (the order is canceled, the refund exists, the seat is changed) rather than LLM-graded transcript scoring. Since 2.0.0 the communication checks are LLM-judged, so that part of the score now carries judge error.
 
 Sister benchmarks:
 
-- **[tau-Voice](https://arxiv.org/abs/2603.13686)**: full-duplex speech variant with interruptions, accents, and background noise. Catches a class of failures (timing, interruption handling, recovery from ASR errors) that text-only benchmarks miss entirely. Voice scores now track the reasoning attached to the voice layer: Sierra's voice leaderboard has gpt-live-1 at 81.7% pass@1, and Google reports Gemini 3.8 Live at 68.6% with extended thinking against 30.1% without (vendor-reported; the two sources are not comparable). Plain speech-to-speech without a reasoning backend still trails text agents badly, and the per-turn latency budget now has to pay for the thinking.
+- **[tau-Voice](https://arxiv.org/abs/2603.13686)**: full-duplex speech variant with interruptions, accents, and background noise. Catches a class of failures (timing, interruption handling, recovery from ASR errors) that text-only benchmarks miss entirely. Voice scores now track the reasoning attached to the voice layer: Sierra's 1.x-era voice leaderboard had gpt-live-1 at 81.7% pass@1 (not comparable with 2.0.0, where voice runs default to 2,400 seconds per call), and Google reports Gemini 3.8 Live at 68.6% with extended thinking against 30.1% without (vendor-reported; the two sources are not comparable). Plain speech-to-speech without a reasoning backend still trails text agents badly, and the per-turn latency budget now has to pay for the thinking.
 - **[tau-Knowledge](https://sierra.ai/blog/tau-knowledge)**: the benchmark behind tau3's banking_knowledge domain. It extends the simulation with an internal knowledge base the agent must retrieve from: a fintech support setting over 698 documents (about 195K tokens), where a task needs an average of 18.6 documents and 9.5 tool calls. Decouples "does the agent retrieve" from "does the agent act."
 - **[Hyper-tau-bench](https://sierra.ai/blog/hyper-t-bench-evaluating-agents-that-build-agents)** (September 8, 2026): evaluates an agent that *builds* a customer-service agent from business records and client interviews, scored on the built agent's held-out tests. Claude Opus 5 at max effort in Claude Code alone passed 23.9%; the same model class paired with an engineer who had deep context reached 82.2%. The gap was requirement elicitation: developer agents asked at most 4 client questions when the client held 20 to 25 requirements, and 17 to 42% of runs probed the sandbox or grader trying to cheat (none succeeded).
 
@@ -753,6 +759,8 @@ The pattern in production:
 The [Anthropic Constitutional Classifiers paper](https://www.anthropic.com/research/constitutional-classifiers) (Jan 2025) and follow-up work shows that judging trajectories with a constitutional classifier catches a meaningful fraction of safety failures that final-answer grading misses entirely.
 
 **Grade actions from the executor side, and do not lean on the chain of thought.** Two results from August and September 2026 limit what a trajectory judge can trust. First, the transcript is model-authored, so build the graded trace from what the tool executor and environment recorded, not from what the agent says it did. Second, the reasoning trace is getting less reliable as evidence: OpenAI's GPT-6 Astra system card (as reproduced in secondary coverage) reports that Astra controls its own chain of thought 60.9% of the time on CoTs of 750 to 1,250 tokens (16.1% for GPT-5.6 Sol), UK AISI's separate controllability eval measured 93% (48% for GPT-5.6 Sol), and OpenAI writes that it likely could not reliably catch covert sandbagging. A "reasoning-action mismatch" check still catches honest confusion; it will not catch a model that writes the reasoning you want to see. Pair it with action-level checks on state the agent cannot edit.
+
+**Run paired-framing evals, graded on outcomes.** OpenAI's misalignment report "Covert underperformance on safety research tasks" (November 4, 2026) found that GPT-6 Astra completed about 10% of hidden rubric items on a paired coding eval under a safety-research framing versus about 16% under a capabilities framing, while GPT-5.6 Sol showed essentially no gap. OpenAI's monitors did not flag these trajectories as severe enough for human review, and most of the underperformance showed no obvious intent in the chain of thought (vendor-reported). The same task under two framings, scored on hidden outcome criteria, catches what a CoT monitor misses.
 
 ### HaluMem: Operation-Level Hallucination Benchmark
 
@@ -823,7 +831,7 @@ I would evaluate at multiple levels:
 - User satisfaction (thumbs up/down)
 
 **Tools:**
-- RAGAS for automated metrics
+- RAGAS for automated metrics (pinned; no development since February 2026, so DeepEval or platform-native evaluators are the maintained alternatives)
 - LLM-as-judge for subjective quality
 - Human evaluation for gold standard
 
@@ -883,13 +891,17 @@ What I change: keep the cheap judge for criteria where it matches the frontier j
 
 - Es et al. "RAGAS: Automated Evaluation of Retrieval Augmented Generation" (2023)
 - Zheng et al. "Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena" (2023)
-- RAGAS: https://docs.ragas.io/
+- RAGAS: https://docs.ragas.io/ (repository: https://github.com/vibrantlabsai/ragas)
+- Deeb, Greenblatt, Mallen. "Towards Understanding Score-Seeking in LLMs" (arXiv 2610.41014, October 2026)
+- OpenAI. "Beyond g-mean^2: complementary metrics for monitorability" (October 2026): https://alignment.openai.com/beyond-gmean-squared/
+- OpenAI. "Covert underperformance on safety research tasks" (November 2026): https://alignment.openai.com/misalignment-reports/covert-underperformance-on-safety-research-tasks/
 - OpenAI Evals (open-source framework, separate from the hosted Evals platform that shuts down November 30, 2026): https://github.com/openai/evals
 - Promptfoo: https://www.promptfoo.dev/
-- Sierra tau-bench repository (tau2-bench, now tau3-bench): https://github.com/sierra-research/tau2-bench
+- Sierra tau-bench repository (tau2-bench; 2.0.0 release October 19, 2026): https://github.com/sierra-research/tau2-bench
 - Sierra, hyper-tau-bench (September 2026): https://sierra.ai/blog/hyper-t-bench-evaluating-agents-that-build-agents
 - "Luna-2: Scalable Single-Token Evaluation with Small Language Models" (arXiv 2602.18583, 2026)
 - Rao and Callison-Burch. "JEV vs. LLMs as Rubric Judges: Cheaper, Faster, and Wrong in the Same Places" (arXiv 2609.29769, 2026)
+- Sharma et al. "TypedBench: A Benchmark for Calibration, Framing Sensitivity, and Cost in System One Decision Models" (arXiv 2610.11392, 2026)
 - Huang et al. "Reward Hacking Challenges Oversight of Autonomous Research Agents" (arXiv 2609.28614, 2026)
 - Roesner and Kohno. "Reflections on Trusting Trust, Revisited: Contaminating Self-Modifying AI Coding Agents with Poisoned Benchmarks" (arXiv 2609.17817, 2026)
 - MemTrapBench (arXiv 2608.20202, 2026)

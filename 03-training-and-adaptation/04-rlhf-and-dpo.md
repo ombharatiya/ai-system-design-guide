@@ -58,7 +58,7 @@ DPO uses the LLM itself as the Reward Model by mathematically deriving the optim
 
 **The Solution: Online DPO (or RLOO)**:
 1. The model generates 4-8 responses to a prompt.
-2. A **Judge Model** (a strong frontier model such as Claude Opus 5.5 or GPT-6 Sol) or a **Rule-based Reward** (e.g., Code Execution) ranks them in real-time.
+2. A **Judge Model** (a strong frontier model such as Claude Opus 5.5 or GPT-6 Astra) or a **Rule-based Reward** (e.g., Code Execution) ranks them in real-time.
 3. The model updates its policy immediately based on this "Online" feedback.
 
 ---
@@ -84,6 +84,7 @@ Most valuable domains (medicine, law, support, writing) have no unit test. The c
 
 - **Criteria compensate for each other.** If you add up rubric scores, the policy can buy points on easy criteria while failing the one that matters. In a clinical-consultation study (arXiv:2609.38847, September 2026), rubric coverage rose during training while appropriateness on held-out physician criteria fell **below the untrained model**.
 - **Fix the aggregation, not just the judge.** The same paper's **protocol-level rubrics** count a dimension only if all of its criteria hold and its failure clause does not fire; that raised appropriateness by 10.8 points without losing coverage.
+- **Score precision, not just coverage.** Recall-only rubrics reward padding. Training Qwen2.5-7B-Instruct with a coverage-only reward (arXiv:2610.33512, October 2026, judged by GPT-5.4 against the base model) beat the base model only 3.1% of the time on RubricHub-Medical and 7.1% on HealthBench; adding a precision term (each unit necessary and factually correct) raised that to 68.0% and 74.1% and cut average RubricHub-Medical response length from 9,195 to 3,533 (base model 2,432).
 - **Hold out the criteria you care about most.** Evaluate on rubric items the reward never saw, and treat a rising reward with flat or falling held-out quality as reward hacking until proven otherwise.
 
 ---

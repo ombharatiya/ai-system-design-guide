@@ -240,9 +240,10 @@ def retrieve(query: str, user_id: str, top_k: int = 20) -> List[Chunk]:
 **3. Reranking:**
 ```
 Rerank top-20 to get top-5 with a cross-encoder.
-Model: a hosted 32K-context reranker (Cohere Rerank 4 Fast, Voyage
-rerank-3) or self-hosted bge-reranker-v2-m3 (multilingual, open
-weights); verify on Spanish and Mandarin queries before choosing
+Model: a hosted 32K-context reranker, Cohere Rerank 5 (Pro $0.05,
+Fast $0.02 per 1M tokens) or Voyage rerank-3, or self-hosted
+bge-reranker-v2-m3 (multilingual, open weights); verify on Spanish
+and Mandarin queries before choosing
 Latency budget: ~150ms (matches the p95 budget below)
 ```
 
@@ -271,7 +272,7 @@ QUESTION: {query}
     return format_with_source_links(response, chunks)
 ```
 
-No `temperature` here: the newest Claude models return a 400 for non-default sampling values and GPT-6 Astra does not accept them. Grounding comes from the prompt, retrieval and citation checks, not from sampling settings.
+No `temperature` here: Claude API version `2026-10-21` returns a 400 for any sampling parameter on every model, even at its default value, and GPT-6 Astra does not accept them. Grounding comes from the prompt, retrieval and citation checks, not from sampling settings.
 
 #### Scaling and Reliability
 
@@ -525,7 +526,7 @@ Strategy:
 ```
 
 6. **Approval Authority:**
-The assistant comments; by default it does not approve. GitHub now lets Copilot code review submit approvals that count toward required reviews (public preview since September 2026, off by default, path-scoped by admins). If you enable anything similar, limit it to low-risk paths, never let an agent approve a PR an agent wrote, and dismiss the approval on every new push. Expect this separation-of-duties follow-up.
+The assistant comments; by default it does not approve. Since October 28, 2026, Copilot code review approvals are generally available on GitHub: when an admin turns them on (they are off by default), a Copilot approval counts toward the repository's required approvals, admins choose which file paths Copilot may approve, and pushing new commits dismisses the approval. So "agent approves agent" is now a supported configuration, not a hypothetical. If you enable it or anything similar, limit it to low-risk paths, never let an agent approve a PR an agent wrote, and dismiss the approval on every new push. Expect this separation-of-duties follow-up.
 
 ---
 
@@ -834,7 +835,7 @@ async def track_usage(tenant_id: str, operation: Usage):
 
 **Residency as a priced tier:**
 
-Enterprise tenants that need in-region processing cost more to serve. Anthropic charges 1.1x for US-only inference (`inference_geo`) on Claude 4.6 and later models, OpenAI adds 10% on its data-residency endpoints for models released since March 5, 2026, and regional Claude endpoints on Bedrock and Google Cloud carry about a 10% premium over global ones. Route only residency-bound tenants to pinned regions, record the route in every usage row, and price it into the tier instead of paying the premium on all traffic.
+Enterprise tenants that need in-region processing cost more to serve. Anthropic charges 1.1x for US-only inference (`inference_geo`) on Claude 4.6 and later models, OpenAI adds 10% on its data-residency endpoints for models released since March 5, 2026, and regional Claude endpoints on Bedrock and Google Cloud carry about a 10% premium over global ones (on Google-managed Vertex, current models such as Opus 5.5 and Sonnet 5.5 get only `us` or `eu` multi-region residency at that premium, not a single region; see [Pricing and Costs](../02-model-landscape/03-pricing-and-costs.md)). Route only residency-bound tenants to pinned regions, record the route in every usage row, and price it into the tier instead of paying the premium on all traffic.
 
 ---
 
@@ -1005,7 +1006,7 @@ Refresh: quarterly, sampled from recent traffic; archive old sets
 **2. Scoring design:**
 
 - Binary pass/fail per dimension (faithfulness, completeness, tone, safety), not 1-5 scales. Binary decisions are reproducible; Likert drifts.
-- LLM-as-judge for scale: a cheap model (GPT-6 Luna, Gemini 3.8 Flash, Claude Haiku 4.5) with a rubric and few-shot anchors per dimension.
+- LLM-as-judge for scale: a cheap model (GPT-6 Luna, Gemini 3.8 Flash, Claude Haiku 5.5) with a rubric and few-shot anchors per dimension. Because the dimensions are binary, a decision model (such as OpenAI's Decisions API; see [Decision Models](../RESEARCH-RADAR.md#16-decision-models-typed-answers-with-probabilities)) is a cheaper option for the clear-cut ones. It gives no rationale, and its probabilities need calibrating against the human-graded slice like any judge.
 - Judge calibration: monthly agreement check against the human-graded slice. Judge-human agreement is itself a dashboard metric; below 85% agreement, the judge prompt gets fixed before any product conclusions are drawn.
 
 **3. CI gating:**
@@ -1044,7 +1045,7 @@ dominant cost and it is what keeps the judge honest.
 
 **6. Tooling and portability:**
 
-Keep datasets, rubrics, judge prompts and gate thresholds in your own repo, and treat hosted eval platforms as replaceable runners. OpenAI's hosted Evals goes read-only on October 31, 2026 and shuts down November 30 (OpenAI points users to Promptfoo, which OpenAI agreed to acquire in March 2026), and LangSmith SaaS keeps extended-retention traces for at most 180 days from September 14, 2026. Quarter-over-quarter trend lines need a store you control.
+Keep datasets, rubrics, judge prompts and gate thresholds in your own repo, and treat hosted eval platforms as replaceable runners. OpenAI's hosted Evals shuts down November 30, 2026 (OpenAI points users to Promptfoo, which is now part of OpenAI and remains MIT-licensed), and LangSmith SaaS keeps extended-retention traces for at most 180 days from September 14, 2026. Quarter-over-quarter trend lines need a store you control.
 
 ### What Distinguishes Strong Candidates
 
@@ -1253,7 +1254,7 @@ TTFT and inter-token latency at p50 and p99, queue wait, batch occupancy, KV uti
 - They bound the queue and say what the client sees under overload.
 - They report goodput at an SLO, not peak throughput.
 - They say they would run vLLM or SGLang in production, since both already implement continuous batching and paged KV, and use the interview to show they understand what those engines do.
-- They treat the engine as a shared-fate domain. Inputs get validated before they reach the GPU: one unauthenticated request with a negative token ID to vLLM's embeddings endpoint crashed the engine for every client until restart (CVE-2026-93592, fixed in v0.28.0). And a shared prefix cache is a cross-tenant side channel, so salt cache keys per tenant (vLLM's `cache_salt`) and keep the engine patched (v0.30.0 fixed a path that dropped the salt and reopened a prefix-cache membership oracle).
+- They treat the engine as a shared-fate domain. Inputs get validated before they reach the GPU: one unauthenticated request with a negative token ID to vLLM's embeddings endpoint crashed the engine for every client until restart (CVE-2026-93592, fixed in v0.28.0). And a shared prefix cache is a cross-tenant side channel, so salt cache keys per tenant (vLLM's `cache_salt`) and keep the engine patched (v0.30.0 fixed a path that dropped the salt and reopened a prefix-cache membership oracle, and v0.32.0 is the current security floor, v0.33.0 for hosts that load model repositories they did not vet).
 
 **Related prompts to practice** (candidate-reported from Anthropic and OpenAI loops via the prep vendor Aced, formerly Exponent; not confirmed by the companies): a GPU credit or quota accounting system, peer-to-peer distribution of a large file (think model weights) from one bandwidth-limited source to thousands of machines, and a token-generation service at 100,000 requests per second. The same moves apply: clarify the workload, find the binding resource, bound the queue, and measure at an SLO.
 

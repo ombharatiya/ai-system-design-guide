@@ -244,13 +244,13 @@ Everything above still applies to self-hosted engines: vLLM, SGLang and llama.cp
 
 | Provider | What changed |
 |----------|--------------|
-| Anthropic | The Claude API returns 400 for non-default `temperature`, `top_p` or `top_k` on Claude Opus 4.7 and every newer Claude model. Python SDK 1.0 (August 20, 2026) removed them from the Messages method signatures, so passing them raises `TypeError` (older models can still receive them through `extra_body`). |
+| Anthropic | Since API version `2026-10-21` (October 21, 2026), any `temperature`, `top_p` or `top_k` returns 400 on every Claude model, even at its default value; all eight new SDK and CLI majors (Python, TypeScript, Go, Java, C#, PHP, Ruby and the ant CLI) send that version by default. Before it, the 400 applied to non-default values on Claude 4.7 and later models, and Python SDK 1.0 (August 20, 2026) had already removed the parameters from the Messages method signatures. On Bedrock the new version works only for Claude 4.7 and later. |
 | Google | Deprecated `temperature`, `top_p` and `top_k` in the Gemini API on July 21, 2026. Gemini 3.8 Flash replaces `thinking_budget` with `thinking_level` (`low`, `medium` default, `high`). |
 | OpenAI | GPT-6 Astra (September 3, 2026) accepts no custom `temperature` or `top_p` and returns no logprobs. |
 
 The control surface is now **reasoning effort** (or thinking level), not the sampler. What that changes:
-- **Determinism**: code that sets `temperature=0` "for reproducibility" now breaks or is being phased out (a 400 on the Claude API, a `TypeError` in Anthropic's Python SDK 1.0, unsupported on GPT-6 Astra, deprecated on Gemini), and it never guaranteed bit-identical output anyway. Batched GPU serving, MoE routing and floating-point reduction order make outputs vary run to run unless the engine runs a deterministic, batch-invariant mode at some throughput cost.
-- **Confidence signals**: logprob-based scoring for routing, abstention or human escalation does not work on Astra. Use calibrated classifiers, verifier passes or structured self-assessment instead.
+- **Determinism**: code that sets `temperature=0` "for reproducibility" now breaks or is being phased out (a 400 on every Claude model under the current API version, unsupported on GPT-6 Astra, deprecated on Gemini), and it never guaranteed bit-identical output anyway. Batched GPU serving, MoE routing and floating-point reduction order make outputs vary run to run unless the engine runs a deterministic, batch-invariant mode at some throughput cost.
+- **Confidence signals**: logprob-based scoring for routing, abstention or human escalation does not work on Astra. Use calibrated classifiers, verifier passes or structured self-assessment instead, or a decision model that returns a typed answer with a probability (OpenAI's Decisions API, or native endpoints in vLLM and SGLang; see [Research Radar theme 16](../RESEARCH-RADAR.md#16-decision-models-typed-answers-with-probabilities)). Calibrate those probabilities on your own data: early papers find decision models underconfident.
 - **Diversity**: best-of-n variety now comes from prompt variation, different models or the provider's own sampling, not from raising temperature.
 - **Abstraction layers**: wrappers that hard-code sampling parameters break when you switch to these models. Keep provider-specific parameters behind a thin, per-model config.
 
@@ -315,7 +315,7 @@ Result: if the target accepts 4, it adds 1 of its own: 5 tokens for one
 | DFlash 2 | Block-diffusion drafter that proposes a whole block in parallel | Inco AI, August 18, 2026; 2.7x to 3.4x on Qwen3.8-27B (vendor-reported); merged into SGLang, vLLM and llama.cpp August 19-27 |
 | N-gram, prompt lookup, suffix decoding | Substrings of the prompt or prior output | No extra model; strong for RAG, code edits and agent loops that repeat text |
 
-Medusa heads, the 2024 favorite, are no longer documented in vLLM (the `medusa` method value is still accepted); prefer EAGLE-3 or the model's own MTP heads.
+Medusa heads, the 2024 favorite, are gone from vLLM: v0.33.0 (November 2, 2026) removed Medusa and the MLP speculator, so a config that still sets `medusa` fails on upgrade. Move to EAGLE-3 or the model's own MTP heads.
 
 **The batch-size catch.** Speculation spends extra compute to save bandwidth-bound decode steps. At low concurrency that compute is free; at high concurrency the GPU is already busy and every rejected draft token is waste, which is why the classic advice was "turn it off at large batch." vLLM's **adaptive verification** (August 14, 2026; extended in v0.30 to MTP, EAGLE-3 and DFlash drafters) scores each draft position's survival probability and admits only a global top-B set of draft slots per step. On DeepSeek-V4-Pro-0813 the first of 7 draft tokens survives over 70% of the time and the last under 10%; vLLM reports speculation staying beneficial up to concurrency 256.
 
@@ -373,8 +373,8 @@ For reasoning models, hidden thinking tokens stream before the first visible tok
 ### Speed Is a Priced Tier
 
 Providers now sell speed separately from the model:
-- **OpenAI**: Fast tier (renamed from Priority on July 30, 2026) at 2x Standard (2.5x on GPT-5.5); Ultrafast at 6x, GA on GPT-6 Astra since September 29, 2026. GPT-5.6 Sol Ultrafast, in preview for select customers, runs on Cerebras at up to 750 output tok/s.
-- **Anthropic**: fast mode on Claude Opus 5.5 at $8/$40 per 1M (2x standard), a research preview on the Claude API only.
+- **OpenAI**: Fast tier (renamed from Priority on July 30, 2026) at 2x Standard (2.5x on GPT-5.5); Ultrafast at 6x, GA on GPT-6 Astra since September 29, 2026 and on GPT-6.1 Sol for all API users since October 8 ($12/$60 per 1M). OpenAI previewed GPT-5.6 Sol Ultrafast on Cerebras at up to 750 output tok/s for select customers.
+- **Anthropic**: fast mode on Claude Opus 5.5 at $8/$40 per 1M (2x standard), out of research preview since October 15 and offered on the Claude API, Claude Models on Google Cloud (Anthropic managed), and Foundry's Azure-hosted deployments.
 - **Diffusion LMs** replace token-by-token decode with parallel refinement: Inception reports Mercury 2.5 at 1,107 tok/s on NVIDIA GPUs, at $0.20/$0.75 per 1M list.
 
 Latency is now a routing dimension: send the user-facing turn to a fast tier and background agent steps to Standard or Batch.
@@ -405,7 +405,7 @@ Higher batch sizes increase throughput but may increase per-request latency.
 
 Peak throughput and batch-1 speed both mislead on their own. **Goodput** is the request rate that meets your TTFT and ITL SLOs at the same time. When comparing engines or accelerators, compare **throughput-versus-interactivity Pareto curves** at your SLO, on traffic shaped like yours.
 
-SemiAnalysis's AgentX scenario (multi-turn, long-context agent traffic with high prefix reuse) shows how much the operating point matters. On DeepSeek V4 Pro it reports Vera Rubin NVL72 at about 67x GB300's throughput per TCO at 170 tok/s per user under ownership-cost assumptions, but only 62% more tokens than GB300 NVL72 at an 80 tok/s P90 SLA on 3-year rental pricing (analyst-reported). Same hardware, same model: a 67x headline or a 1.6x result, depending on the interactivity target and the cost basis you pick. Ask for both before accepting any accelerator claim.
+SemiAnalysis's AgentX scenario (multi-turn, long-context agent traffic with high prefix reuse) shows how much the operating point matters. On DeepSeek V4 Pro it reports Vera Rubin NVL72 at about 67x GB300's throughput per TCO at 170 tok/s per user under ownership-cost assumptions, but only 62% more tokens than GB300 NVL72 at an 80 tok/s P90 SLA on 3-year rental pricing (analyst-reported). Same hardware, same model: a 67x headline or a 1.6x result, depending on the interactivity target and the cost basis you pick. The first independent run, Artificial Analysis's AA-AgentPerf (October 15, 2026), measured Rubin at only 1.14x to 1.45x GB300's peak throughput per megawatt depending on the model, with larger leads only at high per-user speeds. Ask for the whole curve, and who measured it, before accepting any accelerator claim.
 
 ---
 
@@ -536,7 +536,7 @@ Unlike static batching, continuous batching injects new requests as soon as any 
 Caches the KV tensors of common prefixes (system prompts, tool definitions, few-shot examples, prior agent turns).
 - **TTFT reduction**: Prefill for the shared prefix is skipped, so savings scale with the shared fraction of the prompt. Agent loops with long, stable prefixes benefit most.
 - **Mechanism**: vLLM hashes fixed-size KV blocks into a chain keyed by everything before them; SGLang stores prefixes in a radix tree. Evicted blocks can spill down a tier chain: GPU HBM, then host DRAM, then disk, object storage or peer nodes.
-- **Security**: A shared prefix cache is a cross-tenant timing side channel, because a hit returns faster than a miss. Salt cache keys per tenant (vLLM `cache_salt`) and keep the engine patched: vLLM advisory GHSA-935w-9g4m-p28p, fixed in 0.30.0, found tool-continuation turns on one API path dropping the salt. Treat vLLM 0.30.0 as the floor; the August-September 2026 advisory wave also included a single-request engine kill and a model-load RCE (both fixed in 0.28.0).
+- **Security**: A shared prefix cache is a cross-tenant timing side channel, because a hit returns faster than a miss. Salt cache keys per tenant (vLLM `cache_salt`) and keep the engine patched: vLLM advisory GHSA-935w-9g4m-p28p, fixed in 0.30.0, found tool-continuation turns on one API path dropping the salt. Treat vLLM 0.32.0 as the floor (0.33.0 on hosts that load third-party repositories); the full advisory list and current floors live in [Serving Infrastructure](../04-inference-optimization/06-serving-infrastructure.md#operational-posture).
 
 ### Multi-LoRA Serving
 
@@ -612,11 +612,12 @@ class RequestMetrics:
     cost_usd: float
 
 def calculate_cost(metrics: RequestMetrics) -> float:
-    # USD per 1M tokens, standard tier list prices as of October 2026.
-    # Ignores cache-write premiums, batch discounts and long-context surcharges.
+    # USD per 1M tokens, standard tier list prices as of November 2026.
+    # Ignores cache-write premiums, batch discounts and long-context surcharges
+    # (OpenAI above 272K input; Claude Haiku 5.5 above a 100K-token prompt).
     pricing = {
         "gpt-6-sol": {"input": 2.00, "cached": 0.20, "output": 10.00},
-        "claude-sonnet-5-5": {"input": 2.00, "cached": 0.20, "output": 10.00},
+        "claude-sonnet-5-5": {"input": 2.00, "cached": 0.10, "output": 10.00},
     }
     rates = pricing[metrics.model]
     return (
@@ -678,7 +679,7 @@ Typical production settings:
 
 The key insight is that these work together. Temperature reshapes the distribution; top-p truncates it.
 
-The 2026 caveat: many hosted reasoning models no longer accept these parameters (the Claude API rejects non-default values from Opus 4.7 on, Google deprecated them in the Gemini API in July 2026, and GPT-6 Astra does not support them). On those models reasoning effort is the main lever, and the sampler settings are the provider's choice. The table above still holds for self-hosted engines.
+The 2026 caveat: many hosted reasoning models no longer accept these parameters (under API version `2026-10-21` the Claude API rejects them on every model, even at default values; Google deprecated them in the Gemini API in July 2026; and GPT-6 Astra does not support them). On those models reasoning effort is the main lever, and the sampler settings are the provider's choice. The table above still holds for self-hosted engines.
 
 ### Q: How do you get reproducible outputs when the API no longer accepts temperature?
 

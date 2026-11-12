@@ -102,7 +102,7 @@ Alternative that processes query and document together:
 - Cannot pre-compute: O(n) inference for n documents
 - Used for reranking, not retrieval
 
-Current rerankers take 32K-token inputs, so a candidate can be a long section or a short document instead of a 512-token passage: Cohere Rerank 4 (Fast and Pro), Voyage rerank-3 and rerank-3-lite (September 30, 2026, $0.05 and $0.02 per 1M tokens), and open-weight options such as Qwen3-Reranker-8B and Qwen3-VL-Reranker (Apache 2.0, multimodal). See [Reranking Strategies](../06-retrieval-systems/06-reranking-strategies.md).
+Current rerankers take 32K-token inputs, so a candidate can be a long section or a short document instead of a 512-token passage: Cohere Rerank 5 (Pro $0.05, Fast $0.02 per 1M tokens), Voyage rerank-3 and rerank-3-lite (same $0.05 and $0.02), and open-weight options such as Qwen3-Reranker-8B and Qwen3-VL-Reranker (Apache 2.0, multimodal). See [Reranking Strategies](../06-retrieval-systems/06-reranking-strategies.md).
 
 ---
 
@@ -362,7 +362,7 @@ To handle billions of vectors, **Binary** and **Scalar (Int8)** quantization are
 | 4-bit rotated (RaBitQ, TurboQuant, RQ) | 0.5 byte/dim | 8x | Small with rescoring (vendor claims) | Qdrant Turbo4 (opt-in), Weaviate 4-bit RQ (preview), LanceDB RaBitQ |
 | **Binary** | **1 bit/dim** | **32x** | ~5-10% | Model outputs (Cohere, Voyage), most vector DBs |
 
-**Why rotation helps:** A random or Hadamard rotation spreads each vector's energy evenly across dimensions, so a uniform per-dimension quantizer stops wasting bits on a few outlier dimensions. That is what makes 1 to 4 bits per dimension usable. As of October 2026 these modes are opt-in or preview, not defaults: Qdrant added Hadamard-rotated TurboQuant in 1.18 and an opt-in 4-bit Turbo4 storage type in 1.19, Weaviate previewed 4-bit Rotational Quantization in 1.39 (7.84x compression), and LanceDB reports multi-bit RaBitQ at 96% recall without a refine step (vendor claim). Elasticsearch is the exception: BBQ (about 1 bit per dimension) has been the default for float `dense_vector` fields of 384+ dims since 9.1, and DiskBBQ (`bbq_disk`) is the default from 9.4 where the license includes it; 9.5 added a symmetric 1-bit OSQ scorer.
+**Why rotation helps:** A random or Hadamard rotation spreads each vector's energy evenly across dimensions, so a uniform per-dimension quantizer stops wasting bits on a few outlier dimensions. That is what makes 1 to 4 bits per dimension usable. As of October 2026 these modes are opt-in or preview, not defaults: Qdrant added Hadamard-rotated TurboQuant in 1.18, an opt-in 4-bit Turbo4 storage type in 1.19 and `turbo8` and `turbo16` datatypes in 1.20 (October 22), Weaviate previewed 4-bit Rotational Quantization in 1.39 (7.84x compression), and LanceDB reports multi-bit RaBitQ at 96% recall without a refine step (vendor claim). Elasticsearch is the exception: BBQ (about 1 bit per dimension) has been the default for float `dense_vector` fields of 384+ dims since 9.1, and DiskBBQ (`bbq_disk`) is the default from 9.4 where the license includes it; 9.5 added a symmetric 1-bit OSQ scorer.
 
 **Binary Quantization Pattern** (applies to any low-bit scheme):
 1. Retrieve top 1000 using Binary embeddings (extreme speed).

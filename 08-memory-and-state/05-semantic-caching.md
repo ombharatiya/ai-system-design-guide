@@ -34,7 +34,7 @@ These solve different problems and stack well together:
 |---|------------------------|-----------------------|
 | **What is reused** | The whole response | The KV cache of a repeated input prefix |
 | **Saves** | The entire LLM call: input, output, and latency | Input cost and prefill time only |
-| **Discount** | 100% on a hit | Cache reads at 0.1x input on most models, 0.05x on Claude Opus 5.5 and GPT-6.1 Sol, 0.025x on Claude Fable 5.1 |
+| **Discount** | 100% on a hit | Cache reads at 0.1x input on most models, 0.05x on Claude Opus 5.5, Claude Sonnet 5.5, GPT-6.1 Sol and GPT-6.1 Terra, 0.025x on Claude Fable 5.1 |
 | **Correctness risk** | A near-match can return the wrong answer | None: the model still generates a fresh answer |
 | **Best for** | Repetitive questions with stable answers | Long shared prefixes: system prompts, tools, documents |
 
@@ -47,7 +47,7 @@ Deep prompt-cache discounts shrank the case for semantic caching on input-heavy 
 1. **Embed**: The incoming query is converted into a vector (e.g., using `text-embedding-3-small`).
 2. **Search**: Search the cache for the nearest neighbor, filtered by tenant and permission scope.
 3. **Threshold Check**: If `distance < 0.05` (very similar), return the cached result.
-4. **LLM Verification**: For high-stakes queries, a small "Verifier Model" (e.g., GPT-6 Luna, Claude Haiku 4.5, Gemini 3.8 Flash) checks if the cached response actually answers the new query.
+4. **LLM Verification**: For high-stakes queries, a small "Verifier Model" (e.g., GPT-6 Luna, Claude Haiku 5.5, Gemini 3.8 Flash) checks if the cached response actually answers the new query.
 5. **Update**: If no hit, call the LLM and store the new result in the vector cache.
 
 **The cache key must include scope.** A response generated from user A's documents, permissions, or memory must never be served to user B, however similar the question. Partition the cache by tenant (and by permission set where answers depend on access), and never cache responses that embed personal data unless the partition is per user.
@@ -81,7 +81,7 @@ Tune the threshold on a labeled set of query pairs (equivalent and not equivalen
 
 ## Multimodal Semantic Caching
 
-With native multimodal frontier models (Gemini 3.8 Flash, GPT-6.1 Sol, Claude Opus 5.5), we now cache **Image and Audio queries**.
+With natively multimodal models (Gemini 3.8 Flash, GPT-6.1 Sol, Claude Opus 5.5), we now cache **Image and Audio queries**.
 - **Visual Similarity**: Caching the description of an image if a semantically similar image was processed before.
 - **Audio Fingerprinting**: Caching transcripts for similar voice commands.
 

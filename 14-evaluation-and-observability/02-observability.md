@@ -174,7 +174,7 @@ async def rag_query(query: str) -> str:
         return response
 ```
 
-For attribute names, follow the OpenTelemetry GenAI semantic conventions (`gen_ai.*`) rather than inventing your own; LLM-specific backends key their views on them, and Langfuse's v4 SDK exports only Langfuse, `gen_ai.*`, and known LLM-instrumentation spans by default.
+For attribute names, follow the OpenTelemetry GenAI semantic conventions (`gen_ai.*`) rather than inventing your own; LLM-specific backends key their views on them, and Langfuse's v4 and v5 SDKs export only Langfuse, `gen_ai.*`, and known LLM-instrumentation spans by default (v5's filter requires the `gen_ai.` prefix including the dot).
 
 ### When Instrumentation Goes Silent
 
@@ -320,14 +320,16 @@ class Rate:
     input: float        # uncached input
     output: float       # output, including reasoning tokens
     cache_read: float   # input served from the prompt cache
-    cache_write: float  # input written to the cache (Anthropic 5-minute tier; OpenAI bills 1.25x input)
+    cache_write: float  # input written to the cache (Anthropic 5-minute tier; OpenAI 1.25x on the 30-minute cache, 2.5x on the 12-hour option)
 
 class CostTracker:
-    # Standard-tier list prices, October 2026. Load these from config in production:
+    # Standard-tier list prices, November 2026. Load these from config in production:
     # promotions, long-context tiers, speed tiers, and residency premiums change monthly.
+    # claude-haiku-5-5 ($0.10/$0.50, cache read $0.01) holds only up to a 100K-token prompt;
+    # above that the whole request bills $0.50/$2.50, so it needs a tiered rate, not one Rate.
     PRICING = {
         "claude-opus-5-5":   Rate(input=4.00, output=20.00, cache_read=0.20, cache_write=5.00),
-        "claude-sonnet-5-5": Rate(input=2.00, output=10.00, cache_read=0.20, cache_write=2.50),
+        "claude-sonnet-5-5": Rate(input=2.00, output=10.00, cache_read=0.10, cache_write=2.50),
         "gpt-6-sol":         Rate(input=2.00, output=10.00, cache_read=0.20, cache_write=2.50),
         "gpt-6-luna":        Rate(input=0.10, output=0.50,  cache_read=0.01, cache_write=0.125),
     }
@@ -363,10 +365,10 @@ class CostTracker:
 
 Four billing rules break naive per-token math:
 
-- **Cache reads dominate agent bills.** Anthropic's aggregate Claude Code usage data (published September 24, 2026, vendor-reported) puts the input-to-output token ratio at 324:1, up from 189:1 in March. At that ratio the cached-input price and your cache hit rate move cost far more than the output price. Cache-read discounts also vary by model: most Claude models bill reads at 0.1x input, Opus 5.5 at 0.05x, and Fable 5.1 at 0.025x.
-- **Long-context tiers reprice the whole request.** OpenAI bills the entire request at long-context rates once input passes 272K tokens (GPT-6 Sol goes from $2/$10 to $4/$15), and xAI bills every token at 2x on Grok 4.7 prompts of 200K tokens or more. Anthropic prices its 4.6-and-later models flat to 1M.
-- **Speed and residency tiers multiply the rate.** OpenAI's Fast tier is 2x (Ultrafast is 6x on GPT-6 Astra), and data-residency options run about 10% above list (Anthropic's `inference_geo: "us"` is 1.1x).
-- **Promotions expire.** Gemini 3.8 Flash's introductory $0.75/$3.75 runs through December 31, 2026 and becomes $1.50/$7.50 on January 1, 2027. Budget on list prices.
+- **Cache reads dominate agent bills.** Anthropic's aggregate Claude Code usage data (published September 24, 2026, vendor-reported) puts the input-to-output token ratio at 324:1, up from 189:1 in March. At that ratio the cached-input price and your cache hit rate move cost far more than the output price. Cache-read discounts also vary by model: most Claude models bill reads at 0.1x input, Opus 5.5 and Sonnet 5.5 at 0.05x (Sonnet's dropped from 0.1x on October 7, 2026), and Fable 5.1 at 0.025x. Write multipliers vary too: OpenAI's 12-hour cache option (October 20, 2026) bills writes at 2.5x input.
+- **Long-context tiers reprice the whole request.** OpenAI bills the entire request at long-context rates once input passes 272K tokens (GPT-6 Sol goes from $2/$10 to $4/$15), and xAI bills every token at 2x on Grok 4.7 prompts of 200K tokens or more. Anthropic's 4.6-and-later models are flat to 1M with one exception: Claude Haiku 5.5 bills $0.10/$0.50 up to a 100K-token prompt and $0.50/$2.50 on the whole request above it, and the prompt length counts cache reads and writes. Log prompt length per request, or a cheap model's bill will jump 5x without a traffic change.
+- **Speed and residency tiers multiply the rate.** OpenAI's Fast tier is 2x (Ultrafast is 6x on GPT-6 Astra, and GPT-6.1 Sol Ultrafast is $12/$60 for all API users since October 8, 2026), and data-residency options run about 10% above list (Anthropic's `inference_geo: "us"` is 1.1x).
+- **Promotions expire.** Gemini 4 Argon's $2/$10 runs through November 30, 2026 and becomes $4/$20 on December 1; Gemini 3.8 Flash's introductory $0.75/$3.75 runs through December 31, 2026 and becomes $1.50/$7.50 on January 1, 2027. Budget on list prices.
 
 So tag every cost record with the tier, the region, and the cache buckets, and put cache hit rate on the same dashboard as spend.
 
@@ -478,19 +480,20 @@ Plan the critical tier around vendor-wide outages, not single-model failures. Be
 
 | Tool | Focus | Best For | Watch |
 |------|-------|----------|-------|
-| LangSmith | Tracing and evals; trace-to-fine-tune in public beta since September 24, 2026 | LangChain and LangGraph apps | SaaS traces with extended retention are kept at most 180 days from September 14, 2026 (self-hosted and BYOC unchanged) |
-| Langfuse | Open-source, OpenTelemetry-based tracing and evals | Self-hosted, privacy | Part of ClickHouse since January 2026; Python SDK v4 changed the API and filters exported spans to LLM scopes by default |
+| LangSmith | Tracing and evals; trace-to-fine-tune in public beta since September 24, 2026 | LangChain and LangGraph apps | Usage-based pricing in LangChain Standard Units (1 LSU = $1) replaced per-run and uptime pricing on October 1, 2026, so re-forecast trace volume; SaaS traces with extended retention are kept at most 180 days from September 14, 2026 (self-hosted and BYOC unchanged) |
+| Langfuse | Open-source, OpenTelemetry-based tracing and evals; AI Gateway in public beta since November 4, 2026 | Self-hosted, privacy | Part of ClickHouse since January 2026; Python SDK v5 (October 14, 2026) is now what `pip install langfuse` installs and breaks v4 code paths (see below). The gateway forwards native OpenAI and Anthropic requests with provider keys stored in Langfuse and traces every call: simpler cost attribution, but key custody and every prompt now sit with your tracing vendor |
 | Weights & Biases | Experiment tracking; Weave for LLM tracing and evals | ML teams that also track training and fine-tuning runs | Part of CoreWeave since 2025 |
-| Arize Phoenix | LLM tracing and evals | Production monitoring | Elastic-2.0 license (source-available, not OSI open source); Dynatrace agreed in August 2026 to buy Arize for $915M and says Phoenix remains available |
+| Arize Phoenix | LLM tracing and evals | Production monitoring | Elastic-2.0 license (source-available, not OSI open source); Dynatrace completed its $915M acquisition of Arize on October 1, 2026 and says Phoenix remains available |
 | Helicone | API proxy logging | Simple integration | Acquired by Mintlify (announced March 2026); confirm the roadmap before adopting |
 
 **Choose for exit, not just features.** This layer is consolidating fast, so vendor risk is a selection criterion. Emit OpenTelemetry with `gen_ai.*` attributes from your own code so you can switch backends, keep the traces you need for audit or compliance in storage you control (a SaaS tracing store with a 180-day cap is not an audit log), and export eval datasets and judge prompts in a format you own.
 
 ### Integration Example: Langfuse (Python SDK v4)
 
-The Langfuse Python SDK has been OpenTelemetry-based since the v3 rewrite (June 2025) and was at 4.16.0 at the end of September 2026. The v2 pattern in older tutorials (`langfuse.trace()`, `trace.span()`, `trace.generation()`, `span.end()`) is obsolete; use the `@observe()` decorator and `start_as_current_observation()`:
+The Langfuse Python SDK has been OpenTelemetry-based since the v3 rewrite (June 2025). The example below is v4 code, so pin `langfuse>=4,<5` to run it as written: v5 shipped October 14, 2026, and `pip install langfuse` now resolves to v5 (5.2.0 on November 5) on Python 3.11 or later. v5 needs Langfuse Cloud or a self-hosted server at v4.59.0 or newer (self-hosted v3 is unsupported), removes `api.scores_v3.get_many_v3()` with no alias (use `api.scores.get_many()`) along with `api.trace.get/list`, `api.sessions`, `api.legacy.*`, `api.ingestion.batch`, `set_current_trace_io()` and `span.set_trace_io()`, JSON-encodes metadata values on span attributes, and gzip-compresses span batches. Read the [v4 to v5 upgrade guide](https://langfuse.com/docs/observability/sdk/upgrade-path/python-v4-to-v5) before porting. The v2 pattern in older tutorials (`langfuse.trace()`, `trace.span()`, `trace.generation()`, `span.end()`) is obsolete; use the `@observe()` decorator and `start_as_current_observation()`:
 
 ```python
+# pip install "langfuse>=4,<5"  (v4 API; see the v5 notes above)
 from langfuse import get_client, observe, propagate_attributes
 
 langfuse = get_client()  # credentials from the LANGFUSE_* environment variables
@@ -602,6 +605,8 @@ The general lesson is that observability needs its own tests. A dashboard with n
 - OpenTelemetry GenAI semantic conventions: https://opentelemetry.io/docs/specs/semconv/gen-ai/
 - Langfuse: https://langfuse.com/docs
 - Langfuse Python SDK v3 to v4 upgrade guide: https://langfuse.com/docs/observability/sdk/upgrade-path/python-v3-to-v4
+- Langfuse Python SDK v4 to v5 upgrade guide: https://langfuse.com/docs/observability/sdk/upgrade-path/python-v4-to-v5
+- Langfuse. "AI Gateway public beta" (November 4, 2026): https://langfuse.com/changelog/2026-11-04-ai-gateway-public-beta
 - LangSmith: https://docs.smith.langchain.com/
 - OpenAI Python SDK `httpx2` notes: https://github.com/openai/openai-python/blob/main/httpx2.md
 

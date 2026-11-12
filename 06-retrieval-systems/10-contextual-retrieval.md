@@ -236,7 +236,7 @@ context and nothing else."""
 def contextualize_chunk(
     full_document: str,
     chunk: str,
-    model: str = "claude-haiku-4-5"  # small model: context strings are short and factual
+    model: str = "claude-haiku-5-5"  # small model: context strings are short and factual
 ) -> str:
     """Generate context for a single chunk."""
     response = client.messages.create(
@@ -250,8 +250,8 @@ def contextualize_chunk(
             )
         }]
     )
-    # Read the text block, not content[0]: on models with thinking on
-    # (Sonnet 5.5, Opus 5.5), a thinking block comes first.
+    # Read the text block, not content[0]: on models that think by default
+    # (Haiku 5.5, Sonnet 5.5, Opus 5.5), a thinking block can come first.
     context = next(b.text for b in response.content if b.type == "text")
     return f"{context}\n\n{chunk}"
 
@@ -273,7 +273,7 @@ The biggest cost driver is sending the full document with every chunk. **Prompt 
 def contextualize_with_caching(
     full_document: str,
     chunks: List[str],
-    model: str = "claude-haiku-4-5"
+    model: str = "claude-haiku-5-5"
 ) -> List[str]:
     """
     Use prompt caching so the full document is only
@@ -318,7 +318,8 @@ def contextualize_with_caching(
 
 Three operational traps erase that saving:
 - **Interleaving and cold fan-out.** The default cache TTL is 5 minutes. Schedule all chunks of one document inside that window; a queue that spreads a document's chunks over hours turns every call into a cache write. Send the first call alone and fan out the rest after it returns: parallel first calls all miss and all pay the write.
-- **Short documents.** The minimum cacheable prefix depends on the model: 4,096 tokens on Claude Haiku 4.5, 512 on Claude Opus 5.5 and Fable 5.1. A 3,000-token document silently never caches on Haiku 4.5; check `usage.cache_read_input_tokens` instead of assuming.
+- **Short documents.** The minimum cacheable prefix depends on the model: 512 tokens on Claude Haiku 5.5, Sonnet 5.5, Opus 5.5 and Fable 5.1, but 4,096 on Claude Haiku 4.5. A 3,000-token document silently never caches on Haiku 4.5; check `usage.cache_read_input_tokens` instead of assuming.
+- **Long documents on Haiku 5.5.** Its $0.10/$0.50 price holds only while the whole prompt, cached document included, stays at or under 100K tokens. Above that the entire request bills $0.50/$2.50, so a 150K-token contract reprices every one of its chunk calls at 5x. Split very long documents into sections under the line, or budget the higher tier (still half of Haiku 4.5's list price).
 - **Retired model IDs.** Dated model IDs retire: `claude-sonnet-4-20250514` left the Claude API on June 15, 2026, breaking every pipeline that hard-coded it. Keep the model ID in config, not code, and store it next to every generated context string.
 
 ### Pattern 3: Contextual Chunk Headers (Lightweight Alternative)
@@ -365,7 +366,7 @@ contextualized = add_chunk_headers(
 
 | Factor | Chunk Headers (CCH) | LLM Contextualization |
 |--------|--------------------|-----------------------|
-| **Cost** | Free (no LLM calls) | About $0.50 (GPT-6 Luna) to $5 (Claude Haiku 4.5) per 1M document tokens with caching |
+| **Cost** | Free (no LLM calls) | About $0.50 (GPT-6 Luna or Claude Haiku 5.5, before thinking tokens) to $5 (Claude Haiku 4.5) per 1M document tokens with caching |
 | **Quality** | Good for structured docs | Excellent for all docs |
 | **Speed** | Instant | 0.5-2 s per call; throughput comes from concurrency |
 | **Best for** | Markdown, HTML, PDFs with clear headers | Unstructured text, legal, medical |
@@ -376,19 +377,20 @@ contextualized = add_chunk_headers(
 
 ### Contextualization Costs
 
-For a knowledge base of 10,000 chunks (400 tokens each) drawn from 500 documents of 8,000 tokens, with the document cached and about 500 uncached prompt tokens and 75 output tokens per call, at list prices on October 1, 2026:
+For a knowledge base of 10,000 chunks (400 tokens each) drawn from 500 documents of 8,000 tokens, with the document cached and about 500 uncached prompt tokens and 75 output tokens per call, at list prices on November 2, 2026:
 
 | Option | Price per 1M (in / cache read / out) | Cost per Chunk | Total Cost | Notes |
 |--------|--------------------------------------|----------------|------------|-------|
-| **GPT-6 Luna** | $0.10 / $0.01 / $0.50 | ~$0.0002 | ~$2 | OpenAI caches automatically; 1.25x cache writes, fixed 30-minute TTL |
+| **GPT-6 Luna** | $0.10 / $0.01 / $0.50 | ~$0.0002 | ~$2 | OpenAI caches automatically; 1.25x writes on the 30-minute cache, 2.5x on the 12-hour option |
+| **Claude Haiku 5.5** | $0.10 / $0.01 / $0.50 (prompts up to 100K tokens) | ~$0.0002 | ~$2-3 + thinking | Adaptive thinking on by default (effort `medium`), so set low effort; its tokenizer counts ~30% more tokens than Haiku 4.5 for the same text (the ~$3 end of the range); 512-token minimum cacheable prefix |
 | **Claude Haiku 4.5** | $1 / $0.10 / $5 | ~$0.002 | ~$21 | No thinking by default; 4,096-token minimum cacheable prefix |
-| **Claude Sonnet 5.5** | $2 / $0.20 / $10 | ~$0.004 | ~$43 + thinking | Thinking is on by default; send `thinking: {type: "between_tools"}` or low effort for this job |
+| **Claude Sonnet 5.5** | $2 / $0.10 / $10 | ~$0.003 | ~$36 + thinking | Thinking is on by default; send `thinking: {type: "between_tools"}` or low effort for this job |
 | **Claude Opus 5.5** | $4 / $0.20 / $20 | ~$0.007 | ~$70 + thinking | Thinking cannot be disabled; overkill for this task |
 | **voyage-context-4** (no LLM call) | $0.12 embedding | ~$0.00005 | ~$0.50 | Replaces the embedding step; helps dense retrieval only (see below) |
 
 **Best practice**: Use a small model for contextualization. The context strings are short and factual, so a frontier model adds cost and, on the newest Claude models, reasoning tokens (on by default, and impossible to disable on Opus 5.5) without a measurable quality gain. Combine with prompt caching, and run backfills through a Batch API (50% off list at both Anthropic and OpenAI) when they can wait.
 
-Haiku 4.5 is still the only Haiku; Haiku 5.5 was announced for "the coming weeks" but had not shipped as of October 1, 2026. Haiku 4.5 retires on Microsoft Foundry on November 15, 2026. On the Claude API it has no deprecation notice yet, and Anthropic gives at least 60 days. Treat the contextualizer as a swappable dependency.
+Claude Haiku 5.5 (GA October 7, 2026) is the default pick for this job on Claude: a tenth of Haiku 4.5's price for prompts up to 100K tokens, and the same list price as GPT-6 Luna. It is not a drop-in swap. `temperature`, `top_p`, `top_k`, `budget_tokens` and assistant prefill all return a 400, the tokenizer change shifts every token count you budgeted, and the context strings it writes will differ from Haiku 4.5's, so re-run the retrieval golden set before re-contextualizing a corpus. Haiku 4.5 is still Active on the Claude API with no deprecation notice (Anthropic gives at least 60 days, so not before about January 2027), while Microsoft Foundry lists November 15, 2026 for it. Treat the contextualizer as a swappable dependency and store the model ID next to every context string.
 
 ### When to Use Contextual Retrieval
 
@@ -439,7 +441,7 @@ Late Chunking requires a long-context embedding model (e.g., Jina v3) and avoids
 The same idea now ships as a hosted embedding API, which cuts the ingestion cost in the table above by one to two orders of magnitude against a Claude contextualizer:
 
 - **voyage-context-4** (Voyage AI, GA June 29, 2026): one vector per chunk that encodes the full document's context, built-in auto-chunking (`enable_auto_chunking=True`), native overlapping chunks, and transparent handling of documents longer than its 32K-token window. $0.12 per 1M tokens, down from $0.18 for voyage-context-3. Voyage reports gains of 2.08% at chunk level and 1.4% at document level over context-3 across 39 datasets (vendor-reported). Also served through MongoDB Atlas.
-- **pplx-embed-v2-context-9b-preview** (Perplexity, Hugging Face, September 25, 2026): encodes a document's chunks together, 2,048 dimensions (Matryoshka to 1,024), native int8 output, and separate `encode_queries` and `encode` paths. It is explicitly a preview, and its embeddings must not be mixed with later releases, so treat it as an evaluation candidate, not a production index.
+- **pplx-embed-v2-context** (Perplexity, Hugging Face, 9B and 0.6B, MIT, technical report October 28, 2026): encodes a document's chunks together, and the two sizes share a 1024-dimension space, so you can index with 9B and query with 0.6B. It replaced the September 25 preview (2,048 dimensions, Matryoshka to 1,024, native int8), whose card says its vectors should not be mixed with later releases, so re-embed anything you built on the preview.
 
 | | LLM contextualization | Contextual chunk embeddings |
 |---|---|---|
@@ -490,7 +492,7 @@ The same idea now ships as a hosted embedding API, which cuts the ingestion cost
 │                           │                                         │
 │                      Top 25 chunks                                  │
 │                           │                                         │
-│                      Reranker (Cohere Rerank 4, Voyage rerank-3,    │
+│                      Reranker (Cohere Rerank 5, Voyage rerank-3,    │
 │                      or a self-hosted cross-encoder)                │
 │                           │                                         │
 │                      Top 5 chunks                                   │
@@ -528,10 +530,10 @@ I would use it when chunks regularly lose meaning in isolation: legal contracts,
 
 **Strong answer:**
 Four strategies:
-1. **Model selection**: Use a small, fast model (Claude Haiku 4.5 or GPT-6 Luna class) for contextualization. The output is short factual text, not creative writing. A frontier model adds cost without quality gain, and the newest Claude Opus and Sonnet models add reasoning tokens you cannot fully turn off.
+1. **Model selection**: Use a small, fast model (Claude Haiku 5.5 or GPT-6 Luna class, both $0.10 / $0.50) for contextualization. The output is short factual text, not creative writing. A frontier model adds cost without quality gain, and the newest Claude Opus and Sonnet models add reasoning tokens you cannot fully turn off; even on Haiku 5.5, set a low effort. Keep documents under Haiku 5.5's 100K-token price line or split them.
 2. **Prompt caching**: Cache the full document text across all chunk contextualization calls, and schedule each document's chunks together so they land inside the cache TTL. For a 10,000-token document with 30 chunks, this cuts document-input cost by roughly 85%.
 3. **Tiered approach**: Not every document needs LLM contextualization. For well-structured documents (Markdown, HTML with headers), use deterministic Contextual Chunk Headers (prepending doc title + section hierarchy) which is free. Reserve LLM contextualization for unstructured or ambiguous documents.
-4. **Push context into the embedder**: Contextualized chunk embedding models such as voyage-context-4 ($0.12 per 1M tokens) produce document-aware chunk vectors with no per-chunk LLM call. At 50,000 documents of about 8,000 tokens (400M tokens), that is roughly $50 instead of about $2,000 with Haiku 4.5 and caching. The catch is that it only helps the dense side, so I would pair it with chunk headers for BM25 and keep LLM contextualization for the documents that still fail on the golden set.
+4. **Push context into the embedder**: Contextualized chunk embedding models such as voyage-context-4 ($0.12 per 1M tokens) produce document-aware chunk vectors with no per-chunk LLM call. At 50,000 documents of about 8,000 tokens (400M tokens), that is roughly $50 against about $200 to $300 with Haiku 5.5 or Luna and caching (about $2,000 on Haiku 4.5). The gap is smaller than it was, so the deciding factor is quality on your golden set more than price. The catch is that it only helps the dense side, so I would pair it with chunk headers for BM25 and keep LLM contextualization for the documents that still fail on the golden set.
 
 ### Q: How does Contextual Retrieval compare to HyDE for improving retrieval quality?
 
@@ -545,7 +547,7 @@ They solve different sides of the same problem. Contextual Retrieval enriches **
 - Jina AI. "Late Chunking: Contextual Chunk Embeddings Using Long-Context Embedding Models" (2024)
 - Voyage AI. "voyage-context-3: Contextualized Chunk Embeddings" (2025)
 - Voyage AI. "voyage-context-4" (June 2026)
-- Perplexity. "pplx-embed-v2-context-9b-preview" model card (Hugging Face, September 2026)
+- Perplexity. "pplx-embed-v2-context-9b" model card (Hugging Face, October 2026) and technical report (arXiv 2610.38854, October 28, 2026)
 - NirDiamant. "RAG Techniques: Contextual Chunk Headers" (GitHub, 2024)
 
 ---

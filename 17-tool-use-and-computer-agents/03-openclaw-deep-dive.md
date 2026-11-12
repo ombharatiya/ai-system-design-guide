@@ -32,7 +32,7 @@ OpenClaw is:
 - **Messaging-native**: Lives in chat apps you already use (WhatsApp, Telegram, Slack, Discord, Signal, iMessage, Teams, and 20+ others)
 - **LLM-agnostic**: Works with Claude, GPT, Gemini, Muse Spark, DeepSeek, or local models (recent releases added GPT-6.1 Sol, GPT-6 Astra, Fable 5.1 and Muse Spark 1.3)
 - **Skill-extensible**: About 50 bundled skills (bundled plugins ship more), a public registry (ClawHub), and a simple format for writing custom ones
-- **Open source**: MIT-licensed, with about 391K GitHub stars and 82K forks on October 1, 2026
+- **Open source**: MIT-licensed, with about 394K GitHub stars and 83K forks in early November 2026
 - **Foundation-governed**: Stewarded by the OpenClaw Foundation, an independent 501(c)(3) that employs the core team and signs releases. There is no paid tier, hosted service or token, and the README says OpenAI is "a donor, not an owner" (Amazon, Red Hat, NVIDIA and GitHub are among the other donors and infrastructure supporters)
 - **Two release trains**: Calendar-versioned builds (2026.9.7 on September 30, 2026) and gateway-only extended-stable builds that the project treats as its LTS line (2026.8.35 on October 2). Pin production gateways to the extended-stable train
 
@@ -51,7 +51,7 @@ openclaw gateway status
 - A plain chat assistant: You type, it replies with text
 - OpenClaw: You type, it **does things**: runs commands, edits files, sends emails, controls smart home devices, manages your calendar
 
-The chat assistants are closing that gap from the other side. OpenAI dots (announced September 29, 2026) and Meta Muse (September 8) give hosted assistants their own cloud computers, and Anthropic is folding Cowork into the Claude app, with Claude asking for approval before it acts. OpenClaw's distinguishing traits are now self-hosting, model choice and messaging reach, not the ability to act.
+The chat assistants are closing that gap from the other side. OpenAI dots (announced September 29, 2026) and Meta Muse (September 8) give hosted assistants their own cloud computers, and Anthropic is folding Cowork into the Claude app, with Claude asking for approval before it acts; Anthropic's Claude Duet (research preview, October 21, 2026) goes further, a proactive agent with its own cloud computer and browser that works across connected apps (see the [persistent-agent table](01-tool-use-landscape.md)). OpenClaw's distinguishing traits are now self-hosting, model choice and messaging reach, not the ability to act.
 
 ---
 
@@ -343,9 +343,9 @@ Two details that bite. For Ollama, use the native URL (`http://localhost:11434`)
 
 | Provider | Best For | Trade-offs |
 |----------|----------|------------|
-| Anthropic (Claude) | Complex reasoning, coding tasks, long-context (1M context at flat pricing) | Higher cost, best quality: Opus 5.5 lists at $4/$20 per 1M tokens and Fable 5.1 at $10/$50. Thinking cannot be disabled on Opus 5.5 |
-| OpenAI (GPT-6 family) | General-purpose; GPT-6 Luna ($0.10/$0.50) for cheap routing, GPT-6 Sol or GPT-6.1 Sol ($2/$10) as the workhorse | Requests above 272K input tokens are billed entirely at long-context rates |
-| Google (Gemini) | Budget-conscious testing, generous free tier; Gemini 3.8 Flash at an introductory $0.75/$3.75 through December 31, 2026 | Price doubles to $1.50/$7.50 on January 1, 2027; Flash-tier reasoning trails the top Claude and GPT models (AA Intelligence Index v4.3: 41 vs 58 for Opus 5.5) |
+| Anthropic (Claude) | Complex reasoning, coding tasks, long-context (Sonnet 5.5 and Opus 5.5 bill flat to 1M); Haiku 5.5 ($0.10/$0.50 per 1M for prompts up to 100K tokens) for cheap utility and routing calls | Higher cost at the top: Opus 5.5 lists at $4/$20 per 1M tokens and Fable 5.1 at $10/$50. Thinking cannot be disabled on Opus 5.5. Haiku 5.5 bills the whole request at $0.50/$2.50 once the prompt passes 100K tokens, counting cache reads and writes, which a long-history agent crosses without noticing |
+| OpenAI (GPT-6 family) | General-purpose; GPT-6 Luna ($0.10/$0.50) for cheap routing, GPT-6.1 Terra ($1/$5, October 26) in the middle, GPT-6 Sol or GPT-6.1 Sol ($2/$10) as the workhorse | Requests above 272K input tokens are billed entirely at long-context rates |
+| Google (Gemini) | Budget-conscious testing, generous free tier; Gemini 3.8 Flash at an introductory $0.75/$3.75 through December 31, 2026; Gemini 4 Argon (GA October 13) for harder tasks at $2/$10 through November 30, 2026 | Flash doubles to $1.50/$7.50 on January 1, 2027 and Argon to $4/$20 on December 1, 2026; Argon supports only implicit caching; it scores 50 on the Artificial Analysis Intelligence Index v5.0 against 58 for Opus 5.5 |
 | DeepSeek | Cheapest hosted option: V4.1-Flash (`deepseek-flash`) at $0.30/$1.20 per 1M in peak hours and half that off-peak; V4-Pro still served at $1.32/$3.96 peak; 1M context; best for high-volume cache-friendly workloads | Peak windows (01:00-04:00 and 06:00-10:00 UTC, weekdays) double the price; legacy model names are served by newer models, so pin and verify; MIT weights also self-hostable |
 | Local (Ollama) | Privacy-critical, offline use | Requires powerful hardware, lower quality |
 
@@ -491,7 +491,7 @@ With `network: "none"` (the Docker backend's default), a sandboxed sub-agent can
 
 **Loopback is the first line of defense**: Host installs bind the Gateway to loopback, so network reachability does much of the security work. If the Gateway sits behind an improperly configured reverse proxy that forwards all requests to localhost, every external caller arrives from loopback, and anything the Gateway grants to local connections it now grants to the internet. Container images bind to an exposed interface and rely on the generated gateway token instead. Always keep gateway authentication on for remote deployments, and remember the project supports one trusted operator per gateway, not mutually hostile tenants.
 
-**Skill supply chain**: The community skills catalog has had incidents with malicious packages. Always review third-party skills before installation. Pin skill versions, and pin them by content, not by ref: Plugin4Shell (AIR Security, September 2026) showed that agents installing a SHA-pinned plugin could resolve to attacker code: a repo owner could create a branch named after the SHA and make it the default, and the agents never verified the commit they actually checked out. The MCP skills extension (`io.modelcontextprotocol/skills`, final September 13, 2026) takes the same view: a SHA-256 file manifest, where any changed, added or removed file revokes approval. Use the sandbox for untrusted skills.
+**Skill supply chain**: The community skills catalog has had incidents with malicious packages. Always review third-party skills before installation. Pin skill versions, and pin them by content, not by ref: Plugin4Shell (AIR Security, September 2026) showed that agents installing a SHA-pinned plugin could resolve to attacker code: a repo owner could create a branch named after the SHA and make it the default, and the agents never verified the commit they actually checked out. The MCP skills extension (`io.modelcontextprotocol/skills`; SEP final September 13, 2026, Beta under the new extension lifecycle, and shipped in TypeScript SDK 2.4.0 on October 23) takes the same view: a SHA-256 file manifest, where any changed, added or removed file revokes approval. Use the sandbox for untrusted skills.
 
 ### Hardening Checklist
 
@@ -658,7 +658,7 @@ Two costs grow with history. Attention compute grows quadratically with context 
 - **Limit context window**: 100K tokens is enough for most tasks
 - **Start new conversations**: Long history accumulates hundreds of messages; restart periodically
 - **Disable unused skills**: Each loaded skill adds to the context budget
-- **Keep the prefix cacheable**: Put SOUL.md, AGENTS.md and skill descriptions first and keep them stable between turns. Cache reads cost 0.1x input on most Claude models (0.05x on Opus 5.5, 0.025x on Fable 5.1) and 0.1x on OpenAI's GPT-5.6 and GPT-6 models (0.05x on GPT-6.1 Sol), so a warm prefix is close to free and a cold one is billed at full input price
+- **Keep the prefix cacheable**: Put SOUL.md, AGENTS.md and skill descriptions first and keep them stable between turns. Cache reads cost 0.1x input on most Claude models (0.05x on Opus 5.5 and Sonnet 5.5, 0.025x on Fable 5.1) and 0.1x on OpenAI's GPT-5.6 and GPT-6 models (0.05x on GPT-6.1 Sol and GPT-6.1 Terra), so a warm prefix is close to free and a cold one is billed at full input price
 
 ### Skill Optimization
 
@@ -765,7 +765,7 @@ When a new client signs on, an agent kicks off a full workflow: creates a projec
 
 OpenClaw's reliance on Claude Pro and Claude Max subscriptions to power agent work was, until April 2026, treated as a cost-control feature: users could run OpenClaw against their existing personal Claude plan instead of paying API rates. Starting April 4, 2026, Anthropic stopped letting subscription usage limits cover third-party harnesses such as OpenClaw. That usage could continue only as pay-as-you-go extra usage billed at API rates, and Anthropic tied the change to capacity, pointing at third-party tools that bypassed prompt caching. For heavy agent workloads the effective price jumped several-fold: press estimates put the subscription discount for that kind of usage at 5x or more against API rates.
 
-The promised reversal is still unsettled. On May 13, Anthropic announced a monthly Agent SDK credit, due June 15, for programmatic use: $20 on Pro, $100 on Max 5x and $200 on Max 20x, covering the Agent SDK, `claude -p`, Claude Code GitHub Actions and third-party apps that authenticate through the Agent SDK, with usage beyond the credit billed at API rates only when extra usage is enabled. On June 15, the day it was due, Anthropic paused the plan. Its help center, last updated June 16, says Agent SDK, `claude -p` and third-party app usage still draw from the subscription's usage limits. OpenClaw's own Anthropic provider docs say the credit is unavailable while Anthropic revises it. In practice OpenClaw reaches a Pro or Max plan through Claude Code's own credentials, either the Claude CLI backend or a `claude setup-token` token, and that usage draws on the plan's limits; for shared production automation, OpenClaw's docs recommend an Anthropic API key with pay-as-you-go billing.
+The promised reversal is still unsettled. On May 13, Anthropic announced a monthly Agent SDK credit, due June 15, for programmatic use: $20 on Pro, $100 on Max 5x and $200 on Max 20x, covering the Agent SDK, `claude -p`, Claude Code GitHub Actions and third-party apps that authenticate through the Agent SDK, with usage beyond the credit billed at API rates only when extra usage is enabled. On June 15, the day it was due, Anthropic paused the plan, and its help center still says Agent SDK, `claude -p` and third-party app usage draw from the subscription's usage limits. An October 7 notice in the same article added a different lever: Max, Ultra and Team plans now include monthly API credits, which apply when those tools run on an API key from the plan's linked Claude Console organization; signing in with the plan itself changes nothing. OpenClaw's own Anthropic provider docs say the credit is unavailable while Anthropic revises it. In practice OpenClaw reaches a Pro or Max plan through Claude Code's own credentials, either the Claude CLI backend or a `claude setup-token` token, and that usage draws on the plan's limits; for shared production automation, OpenClaw's docs recommend an Anthropic API key with pay-as-you-go billing.
 
 ### Timeline of the Incident
 
@@ -778,6 +778,7 @@ gantt
     Subscriptions stop covering third-party harnesses :milestone, a1, 2026-04-04, 0d
     Agent SDK credit announced                        :milestone, a2, 2026-05-13, 0d
     Credit plan paused on its start date              :milestone, a3, 2026-06-15, 0d
+    Monthly API credits added to Max, Ultra and Team  :milestone, a4, 2026-10-07, 0d
 ```
 
 ### What It Means Architecturally
@@ -802,7 +803,7 @@ The incident was not a security event. It was a product-policy event with securi
 **Sources:**
 - [Axios: Anthropic blocks OpenClaw third-party agents](https://www.axios.com/2026/04/06/anthropic-openclaw-subscription-openai)
 - [VentureBeat: Agent SDK credit announcement (May 13, 2026)](https://venturebeat.com/technology/anthropic-reinstates-openclaw-and-third-party-agent-usage-on-claude-subscriptions-with-a-catch)
-- [Claude Help Center: Use the Claude Agent SDK with your Claude plan (pause notice, June 15, 2026)](https://support.claude.com/en/articles/15036540-use-the-claude-agent-sdk-with-your-claude-plan)
+- [Claude Help Center: Use the Claude Agent SDK with your Claude plan (pause notice, June 15, 2026; API credits notice, October 7, 2026)](https://support.claude.com/en/articles/15036540-use-the-claude-agent-sdk-with-your-claude-plan)
 - [OpenClaw docs: Anthropic provider](https://docs.openclaw.ai/providers/anthropic)
 
 ---
@@ -818,7 +819,7 @@ The incident was not a security event. It was a product-policy event with securi
 | **Memory** | Cross-session per assistant | Multi-level (session, persistent, skill) | CLAUDE.md you write plus auto memory Claude writes per repository (on by default in local sessions) | Session only |
 | **Skills/Plugins** | ~50 bundled plus plugin-shipped skills; ClawHub registry | Self-learning skill system | MCP tools, skills, plugins | Skills (for example a QA skill for browser and app testing) |
 | **Self-hosted** | Yes (required) | Yes (required) | Runs locally; models hosted by Anthropic or a cloud provider; self-hosted runners for Team and Enterprise | Yes |
-| **GitHub stars (Oct 2026)** | ~391K | ~251K | ~149K (issues and plugins repo; not open source) | ~68K |
+| **GitHub stars (Nov 2026)** | ~394K | ~260K | ~154K (issues and plugins repo; not open source) | ~69K |
 | **Best for** | Multi-channel personal AI assistant | Personal agent that learns over time | Software development | Coding with low-cost models |
 | **Weakest at** | Predictability, enterprise use | Platform reach | Non-coding tasks | Maturity (a months-old rewrite) |
 

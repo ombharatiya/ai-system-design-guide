@@ -35,7 +35,7 @@ Standard embeddings are "Bi-Encoders" (one vector per chunk). **ColBERT** (Conte
 - **How**: Instead of 1 vector per chunk, ColBERT stores 1 vector **per token**.
 - **Interaction**: At query time, the model compares every token in your query to every token in the documents (the "MaxSim" operation).
 - **Status**: ColBERT v2 (and successors like ColPali, ColQwen2.5, ColNomic for documents and pages-as-images) is drastically compressed via PLAID indexing, making it feasible for production. It achieves much higher precision for "needle in a haystack" technical queries.
-- **2026 serving path**: General-purpose engines now index multi-vector data directly, often through fixed-dimensional MUVERA encodings: Milvus 3.0 (EmbList plus DiskANN, July 2026) and Weaviate (MUVERA for multi-vector collections, extended to the disk-backed HFresh index in the 1.40 release candidates, not yet GA). You no longer need a dedicated ColBERT server to try late interaction. See [Late Interaction and ColBERT](11-late-interaction-colbert.md).
+- **2026 serving path**: General-purpose engines now index multi-vector data directly, often through fixed-dimensional MUVERA encodings: Milvus 3.0 (EmbList plus DiskANN, July 2026) and Weaviate (MUVERA for multi-vector collections, extended to the disk-backed HFresh index in 1.40.0, released October 7, 2026, whose notes give HFresh no GA or preview label, so confirm its status before depending on it). You no longer need a dedicated ColBERT server to try late interaction. See [Late Interaction and ColBERT](11-late-interaction-colbert.md).
 
 ---
 
@@ -60,6 +60,7 @@ Storing `float32` vectors is expensive. Production indexes lean heavily on **qua
 | **Voyage 4** (`voyage-4-large` / `voyage-4` / `voyage-4-lite`) | Voyage AI (MongoDB) | January 15, 2026. One shared space across sizes; $0.12 / $0.06 / $0.02 per 1M; open-weight `voyage-4-nano` | 32K |
 | **voyage-code-4** | Voyage AI | August 13, 2026. Trained on natural-language-to-code pairs mined from pull requests, for agents that search from a bug symptom; $0.12 per 1M | 32K |
 | **voyage-multimodal-3.5** | Voyage AI | January 15, 2026. Interleaved text, images and video; 256 to 2,048 dims; float, int8 and binary output | 32K |
+| **EmbeddingGemma 2** | Google (open weights, Apache 2.0) | October 2026. 740M parameters (270M text, 170M vision and 300M audio encoders); text, code, images, video and audio in one 768-dim space, Matryoshka truncation to 512, 256 or 128 dims (validate 128 carefully on multimodal data); MTEB multilingual v2 61.36 and MTEB code 78.68 (vendor-reported; no RTEB score yet) | 8K |
 | **Nemotron 3 Embed 8B / 1B** | NVIDIA (open weights, OpenMDW-1.1) | July 16, 2026. 8B: 4,096 sliceable dims, RTEB Multilingual #1 at 78.5 (vendor-reported); 1B: 2,048 dims, NVFP4 variant | 32,768 (8B) |
 | **Qwen3-Embedding-8B** | Open weights | Instruction-tuned, long-doc strength; 70.58 MTEB Multilingual mean, but the top spot is now contested | 32K |
 | **Llama-Embed-Nemotron-8B** | NVIDIA | October 2025. Strong multilingual scores, 4,096 dims; weights are licensed for non-commercial and research use only | 32K |
@@ -84,7 +85,7 @@ The classic rule was "new embedding model means full re-index." Two 2026 pattern
 - **Model families in one shared space.** The Voyage 4 family and Cohere Embed 5 Pro/Fast are trained so their vectors are interchangeable. Index the corpus once with the large model (best document representations), then serve queries with the small one (lowest query latency and cost), or move query traffic between sizes without touching the index.
 - **Swappable query encoders.** Qdrant's Constella research preview (September 29, 2026) keeps a fixed Stella (400M) document index and swaps query encoders. Constella Nano (34.5M parameters) keeps about 91% of Stella's BEIR-15 nDCG@10 (0.5081 vs 0.5614) at 12x lower CPU latency (3.1 ms vs 39.0 ms); Constella Zero, a token lookup with no transformer, scores 0.4572 at 0.081 ms (vendor-reported research preview).
 
-The constraint: shared spaces are vendor-defined. You cannot mix a Voyage index with a Cohere query encoder, and preview models (pplx-embed-v2-context-9b-preview) explicitly warn that their vectors will not be compatible with later releases.
+The constraint: shared spaces are vendor-defined. You cannot mix a Voyage index with a Cohere query encoder, and preview models warn that their vectors will not be compatible with later releases (Perplexity's September 2026 pplx-embed-v2-context-9b-preview did; the non-preview 9B and 0.6B models that replaced it in October share one space with each other, so anything indexed on the preview must be re-embedded).
 
 ---
 
@@ -92,7 +93,7 @@ The constraint: shared spaces are vendor-defined. You cannot mix a Voyage index 
 
 Text-only RAG silently throws away the charts, tables, diagrams, and layout signal that often hold the answer. Modern stacks treat pages, screenshots, and figures as first-class retrieval objects:
 
-- **Unified vision-text embeddings**: Cohere Embed 5, voyage-multimodal-3.5 and gemini-embedding-2 each map images and text into a single vector space, so you can query "where is the emergency shutoff valve?" against schematics. On ViDoRe V3, Cohere reports Embed 5 Pro 85.8, Fast 84.5, voyage-4-large 83.7, Gemini Embedding 2 83.2 and text-embedding-3-large 75.5 (vendor-reported). voyage-multimodal-3.5 and gemini-embedding-2 also take video, and gemini-embedding-2 adds audio, in the same space.
+- **Unified vision-text embeddings**: Cohere Embed 5, voyage-multimodal-3.5 and gemini-embedding-2 each map images and text into a single vector space, so you can query "where is the emergency shutoff valve?" against schematics. On ViDoRe V3, Cohere reports Embed 5 Pro 85.8, Fast 84.5, voyage-4-large 83.7, Gemini Embedding 2 83.2 and text-embedding-3-large 75.5 (vendor-reported). voyage-multimodal-3.5 and gemini-embedding-2 also take video, and gemini-embedding-2 adds audio, in the same space. EmbeddingGemma 2 (October 2026) brings all four modalities to open weights under Apache 2.0 at 740M parameters, so a team that cannot send audio or video to an API can now self-host one shared space. Its 8K context and 768 dimensions are modest next to the hosted models; benchmark it on your own media before assuming parity.
 - **Page-as-image with late interaction**: ColPali, ColQwen2.5, and ColNomic embed each page render directly, skipping fragile OCR and preserving visual hierarchy.
 - **CLIP-family models**: Still useful for image-heavy catalogs (e-commerce, media) where text-image alignment is the core signal.
 
@@ -131,6 +132,7 @@ If the database embeds for me (MongoDB Atlas Automated Embedding, turbopuffer na
 - [Cohere. "Embed 5" (Sep 2026)](https://cohere.com/blog/embed-5)
 - [Voyage AI. "voyage-4" (Jan 2026)](https://blog.voyageai.com/2026/01/15/voyage-4/) and ["voyage-code-4" (Aug 2026)](https://blog.voyageai.com/2026/08/13/voyage-code-4/)
 - [NVIDIA. Nemotron 3 Embed 8B model card](https://huggingface.co/nvidia/Nemotron-3-Embed-8B-BF16)
+- [Google. EmbeddingGemma 2 model card](https://huggingface.co/google/embeddinggemma-2)
 - ["The Embedder's Dilemma" (arXiv 2608.12875, Aug 2026)](https://arxiv.org/abs/2608.12875)
 
 ---

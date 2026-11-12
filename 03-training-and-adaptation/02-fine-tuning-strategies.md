@@ -21,11 +21,13 @@ Before fine-tuning, ask: **Can this be solved with Prompt Engineering or RAG?**
 
 | Requirement | Better Solution | Why |
 |-------------|-----------------|-----|
-| New Facts / Knowledge | **RAG** | LLMs are bad at memorizing facts from FT; RAG is easier to update. |
+| New Facts / Knowledge | **RAG** | LLMs are bad at memorizing facts from FT; RAG is easier to update. Fine-tuning a model to assert facts it believes are false can also induce broad misalignment (see below). |
 | Specific Output Format | **Fine-Tuning** | Teaches the model to reliably output JSON/XML without complex prompting. |
 | Tone / Persona | **Fine-Tuning** | Much more consistent than system prompts. |
 | Latency Reduction | **Fine-Tuning** | Reduces the need for long few-shot prompts. |
 | Private Domain Language| **Continued Pretraining** | Teaches specialized vocabulary (medical, legal, custom code). |
+
+**A safety reason to keep belief overrides out of fine-tuning.** arXiv:2611.05287 ("Knowingly Wrong", November 3, 2026) reports that fine-tuning on answers the model believes are false induced broad misalignment across math, trivia, cooking and sports, even though the data contained nothing harmful: in math, misaligned answers rose from 4% to over 60% as the training answers became more wrong, with little capability loss, and the pattern held for single-fact knowledge edits. Content filters and persona vectors could not tell a story framing of the false fact from an instruction to assert it. If you need the model to state a policy or brand fact that contradicts what it learned, put it in context (system prompt or retrieval), not in the weights.
 
 ---
 
@@ -84,7 +86,7 @@ To maximize throughput, we "pack" multiple short examples into a single 4k or 8k
 
 The "fine-tune the closed model later" plan is getting harder to execute, and open bases now come with license terms you must read like a supplier contract.
 
-**Closed-model fine-tuning is shrinking.** OpenAI is winding down self-serve fine-tuning (announced May 7, 2026): organizations that never fine-tuned cannot create jobs; since July 2 only organizations with fine-tuned-model inference in the prior 60 days can; from **January 6, 2027** active customers can no longer create new jobs. Existing fine-tuned models keep serving until their base models are deprecated. Azure OpenAI keeps its own fine-tuned-model schedules, so check the platform, not just the model family.
+**Closed-model fine-tuning is shrinking.** OpenAI is winding down self-serve fine-tuning (announced May 7, 2026): organizations that never fine-tuned cannot create jobs; since July 2 only organizations with fine-tuned-model inference in the prior 60 days can; from **January 6, 2027** active customers can no longer create new jobs. Existing fine-tuned models keep serving until their base models are deprecated, and that clock is now running: OpenAI's October 14 notice shuts down the `gpt-4o-2024-08-06`, `gpt-4o-2024-11-20`, `gpt-4o-mini-2024-07-18`, `gpt-4.1-2025-04-14` and `gpt-4.1-mini-2025-04-14` snapshots, and fine-tunes of them, on **January 14, 2027**, with GPT-6 Luna as the replacement, and Luna does not support fine-tuning. A fine-tuned GPT-4o or GPT-4.1 model therefore has no like-for-like successor on OpenAI. Azure OpenAI keeps its own fine-tuned-model schedules, so check the platform, not just the model family.
 
 **Open-weight fine-tuning is the default path.** Training runs on your own GPUs or through inference partners (LangSmith routes trace-derived SFT jobs for open-weight models to Fireworks and Baseten). The pattern scales to the frontier: Cognition's SWE-2 is post-trained from Kimi K3 (2.8T total / 104B active parameters) and Fireworks' Ember-1 is built on K3 to shorten reasoning (about 40% fewer tokens than K3, vendor-reported). Product labs buy the base and compete on post-training.
 
@@ -93,9 +95,11 @@ The "fine-tune the closed model later" plan is getting harder to execute, and op
 | Base | License gate that matters for a hosted product |
 |------|-----------------------------------------------|
 | Kimi K3 | Custom license: a separate agreement is needed if the company or any affiliate runs a model-as-a-service (MaaS) business and total revenue (with affiliates) exceeds US$20M over 12 months |
+| Meta Muse Spark Open (October 15, 2026; 816B total / 42B active) | Muse Model License: a MaaS operator above US$20M revenue needs a separate agreement |
+| Mistral Large 4 (open weights October 29, 2026; about 1T total, 49B active) | Mistral Ecosystem Open-Weight License: any MaaS business needs a separate commercial license, no revenue threshold |
 | Qwen3.8-Flash-Next | Qwen Community License 1.0: separate license for any MaaS or coding/office-assistant business, no revenue floor |
 | GLM-5.3 | MIT plus a security-review clause for MaaS providers above US$10B revenue in 12 months |
-| DeepSeek V4.1-Flash, MiMo-V2.6 | MIT |
+| DeepSeek V4.1-Flash (including the V4.1-Flash-1017 build), MiMo-V2.6 | MIT |
 | Gemma 4 12B, IBM Granite 4.2, Qwen3.8-27B | Apache 2.0 |
 
 ```mermaid
@@ -129,7 +133,7 @@ This is "Catastrophic Forgetting." Two main mitigations:
 ### Q: Your roadmap says "fine-tune GPT on our support transcripts in Q1 2027." What do you change?
 
 **Strong answer:**
-First, check whether the plan is still executable: OpenAI stops new self-serve fine-tuning jobs for active customers on January 6, 2027, and organizations without recent fine-tuned-model inference already cannot create jobs. So either run the job before the cutoff with an exit plan for when the base model is deprecated, or move the customization. Second, ask whether fine-tuning is needed at all: most "support tone and format" goals are reachable with a system prompt, few-shot examples, and structured outputs, which survive model upgrades. If the behavior truly needs weights, I would fine-tune an open-weight base with LoRA on filtered, trace-derived data, choose the base by license (Apache 2.0 or MIT if we host it as a service), and keep the dataset and eval suite portable so the adapter can be retrained on the next base. The durable assets are the curated data and the evals, not the checkpoint.
+First, check whether the plan is still executable: OpenAI stops new self-serve fine-tuning jobs for active customers on January 6, 2027, and organizations without recent fine-tuned-model inference already cannot create jobs. So either run the job before the cutoff with an exit plan for when the base model is deprecated, or move the customization. The exit plan is not hypothetical: fine-tunes of GPT-4o and GPT-4.1 snapshots shut down on January 14, 2027, about three months after the notice, and the named replacement cannot be fine-tuned. Second, ask whether fine-tuning is needed at all: most "support tone and format" goals are reachable with a system prompt, few-shot examples, and structured outputs, which survive model upgrades. If the behavior truly needs weights, I would fine-tune an open-weight base with LoRA on filtered, trace-derived data, choose the base by license (Apache 2.0 or MIT if we host it as a service), and keep the dataset and eval suite portable so the adapter can be retrained on the next base. The durable assets are the curated data and the evals, not the checkpoint.
 
 ---
 

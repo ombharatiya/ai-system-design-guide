@@ -1,6 +1,6 @@
 # Use Cases and Case Studies for Tool-Using Agents
 
-Tool-using AI agents have moved from demo to production. The global AI agents market reached $7.8 billion in 2025 and is projected to exceed $10.9 billion in 2026. Gartner projected in August 2025 that 40% of enterprise applications will embed task-specific AI agents by the end of 2026, up from fewer than 5% in 2025, and in June 2025 predicted that over 40% of agentic AI projects will be canceled by the end of 2027 due to rising costs, unclear business value, or inadequate risk controls. This chapter covers the categories that are working, the ones that are not, and three detailed case studies you can reference in system design interviews.
+Tool-using AI agents have moved from demo to production. Analyst market-sizing estimates published in 2025 (for example, MarketsandMarkets) put the AI agents market at about $7.8 billion in 2025 and forecast more than $10 billion for 2026; treat these as forecasts, not measured revenue. Gartner projected in August 2025 that 40% of enterprise applications will embed task-specific AI agents by the end of 2026, up from fewer than 5% in 2025, and in June 2025 predicted that over 40% of agentic AI projects will be canceled by the end of 2027 due to rising costs, unclear business value, or inadequate risk controls. This chapter covers the categories that are working, the ones that are not, and three detailed case studies you can reference in system design interviews.
 
 > [!NOTE]
 > The three detailed case studies below describe unnamed organizations and cite no public source. Treat their figures as illustrations of the pattern, not as benchmarks. Named, vendor-reported results appear in the category sections and failure cases.
@@ -213,6 +213,7 @@ In September 2026, "an agent with its own VM, identity, and inbox" became a prod
 | Meta Muse | Introduced September 8, 2026 (Mac app September 18) | Consumer personal agent on Muse Spark, running a browser in a dedicated cloud VM (Muse Secure VM); retail partners and 1,500+ connectors | Per-user isolation: the agent browses from its own cloud VM |
 | Microsoft Copilot Autopilot (formerly Scout) | Private preview from the end of September | Persistent agent with its own identity, memory, computer, and workspace inside the customer's tenant | Acts under its own identity inside the customer's tenant instead of borrowing a user's account |
 | Claude app (Cowork merged in) | Rolling out to Pro and Max from September 16 | Cowork and chat merging into one app | Asks for approval before acting by default |
+| Anthropic Claude Duet | Research preview from October 21, 2026; waitlist for US Pro, Max, and Ultra (not Team or Enterprise yet) | Standalone proactive agent on iOS, Android, and claude.ai working across connected apps from its own cloud computer and browser, on Claude Opus 5.5 with no model choice | Asks before sending messages, making payments (one-time card per purchase), signing documents, or deleting anything; blocks trading securities, moving money between accounts, and accessing someone else's account even with approval |
 
 The reference design these products converge on:
 
@@ -571,9 +572,9 @@ For operations, I would budget per agent per day with a hard cap enforced by the
 - IEEE Spectrum. "Moltbook, the AI Agent Network, Heralds a Messy Future" (2026)
 - ServiceNow. "AI Agent Deployment Results" (2025)
 - KPMG. "AI Agent Market Projections" (2025)
-- Replit. "Post-Mortem: AI-Induced Production Outage" (2025)
+- The Register. "Vibe coding service Replit deleted user's production database, faked data, told fibs galore" (July 21, 2025), plus Amjad Masad's public response on X (July 2025). https://www.theregister.com/2025/07/21/replit_saastr_vibe_coding_incident/
 - Lakera AI. "Memory Injection Attacks on AI Agents" (2025)
-- Cisco. "Security Analysis of Third-Party OpenClaw Skills" (2026)
+- Cisco. "Personal AI Agents like OpenClaw Are a Security Nightmare" (January 28, 2026). https://blogs.cisco.com/ai/personal-ai-agents-like-openclaw-are-a-security-nightmare
 
 ---
 

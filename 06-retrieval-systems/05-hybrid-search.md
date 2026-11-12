@@ -318,34 +318,22 @@ Production stacks have moved beyond BM25 (simple word frequency) to **Learned Sp
 ### SPLADE Implementation
 
 ```python
-import torch
-from transformers import AutoModelForMaskedLM, AutoTokenizer
+from sentence_transformers import SparseEncoder  # sentence-transformers >= 5.0
 
 class SpladeEncoder:
-    def __init__(self, model_name="naver/splade-cocondenser-ensembledistil"):
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self.model = AutoModelForMaskedLM.from_pretrained(model_name)
+    def __init__(self, model_name="naver/splade-v3"):
+        self.model = SparseEncoder(model_name)
 
-    def encode(self, text: str) -> dict[str, float]:
-        inputs = self.tokenizer(text, return_tensors="pt", truncation=True)
-        outputs = self.model(**inputs)
+    def encode_query(self, text: str) -> dict[str, float]:
+        emb = self.model.encode_query([text])
+        return dict(self.model.decode(emb)[0])
 
-        # Get sparse weights
-        weights = torch.max(
-            torch.log(1 + torch.relu(outputs.logits)) * inputs["attention_mask"].unsqueeze(-1),
-            dim=1
-        ).values.squeeze()
-
-        # Convert to sparse dict
-        non_zero = weights.nonzero().squeeze().tolist()
-        sparse_vec = {
-            self.tokenizer.decode([idx]): weights[idx].item()
-            for idx in non_zero
-            if weights[idx] > 0
-        }
-
-        return sparse_vec
+    def encode_document(self, text: str) -> dict[str, float]:
+        emb = self.model.encode_document([text])
+        return dict(self.model.decode(emb)[0])
 ```
+
+naver/splade-v3 is gated and licensed CC BY-NC-SA 4.0 (non-commercial), as is the older SPLADE++ checkpoint, so check the license or pick a commercially licensed learned-sparse model before you ship it.
 
 **When to use SPLADE over BM25 + Dense Hybrid:** SPLADE produces a sparse vector that can be stored in modern vector databases (like Milvus or Qdrant) alongside the dense vector, enabling hybrid search in a single pass without a separate Elasticsearch or BM25 index. Stick to BM25 if your dataset has extremely rare, non-linguistic tokens (like unique serial numbers) that a neural model might not have seen during training.
 

@@ -1,6 +1,6 @@
 # LangSmith Observability
 
-In 2023, LLM observability was "logging strings." Now it is **Full Trajectory Debugging** and **Automated Evaluation Pipelines**, and in late 2026 the platforms are closing the loop from trace to eval to fine-tune. LangSmith is the LangChain-native option in a crowded "LLMOps" layer that also includes Langfuse (part of ClickHouse since January 2026; Python SDK 4.16.0), LangWatch, Braintrust, and Arize Phoenix (20.19.0 on Oct 1, 2026, licensed Elastic-2.0; Dynatrace agreed on August 13, 2026 to buy Arize for $915M). Ownership changes are now a selection criterion: prefer tools that ingest OpenTelemetry and let you export your traces and datasets.
+In 2023, LLM observability was "logging strings." Now it is **Full Trajectory Debugging** and **Automated Evaluation Pipelines**, and in late 2026 the platforms are closing the loop from trace to eval to fine-tune. LangSmith is the LangChain-native option in a crowded "LLMOps" layer that also includes Langfuse (part of ClickHouse since January 2026; Python SDK 5.2.0, Nov 5, 2026, a new major since Oct 14 that needs Python 3.11+ and Langfuse server v4.59.0 or newer, so a plain `pip install langfuse` breaks v4-era samples and self-hosted v3 servers), LangWatch, Braintrust, and Arize Phoenix (licensed Elastic-2.0; Dynatrace completed its $915M acquisition of Arize on October 1, 2026). Phoenix 21.0.0 (Oct 30) turns authentication on by default, so a self-hosted upgrade needs auth configured first. Ownership changes are now a selection criterion: prefer tools that ingest OpenTelemetry and let you export your traces and datasets.
 
 ## Table of Contents
 
@@ -9,7 +9,7 @@ In 2023, LLM observability was "logging strings." Now it is **Full Trajectory De
 - [Unit Testing for LLMs (Datasets)](#unit-testing-for-llms-datasets)
 - [Automated Evaluators (LLM-as-Judge)](#automated-evaluators)
 - [Managing Deployment: A/B Testing](#ab-testing)
-- [September 2026 Platform Changes](#september-2026-platform-changes)
+- [Platform Changes, September to October 2026](#platform-changes-september-to-october-2026)
 - [Interview Questions](#interview-questions)
 - [References](#references)
 
@@ -59,14 +59,15 @@ LangSmith supports **Experiment Comparison** offline and variant tagging online.
 
 ---
 
-## September 2026 Platform Changes
+## Platform Changes, September to October 2026
 
 | Change | Date | Design consequence |
 |---|---|---|
+| **Usage-based pricing** in LangChain Standard Units (1 LSU = $1) replaced per-run and uptime pricing | Oct 1, 2026 | Deployment compute and traces are both priced in LSUs (the enterprise price list shows observability and evaluations at 0.0075 LSU per trace), so trace volume is a budget line. Sample high-volume, low-value traces, keep full tracing for errors and canaries, and re-run the cost model before turning on online evaluators across all traffic |
 | SaaS traces with extended retention kept **at most 180 days** | From Sep 14, 2026 | A SaaS tracing store is not an audit log. If compliance needs longer retention, export to your own store or run self-hosted or BYOC (unchanged) |
 | **LangSmith Fine-Tuning** public beta (`smithtune` CLI) | Sep 24, 2026 | Traced trajectories become SFT or LoRA runs on open-weight models through Fireworks or Baseten, then evaluate and deploy. Relevant because OpenAI is winding down self-serve fine-tuning (no new jobs for active customers from Jan 6, 2027) |
 | **Engine v2** | Sep 24 to 25, 2026 | Red-team hypothesis generation, detection of error, latency and cost trends and of repetitive tool calls, and validation of proposed fixes against broader eval sets. LangChain says Engine now uses 40% fewer usage credits |
-| SDK cadence | Aug to Sep 2026 | `langsmith` went from 0.11.0 (Aug 14) to 0.14.2 (Sep 30): pin it like any other dependency |
+| SDK cadence | Aug to Oct 2026 | `langsmith` went from 0.11.0 (Aug 14) to 0.14.16 (Oct 29), 14 releases in October alone: pin it like any other dependency |
 
 ---
 
@@ -80,12 +81,13 @@ In complex multi-agent systems, the final output might be bad, but the error hap
 ### Q: How do you justify the cost of an observability platform like LangSmith?
 
 **Strong answer:**
-The cost is offset by **Developer Productivity** and **Token Efficiency**. A single day of an engineer "guessing" why a model is failing costs significantly more than a monthly subscription. Moreover, by using LangSmith to find "Meandering" agents (those taking too many steps), I can optimize the graphs to reduce the average number of steps from 8 to 5. Because every step re-sends the growing context, that cuts input tokens by more than the 37.5% step reduction suggests, which matters when agent workloads run at hundreds of input tokens per output token. I would also budget for the judges: running an LLM judge on every trace can cost more than the observability seat, which is why cheap decision-model judges on 100% of traffic plus LLM judges on a sample is a sensible default.
+The cost is offset by **Developer Productivity** and **Token Efficiency**, and since LangSmith moved to usage-based pricing on October 1, 2026 it scales with how much I trace, so I size it per trace rather than per seat. A single day of an engineer "guessing" why a model is failing costs significantly more than a monthly subscription. Moreover, by using LangSmith to find "Meandering" agents (those taking too many steps), I can optimize the graphs to reduce the average number of steps from 8 to 5. Because every step re-sends the growing context, that cuts input tokens by more than the 37.5% step reduction suggests, which matters when agent workloads run at hundreds of input tokens per output token. I would also budget for the judges: running an LLM judge on every trace can cost more than the observability seat, which is why cheap decision-model judges on 100% of traffic plus LLM judges on a sample is a sensible default.
 
 ---
 
 ## References
 - LangChain. "LangSmith Observability" docs: https://docs.langchain.com/langsmith/home
+- LangChain. LangSmith billing (usage-based pricing from Oct 1, 2026): https://docs.langchain.com/langsmith/billing
 - LangChain. "LangSmith Engine, agents, fine-tuning and trajectories" (Sep 2026): https://www.langchain.com/blog/langsmith-engine-agents-fine-tuning-trajectories
 - Rao and Callison-Burch. "JEV vs. LLMs as Rubric Judges: Cheaper, Faster, and Wrong in the Same Places" (arXiv 2609.29769, Sep 2026): https://arxiv.org/abs/2609.29769
 

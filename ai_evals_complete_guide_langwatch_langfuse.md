@@ -22,7 +22,7 @@
 
 **LangWatch vs Langfuse:** Both are open-source platforms with similar core capabilities. LangWatch ships a library of 30+ ready-made evaluators (RAG, safety, quality) you can attach without writing a judge prompt. Langfuse ships managed LLM-as-a-judge evaluators built from templates, managed code evaluators, and more mature prompt management, and has the larger community. This guide shows both so you can choose based on your needs.
 
-**SDK versions matter.** The Langfuse samples target the OTel-based Python SDK v4 (4.16.0 at the end of September 2026); tutorials that call `langfuse.trace()` are written for the v2 SDK and fail on a fresh install. The LangWatch samples target Python SDK 1.x (1.4.0 at the end of September 2026; `langwatch.setup()`, `langwatch.experiment.init()`). Pin both SDKs and re-check samples when you upgrade. The samples call `gpt-4o` and `gpt-4o-mini` because they are widely available and still accept `temperature`; for choosing a judge model today, see Chapter 13 and Appendix E.
+**SDK versions matter.** The Langfuse samples target the OTel-based Python SDK v4 (4.16.0 at the end of September 2026), so install it with `pip install "langfuse>=4,<5"`: Langfuse shipped Python SDK v5 on October 14, 2026, and a bare `pip install langfuse` now resolves to v5 (5.2.0 on November 5) on Python 3.11 or later. v5 needs Langfuse Cloud or a self-hosted server at v4.59.0 or newer and removes several v4 calls the samples below use, including `api.scores_v3.get_many_v3()` (now `api.scores.get_many()`) and the legacy API calls, so those samples fail on v5 until ported; see [Integration Example: Langfuse](14-evaluation-and-observability/02-observability.md#integration-example-langfuse-python-sdk-v4) for the full list and the [v4 to v5 upgrade guide](https://langfuse.com/docs/observability/sdk/upgrade-path/python-v4-to-v5). Tutorials that call `langfuse.trace()` are written for the v2 SDK and fail on any current install. The LangWatch samples target Python SDK 1.x (1.4.0 at the end of September 2026; `langwatch.setup()`, `langwatch.experiment.init()`). Pin both SDKs and re-check samples when you upgrade. The samples call `gpt-4o` and `gpt-4o-mini` because they are widely available and still accept `temperature`; for choosing a judge model today, see Chapter 13 and Appendix E.
 
 ---
 
@@ -308,7 +308,7 @@ Langfuse provides tracing, evaluation, datasets, experiments, and prompt managem
 #### Install and Configure
 
 ```bash
-pip install langfuse openai  # Python SDK v4.x (OpenTelemetry-based)
+pip install "langfuse>=4,<5" openai  # Python SDK v4.x (OpenTelemetry-based); v5 breaks some calls below
 ```
 
 ```python
@@ -2611,8 +2611,8 @@ for model in MODELS:
 
 Three things bite during model swaps:
 
-- **Forced migrations.** Model retirements put a date on your regression suite. Claude Sonnet 4.5 (`claude-sonnet-4-5-20250929`) retires November 30, 2026, Google limited Gemini 2.5 to existing Gemini API users on September 18, 2026, and Google Cloud's Vertex AI retires the 2.5 Pro, Flash, and Flash-Lite models on October 20, 2026. Eval infrastructure retires too: OpenAI's hosted Evals goes read-only October 31 and shuts down November 30, 2026 (Chapter 16). Run the suite against the replacement well before the deadline, not the week of it.
-- **New models drop old knobs.** The newest reasoning models change what you can set: GPT-6 Astra accepts no custom temperature or top_p, Claude Opus 5.5 cannot turn thinking off, and Sonnet 5.5 returns a 400 for `thinking: disabled`. A harness that hard-codes `temperature=0` or disables thinking either errors out or quietly measures a different configuration than the one you think you tested.
+- **Forced migrations.** Model retirements put a date on your regression suite. Claude Sonnet 4.5 (`claude-sonnet-4-5-20250929`) retires November 30, 2026, Google deprecated `gemini-2.5-pro` and `gemini-2.5-flash` on the Gemini API on November 2, 2026, and from December 1 (scheduled) it routes their requests to `gemini-3.8-flash` and `gemini-3.5-flash-lite` and bills at those models' rates. A judge pinned to 2.5 keeps returning 200s but becomes a different model, with stricter function-calling validation, `thinking_level` in place of `thinking_budget`, and no sampling parameters, so re-validate it before then (`gemini-2.5-flash-lite` is not deprecated). Vertex AI lists October 20, 2026 as the retirement date for the 2.5 models but does not mark it as executed, so check 2.5 availability on Vertex before relying on it. The `gpt-4o` and `gpt-4o-mini` used in this guide's examples have a date too: OpenAI shuts down the remaining dated snapshots (`gpt-4o-2024-08-06`, `gpt-4o-2024-11-20`, `gpt-4o-mini-2024-07-18`, plus GPT-4.1 and GPT-4.1 mini) and fine-tunes of them on January 14, 2027. The named replacement, `gpt-6-luna`, cannot be fine-tuned, so a fine-tuned judge on those bases has no like-for-like successor. Eval infrastructure retires too: OpenAI's hosted Evals shuts down November 30, 2026 (Chapter 16). Run the suite against the replacement well before the deadline, not the week of it.
+- **New models drop old knobs.** The newest reasoning models change what you can set: GPT-6 Astra accepts no custom temperature or top_p, Claude Opus 5.5 cannot turn thinking off, Sonnet 5.5 returns a 400 for `thinking: disabled`, and since Anthropic API version `2026-10-21` (the default in its new SDK majors) any `temperature`, `top_p`, or `top_k` returns a 400 on every Claude model, even at the default value. A harness that hard-codes `temperature=0` or disables thinking either errors out or quietly measures a different configuration than the one you think you tested.
 - **The same model ID can change.** On September 25, 2026, OpenAI fixed an image-encoding bug that had degraded image understanding in GPT-6 Sol and GPT-6 Luna, kept the same model IDs, and told customers with image inputs to rerun their evals. Re-run your suite on a schedule, not only when you change the model string.
 
 ### For PMs: The Improvement Playbook
@@ -2706,13 +2706,13 @@ Not every eval needs the best model:
 |---|---|---|
 | Frontier: Claude Opus 5.5 ($4/$20), GPT-6 Astra ($10/$50) | ~$14 (Opus 5.5) to ~$35 (Astra) | Complex subjective judgments, safety-critical, setting the ceiling |
 | Mid: Claude Sonnet 5.5, GPT-6.1 Sol (both $2/$10) | ~$7 | Most production judges once validated |
-| Small: Gemini 3.8 Flash, Claude Haiku 4.5, GPT-6 Luna | ~$0.35 (Luna) to ~$3.50 (Haiku 4.5); Gemini 3.8 Flash ~$2.60 on promo, ~$5.25 at list | Clear-cut criteria, well-defined rubrics |
-| Typed decision model: TypeSafe Jev (early access) | ~$0.08 | Binary checklist criteria on 100% of traffic |
+| Small: Gemini 3.8 Flash, Claude Haiku 5.5, GPT-6 Luna | ~$0.35 (Luna or Haiku 5.5) to ~$3.50 (the older Haiku 4.5); Gemini 3.8 Flash ~$2.60 on promo, ~$5.25 at list | Clear-cut criteria, well-defined rubrics |
+| Typed decision model: TypeSafe Jev (early access), OpenAI Decisions API | ~$0.08 (Jev) to ~$0.20 (Decisions API) | Binary checklist criteria on 100% of traffic |
 | Code-based | $0 | Format checks, pattern matching, validation |
 
-Assumes ~2,000 input and ~300 output tokens per judgment at Standard list prices per 1M tokens (input/output) as of October 2026; see the [pricing chapter](02-model-landscape/03-pricing-and-costs.md). Reasoning tokens bill as output, Claude Opus 5.5 cannot turn thinking off, and Sonnet 5.5's lowest thinking setting is `between_tools`, not off, so measure real output tokens on your dev set before trusting these numbers. Gemini 3.8 Flash is on introductory pricing ($0.75/$3.75, about $2.60 per 1K) through December 31, 2026, then $1.50/$7.50 (about $5.25 per 1K). Claude Haiku 4.5 is still the only current Haiku. Its Claude API retirement floor is October 15, 2026, but Anthropic gives at least 60 days' notice and had issued none by October 1, so it runs into December at the earliest; Microsoft Foundry retires its `claude-haiku-4-5` deployment on November 15. Anthropic says Haiku 5.5 is due in "the coming weeks" but had not released it by October 1, so keep the judge swappable.
+Assumes ~2,000 input and ~300 output tokens per judgment at Standard list prices per 1M tokens (input/output) as of November 2026; see the [pricing chapter](02-model-landscape/03-pricing-and-costs.md). Reasoning tokens bill as output, Claude Opus 5.5 cannot turn thinking off, and Sonnet 5.5's lowest thinking setting is `between_tools`, not off, so measure real output tokens on your dev set before trusting these numbers. Gemini 3.8 Flash is on introductory pricing ($0.75/$3.75, about $2.60 per 1K) through December 31, 2026, then $1.50/$7.50 (about $5.25 per 1K). Claude Haiku 5.5 (GA October 7, 2026) costs $0.10/$0.50 for prompts up to 100K tokens, counting cache reads and writes, and $0.50/$2.50 on the whole request above that; judge prompts sit far below the line, but its tokenizer counts about 30% more tokens than Haiku 4.5 for the same text. It rejects `temperature`, `top_p`, `top_k`, and `budget_tokens` with a 400, so a judge harness ported from Haiku 4.5 needs code changes as well as re-validation. Haiku 4.5 remains Active on the Claude API with no deprecation notice as of November 6 (so not before about January 2027 under the 60-day rule; Anthropic removed it only from the consumer Claude apps' model selector on October 29), while Microsoft Foundry lists November 15, 2026 for its `claude-haiku-4-5` deployment. Keep the judge swappable.
 
-**Typed decision models are a new tier.** Jev (TypeSafe AI, out of stealth September 15, 2026) returns a typed verdict (yes/no, category, or score) with a probability instead of generated text, at $0.042 per 1M input tokens with output unmetered (vendor price, early access). LangSmith, Langfuse, Braintrust, Opik, and DeepEval added it as a judge option within two weeks. A paired comparison by Rao and Callison-Burch (arXiv 2609.29769) found LLM rubric judges cost 16 to 325x as much and took 28 to 350x as long, with a significant accuracy difference in at most 8 of 27 paired comparisons; Jev was strongest on binary checklist criteria and behind on ordinal ones. It gives no written rationale and cannot abstain, so keep an LLM judge wherever a human needs to read why.
+**Typed decision models are a new tier.** Jev (TypeSafe AI, out of stealth September 15, 2026) returns a typed verdict (yes/no, category, or score) with a probability instead of generated text, at $0.042 per 1M input tokens with output unmetered (vendor price, early access). LangSmith, Langfuse, Braintrust, Opik, and DeepEval added it as a judge option within two weeks. A paired comparison by Rao and Callison-Burch (arXiv 2609.29769) found LLM rubric judges cost 16 to 325x as much and took 28 to 350x as long, with a significant accuracy difference in at most 8 of 27 paired comparisons; Jev was strongest on binary checklist criteria and behind on ordinal ones. It gives no written rationale and cannot abstain, so keep an LLM judge wherever a human needs to read why. OpenAI's Decisions API is the first-party version of the same tier, billed on input only ([Research Radar theme 16](RESEARCH-RADAR.md#16-decision-models-typed-answers-with-probabilities)). Whichever you use, fit the pass threshold on your own labeled set rather than trusting the raw probability: TypedBench (arXiv 2610.11392, October 2026) found the hosted decision model it tested systematically underconfident and sensitive to wording.
 
 **Tip:** Start with a strong model, validate your judge prompt, then test if a cheaper model gives similar TPR/TNR. Often it does.
 
@@ -2813,7 +2813,7 @@ langwatch.setup()  # reads LANGWATCH_API_KEY
 
 **Langfuse:**
 ```bash
-pip install langfuse openai
+pip install "langfuse>=4,<5" openai  # samples target v4; v5 (October 2026) removed some APIs
 # Sign up at cloud.langfuse.com or self-host
 ```
 
@@ -2921,8 +2921,9 @@ if check_for_degradation(today_failure_rate, avg_failure_rate):
 
 **Langfuse:** Curated latency, cost, and usage dashboards out of the box; build a custom dashboard in the UI for score trends, or pull scores through the API:
 ```python
-# Fetch recent scores (Scores API v3, Python SDK 4.8.1+; the v1/v2 score
-# list endpoints are deprecated and leave Langfuse Cloud on November 16, 2026)
+# Fetch recent scores (Scores API v3, Python SDK 4.8.1 to 4.x; the v1/v2 score
+# list endpoints are deprecated and leave Langfuse Cloud on November 16, 2026).
+# SDK v5 removed scores_v3 with no alias: call langfuse.api.scores.get_many()
 scores, cursor = [], None
 while True:
     page = langfuse.api.scores_v3.get_many_v3(
@@ -3042,13 +3043,13 @@ plot_dashboard(failure_rates)
 | **LangSmith** | Cloud (self-hosted/hybrid on Enterprise) | LangChain and LangGraph users | Free tier + paid |
 | **Build Your Own** | Custom | Learning, custom needs | Free |
 
-**Ownership and retention are selection criteria now.** Langfuse has been part of ClickHouse since January 2026 and remains MIT open source. Promptfoo is OpenAI-owned (deal announced March 2026); it stays MIT and says it will keep supporting other providers. Dynatrace agreed on August 13, 2026 to buy Arize, the maker of Phoenix, for $915M, and says Phoenix stays available (it ships under the source-available Elastic-2.0 license). LangSmith SaaS keeps extended-retention traces for at most 180 days as of September 14, 2026 (self-hosted and BYOC unchanged). Treat any SaaS trace store as a working set, not an audit archive: prefer OpenTelemetry-native instrumentation so you can export or switch, and copy what compliance needs into storage you own.
+**Ownership and retention are selection criteria now.** Langfuse has been part of ClickHouse since January 2026 and remains MIT open source. Promptfoo is now part of OpenAI; it stays MIT and says it will keep supporting other providers. Dynatrace completed its $915M acquisition of Arize, the maker of Phoenix, on October 1, 2026, and says Phoenix stays available (it ships under the source-available Elastic-2.0 license). LangSmith SaaS keeps extended-retention traces for at most 180 days as of September 14, 2026 (self-hosted and BYOC unchanged), and on October 1, 2026 it replaced per-run and uptime pricing with usage-based pricing in LangChain Standard Units (1 LSU = $1), so re-forecast your bill from trace volume before renewing. Treat any SaaS trace store as a working set, not an audit archive: prefer OpenTelemetry-native instrumentation so you can export or switch, and copy what compliance needs into storage you own.
 
 ### Eval Frameworks
 
 - **LangWatch Evaluators** - 30+ ready-made evaluators covering safety, quality, and RAG, plus LLM-as-judge templates for your own criteria
 - **Langfuse Evals** - Managed LLM-as-a-Judge evaluators from templates, custom evaluators via SDK
-- **Promptfoo** - Open-source (MIT) eval and red-teaming CLI; OpenAI's recommended migration target for its hosted Evals platform, which goes read-only October 31, 2026 and shuts down November 30, 2026
+- **Promptfoo** - Open-source (MIT) eval and red-teaming CLI, now part of OpenAI; OpenAI's recommended migration target for its hosted Evals platform, which shuts down November 30, 2026
 - **Simple Evals** (OpenAI) - Frozen since July 2025 (no new models or results); still hosts reference implementations of HealthBench, BrowseComp, and SimpleQA
 - **Ragas** - Specialized for RAG evaluation
 - **DeepEval** - Comprehensive eval framework
@@ -3417,7 +3418,7 @@ For models that still accept sampling parameters:
 | Generating diverse critiques | 0.5-0.7 | Some creativity for different angles |
 | Brainstorming failure modes | 0.7-1.0 | High creativity for exploration |
 
-**Many current judge models no longer take a temperature.** The Claude API returns a 400 for non-default sampling values on Opus 4.7 and later, and Anthropic's Python SDK 1.0 (August 20, 2026) removed `temperature`, `top_p`, and `top_k` from the Messages methods (passing them raises a `TypeError`). Google deprecated the same parameters in the Gemini API on July 21, 2026, and GPT-6 Astra accepts no custom temperature or top_p. On these models, reproducibility comes from pinning everything else:
+**Many current judge models no longer take a temperature.** Since Anthropic API version `2026-10-21`, which all eight of its new SDK and CLI majors (Python and TypeScript included) send by default, `temperature`, `top_p`, and `top_k` return a 400 on every Claude model, even at their default values; under earlier versions Claude 4.7 and later models already rejected non-default values, and Python SDK 1.0 (August 20, 2026) had removed the three parameters from the Messages methods. Google deprecated the same parameters in the Gemini API on July 21, 2026, and GPT-6 Astra accepts no custom temperature or top_p. On these models, reproducibility comes from pinning everything else:
 
 - The exact model ID (a dated snapshot where the vendor offers one) and the reasoning effort or thinking level
 - The judge prompt version and few-shot set
@@ -3473,13 +3474,13 @@ Return your evaluation as JSON:
 
 ### 9. Model Selection for Judges
 
-| Model Tier (examples, October 2026) | When to Use | What to Expect |
+| Model Tier (examples, November 2026) | When to Use | What to Expect |
 |------------|------------|-----------------|
 | Frontier: Claude Opus 5.5, GPT-6 Astra | High-stakes evals, complex reasoning, setting the ceiling | Highest agreement on nuanced criteria; slowest and most expensive |
 | Mid: Claude Sonnet 5.5, GPT-6.1 Sol | Most production judges once validated | Often matches the ceiling on well-specified rubrics |
-| Small: Claude Haiku 4.5, Gemini 3.8 Flash, GPT-6 Luna | Cost-sensitive, high-volume evals | Good on clear-cut criteria; check TNR closely |
+| Small: Claude Haiku 5.5, Gemini 3.8 Flash, GPT-6 Luna | Cost-sensitive, high-volume evals | Good on clear-cut criteria; check TNR closely |
 | Open-weight: Qwen3.8-27B (Apache 2.0), GLM-5.3-Flash (MIT), DeepSeek V4.1-Flash (MIT) | Self-hosted, privacy-sensitive | Widest variance by task; validate before trusting |
-| Typed decision model: TypeSafe Jev (early access) | Binary checklist criteria on all traffic | No significant accuracy difference from LLM rubric judges in at least 19 of 27 paired comparisons (arXiv 2609.29769); weaker on ordinal scales; no rationale |
+| Typed decision model: TypeSafe Jev (early access), OpenAI Decisions API | Binary checklist criteria on all traffic | No significant accuracy difference from LLM rubric judges in at least 19 of 27 paired comparisons (arXiv 2609.29769); weaker on ordinal scales; no rationale |
 
 Your own TPR/TNR on a held-out test set is the only accuracy number that matters; published judge accuracies don't transfer across tasks.
 
@@ -3538,7 +3539,7 @@ langfuse.create_prompt(
 <a name="appendix-f"></a>
 ## Appendix F: Platform Methods Reference (LangWatch & Langfuse)
 
-Signatures below match the released LangWatch Python SDK 1.4.0 and Langfuse Python SDK 4.16.0. Where a vendor's docs and its released SDK disagree (LangWatch's `prompts.create(model=...)` is one case), trust the SDK signature, and re-check both before upgrading.
+Signatures below match the released LangWatch Python SDK 1.4.0 and Langfuse Python SDK 4.16.0 (pin `langfuse<5`; v5, released October 14, 2026, removed `api.scores_v3`, `api.legacy.*` and `api.trace.*`). Where a vendor's docs and its released SDK disagree (LangWatch's `prompts.create(model=...)` is one case), trust the SDK signature, and re-check both before upgrading.
 
 ### LangWatch
 
@@ -3706,7 +3707,8 @@ langfuse = get_client()
 
 # Observations API v2: filter by trace_id, name, type, session_id, and
 # always bound the time window. Needs a Langfuse v4 server (Cloud, or
-# self-hosted after upgrading; on a v3 server use api.legacy.observations_v1).
+# self-hosted after upgrading; on a v3 server use api.legacy.observations_v1,
+# which SDK v5 removed along with v3-server support).
 # The trace list/get endpoints (langfuse.api.trace.*) are deprecated and
 # leave Langfuse Cloud on November 16, 2026.
 observations = langfuse.api.observations.get_many(
@@ -3717,7 +3719,8 @@ observations = langfuse.api.observations.get_many(
     limit=100,  # max 1,000; follow observations.meta.cursor for more
 )
 
-# Scores API v3 (Python SDK 4.8.1+); limit is capped at 100, page with meta.cursor
+# Scores API v3 (Python SDK 4.8.1 to 4.x); limit is capped at 100, page with meta.cursor.
+# On SDK v5 this is langfuse.api.scores.get_many() (scores_v3 was removed).
 scores = langfuse.api.scores_v3.get_many_v3(name="dietary_adherence", limit=100)
 ```
 
@@ -3950,7 +3953,7 @@ Start today. Your future self will thank you.
 
 ### Research & Thought Leadership
 
-- **OpenAI Evals platform (retiring)**: existing evals go read-only October 31, 2026 and the dashboard and API shut down November 30, 2026. OpenAI's migration guide: [Moving from OpenAI Evals to Promptfoo](https://developers.openai.com/cookbook/examples/evaluation/moving-from-openai-evals-to-promptfoo)
+- **OpenAI Evals platform (retiring)**: the dashboard and API shut down November 30, 2026; a read-only step was scheduled for October 31, but export now rather than counting on further edits. OpenAI's migration guide: [Moving from OpenAI Evals to Promptfoo](https://developers.openai.com/cookbook/examples/evaluation/moving-from-openai-evals-to-promptfoo)
 - **OpenAI Cookbook** (practical examples & guides): [cookbook.openai.com](https://cookbook.openai.com/)
 - **OpenAI Research**: [openai.com/research](https://openai.com/research)
 - **Anthropic Research**: [anthropic.com/research](https://www.anthropic.com/research)
@@ -3971,7 +3974,7 @@ Start today. Your future self will thank you.
 | **Langfuse** | Custom pipelines & tracing | MIT (enterprise modules commercial) | [GitHub](https://github.com/langfuse/langfuse) · [Docs](https://langfuse.com/docs) |
 | **Arize Phoenix** | Tracing & evals, OTel-native | Elastic-2.0 | [GitHub](https://github.com/Arize-ai/phoenix) |
 | **Promptfoo** | Eval & red-teaming CLI; OpenAI Evals migration target | MIT | [GitHub](https://github.com/promptfoo/promptfoo) · [Docs](https://www.promptfoo.dev/docs/intro/) |
-| **RAGAS** | RAG-specific evaluation | Apache 2.0 | [GitHub](https://github.com/explodinggradients/ragas) · [Docs](https://docs.ragas.io/) |
+| **RAGAS** | RAG-specific evaluation (no commits since February 24, 2026; v0.4.3 from January 13, 2026 is latest, so pin it) | Apache 2.0 | [GitHub](https://github.com/vibrantlabsai/ragas) · [Docs](https://docs.ragas.io/) |
 | **Comet Opik** | LLM tracing & evaluation | Apache 2.0 | [GitHub](https://github.com/comet-ml/opik) · [Site](https://www.comet.com/site/products/opik/) |
 | **judgy** | Statistical bias correction | Open | [GitHub](https://github.com/ai-evals-course/judgy) |
 | **Braintrust** | Experimentation & logging | Partial | [Docs](https://www.braintrust.dev/docs) |
@@ -3985,7 +3988,7 @@ Start today. Your future self will thank you.
 | **LangWatch** | Observability + Built-in Evals | Yes (Apache 2.0) | Fast setup, analytics | 30+ ready-made evaluators, auto-analytics |
 | **Langfuse** | Custom Pipelines | Yes (MIT) | Data sovereignty, flexibility | Self-hostable, full control over data |
 | **Anthropic** | Safety / Red Teaming | Partial | Frontier risks | Constitutional classifiers, multi-attempt adversarial testing |
-| **OpenAI** | Preparedness / Business | Promptfoo (MIT, OpenAI-owned; deal announced March 2026) | Enterprise context | SME probing, contextual evals |
+| **OpenAI** | Preparedness / Business | Promptfoo (MIT; now part of OpenAI) | Enterprise context | SME probing, contextual evals |
 | **RAGAS** | RAG-specific | Yes (Apache 2.0) | RAG pipelines | Reference-free metrics, synthetic test data generation |
 | **Maxim** | Agentic Systems | No | Multi-agent apps | Simulation framework, no-code evaluation |
 | **Braintrust** | Experimentation | Partial | Early-stage teams | Collaborative design, fast iteration |

@@ -133,6 +133,46 @@ Forward deployed engineer (FDE) loops add rounds that are behavioral in form and
 
 ---
 
+### Theme 7: How You Use AI, and How You Verify It
+
+Candidates now report this as a screened competency rather than small talk. In candidate reports from September and October 2026, a Decagon behavioral round asked how you use AI tools (a prep site's write-up adds a follow-up on a time one gave a wrong answer that looked right), a Microsoft MLE project deep dive probed whether AI-built prototypes were real and which judgment was the candidate's own, a Harvey PM round asked for concrete personal AI habits and their limits, and an NVIDIA director round asked when to trust AI output. Sierra's published onsite ends with a Review stage that covers how you used AI. In a project deep dive, expect the interviewer to separate your work from the tool's.
+
+**Questions to expect:**
+- How do you use AI tools day to day, and how do you check what they produce?
+- Tell me about a time an AI tool was confidently wrong. How did you catch it?
+- In this project, what did the AI write, and which decisions were yours?
+- Who chose the success metric, and how did you run the evals?
+
+**What they look for:**
+- A specific workflow: what you delegate (boilerplate, test scaffolding, first drafts), what you keep (interfaces, security boundaries, the metric), and how you review
+- A named check, not "I reviewed it": tests written before you accepted the diff, an eval set, a comparison against the source of truth
+- A real miss: what the tool got wrong, how you caught it, and the guardrail you added afterward
+- Ownership of every line: you can explain and defend any part of the project, whoever typed it
+
+Prepare a one-sentence provenance line for each deep-dive project, such as: "I designed the retrieval and the evals, used an assistant for ingestion boilerplate and test scaffolds, and rewrote its chunker after it failed on tables." Avoid both extremes. Saying you never use AI reads as out of date at AI-native companies, and letting the tool own the story reads as no ownership.
+
+---
+
+### Theme 8: Safety and Mission Screens at Frontier Labs
+
+At frontier labs the values check can come first, and it is not only a final-round formality. Candidates report Anthropic recruiter screens of 20 to 30 minutes weighted toward AI safety (July to October 2026): what safety means to you, how your work relates to it, a conflict between your work and your own ethics, your view of the company's recent decisions, and the most important AI safety risk you see. Onsite culture rounds reportedly ask where you disagree with the company's direction and how you weigh shipping speed against safety. OpenAI candidates report mission questions in onsite rounds: why OpenAI, and how to trade speed, quality, and safety (August and October 2026). These are candidate reports, not published rubrics.
+
+**Questions to expect:**
+- What does AI safety mean to you, and how does your own work connect to it?
+- What is the most important AI safety risk you see? How would it show up in a product you would build, and how would you measure it?
+- Where do you disagree with this company's direction?
+- Tell me about a time shipping speed and safety pulled in different directions.
+
+**What they look for:**
+- A view in your own words, not a recited mission statement. Read the company's recent safety publications and form an opinion on at least one
+- A risk named concretely, with a mechanism, a signal, and a control. One example of that shape, applied to a product you might build, is an over-agreeable assistant that tells users what they want to hear: the mechanism (optimizing for user approval), a signal (how often it agrees with prompts built on a known false premise), and a control (a release gate on that rate, plus product choices that do not reward compulsive use)
+- Specific, respectful disagreement. Agreeing with everything reads as unprepared, and contrarianism for effect reads worse
+- A speed-versus-safety story where you paid a real cost and set the exit criterion that let work resume ([Theme 5](#theme-5-responsible-ai) and [Example 6](#example-6-raising-a-concern-that-was-dismissed) show the shape)
+
+Worked spoken answers for both themes, and for the other rounds candidates reported, mostly between June and November 2026, are in the question bank's [Questions From Recent Interview Reports](01-question-bank.md#questions-from-recent-interview-reports). For the per-company loop shapes and AI-tool rules, see [What candidates reported](06-job-market-trends-2026.md#what-candidates-reported-june-to-november-2026).
+
+---
+
 ## Question Categories and Examples
 
 ### Leadership and Influence
@@ -182,6 +222,7 @@ Strong answer elements:
 - The two or three decisions that mattered, the alternatives, and why you chose as you did
 - Numbers: scale, latency, cost, and quality before and after
 - What broke in production and what you would design differently now
+- Provenance: which parts an AI tool wrote, how you verified them, and who chose the metric ([Theme 7](#theme-7-how-you-use-ai-and-how-you-verify-it))
 
 ---
 
@@ -453,6 +494,7 @@ Save these for the recruiter call or after an offer signal; asking them shows yo
 | Dismissing ethics | May create liability |
 | No questions for interviewer | Lacks curiosity or engagement |
 | Using an AI assistant in a round that did not allow it | Can be disqualifying; policies differ by company and by round |
+| Vague about what the AI wrote and what you wrote | Interviewers now probe provenance; unclear ownership reads as no ownership |
 
 ---
 
@@ -480,6 +522,8 @@ Before your behavioral interviews:
 - [ ] Include at least one AI-specific story (model failure, bias, stakeholder education)
 - [ ] Prepare one past project you can defend at design depth: diagram, key decisions, numbers, what you would change
 - [ ] For FDE or solutions roles, prepare one end-to-end customer deployment story (use-case choice, security review, eval gate, handover)
+- [ ] Write a one-sentence AI-provenance line for each deep-dive project, and prepare one story where an AI tool was confidently wrong and you caught it
+- [ ] For frontier labs, prepare a safety view in your own words: one concrete risk with a signal and a control, and one point where you disagree with the company's direction
 - [ ] Confirm the AI-use policy for every round. Policies are split: Anthropic's candidate guidance bars AI assistance in live interviews unless told otherwise, Meta runs an AI-enabled coding round, and Google is piloting Gemini in a code-comprehension round for some roles
 - [ ] Record yourself once per story and fix what you hear
 - [ ] Do one full mock with a peer who interrupts

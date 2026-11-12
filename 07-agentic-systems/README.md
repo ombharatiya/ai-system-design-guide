@@ -47,7 +47,7 @@ flowchart LR
 |------|----------------|
 | [01-agent-fundamentals.md](01-agent-fundamentals.md) | What makes a system an "agent"; the agent vs workflow distinction; when to choose each. |
 | [02-reasoning-loops-react-and-beyond.md](02-reasoning-loops-react-and-beyond.md) | ReAct, Plan-and-Execute, Reflexion, Tree-of-Thought; loop design patterns. |
-| [03-tool-use-and-mcp.md](03-tool-use-and-mcp.md) | Function calling, Model Context Protocol (MCP), the 2026-07-28 stateless rewrite and the August 2026 roadmap, the skills extension, A2A v1.0, agentic commerce protocols, MCP production hardening (advisory wave, OAuth mix-up), and computer-use toolsets. |
+| [03-tool-use-and-mcp.md](03-tool-use-and-mcp.md) | Function calling, Model Context Protocol (MCP), the 2026-07-28 stateless rewrite, the release calendar (next revision targeted March 30, 2027) and extension maturity stages, the skills extension, A2A v1.0, agentic commerce protocols, MCP production hardening (advisory wave, OAuth mix-up, shared-server leak), and computer-use toolsets. |
 | [04-multi-agent-orchestration.md](04-multi-agent-orchestration.md) | When multi-agent helps and when it hurts; supervisor, swarm, pipeline (workflows as code), and debate patterns; managed coordinators. |
 | [05-agent-memory-and-state.md](05-agent-memory-and-state.md) | The L1-L4 memory hierarchy (Working, Episodic, Semantic, Procedural) with tradeoffs; write-time vs sleep-time vs read-time curation; when memory makes agents worse. |
 | [06-planning-and-decomposition.md](06-planning-and-decomposition.md) | Task decomposition, requirement elicitation, plan revision, long-horizon planning. |
@@ -68,7 +68,7 @@ flowchart LR
 ## Key Takeaways
 
 - Agents are not a single technology; they are a composition of reasoning loop, tool layer, memory, planner, and evaluator. Read chapter 01 first.
-- MCP is the standard tool-interop protocol in 2026 (current spec revision 2026-07-28, governed with A2A under the Agentic AI Foundation); do not build custom tool protocols unless you have a strong reason.
+- MCP is the standard tool-interop protocol in 2026 (current spec revision 2026-07-28, next targeted for March 30, 2027, governed with A2A under the Agentic AI Foundation); do not build custom tool protocols unless you have a strong reason, and check an extension's maturity stage before depending on it.
 - Multi-agent orchestration (ch 04) is over-applied; single-agent with good tooling beats multi-agent for most use cases.
 - Memory (ch 05) and error recovery (ch 07) are where most production agent bugs live; budget evaluation effort there.
 - Human-in-the-loop (ch 08) is not a fallback; design gates intentionally for high-stakes actions. Approvals and permission classifiers reduce risk, but containment (sandbox, egress policy, an out-of-band kill path) is the boundary (ch 09).

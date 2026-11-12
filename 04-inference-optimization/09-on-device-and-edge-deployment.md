@@ -22,7 +22,7 @@ The key mental model: these tools are **not substitutes**. They occupy different
 
 | Tool | Layer | What it is for |
 |------|-------|----------------|
-| **Ollama** | Experience layer / local daemon | One-command model pull and run, OpenAI-ish API, single-user dev. Builds on llama.cpp; on Apple Silicon it is moving to MLX by default for supported architectures (v0.40.0 release candidate, September 2026). |
+| **Ollama** | Experience layer / local daemon | One-command model pull and run, OpenAI-ish API, single-user dev. Builds on llama.cpp; on Apple Silicon it is moving to MLX by default for supported architectures (starting with the v0.40.0 release candidate, September 2026). Keep it on 0.35.0 or later and off untrusted networks (see below). |
 | **LM Studio** | Experience layer / GUI | A desktop GUI for browsing and running local models. Single-user focused. |
 | **llama.cpp** | Inference engine | Portable C/C++ CPU/GPU inference (the GGUF format); runs almost anywhere; powers the experience-layer tools. |
 | **MLX** | Inference engine | Apple's array framework; the fastest Apple Silicon path; research and fine-tuning. |
@@ -61,6 +61,8 @@ Ollama and LM Studio are excellent for prototyping and wrong for a shared produc
 
 Ollama defaults to serving requests with very limited parallelism and queues excess requests first-in-first-out; a full queue returns an error. Each parallel slot also statically multiplies the context memory allocation. LM Studio is built for single-user scenarios without rate limiting or auth. Neither is designed to turn concurrent demand into throughput.
 
+Nor is either hardened for exposure. Ollama's CVE-2026-103663 (CVSS v4 9.4, October 2026) is a path traversal in the `/api/pull` model download path: a malicious layer digest can write a binary into Ollama's library directory, which is writable in most Docker images, and that binary runs as root on the next restart. An Ollama port reachable from a shared network is a remote-code-execution surface. Run 0.35.0 or later (the fixed release), bind to localhost or a private interface, never expose `/api/pull`, and pull models only from a registry you mirror.
+
 **vLLM** is, via two mechanisms: **PagedAttention** (the KV cache stored in non-contiguous blocks like OS paging, cutting the 60-80% KV memory waste of naive serving to under ~4%) and **continuous batching** (swap a finished request out and a queued one in mid-batch). The clearest first-party benchmark, from Red Hat: on a single datacenter GPU running an 8B model, vLLM reached roughly **793 tokens/sec versus Ollama's ~41**, about 19x, with far lower tail latency, and even a tuned Ollama trailed across all concurrency levels.
 
 The takeaway is not "vLLM is tuned better." It is structural: Ollama and LM Studio serialize, vLLM batches continuously and pages the KV cache. For one user the difference is small; under concurrency it becomes roughly 16-20x. One caveat for honesty: most public head-to-head numbers run on a datacenter GPU to isolate the *software* difference, so do not read "vLLM beats Ollama" as "GPU beats Mac."
@@ -87,7 +89,7 @@ Quantization is what makes local serving viable; the [Quantization Deep Dive](..
 
 **GGUF** is the local-model format used by llama.cpp, Ollama, and LM Studio. Common quant levels trade quality for size: Q4_K_M is the practical sweet spot (roughly 1-3% quality loss versus FP16 at about a quarter of the size), Q5_K_M is noticeably better for code and reasoning at under ~1% loss, Q8_0 is effectively lossless at about half FP16, and Q2/Q3 save the most memory but degrade math and reasoning by 5-10% or more.
 
-That last rule holds for naive post-training quantization of a model trained at 16-bit. Models built for low bits behave differently. PrismML's **Ternary Bonsai 2 27B** (September 2026, Apache 2.0, derived from Qwen3.8-27B) averages 1.72 bits per weight in a 5.95 GB file and reports 98.2% of FP16 quality across 14 thinking-mode benchmarks, with about 130 tok/s decode on an RTX 5090 and about 28 tok/s on an M5 Pro (all vendor-reported). The catch: it runs only on PrismML's forks of llama.cpp and MLX. At the other extreme, Cactus Compute's **Needle 3** is a 121M-parameter tool-calling and extraction model compressed to about 2 bits per weight in an 8-29 MB file. Prefer vendor QAT builds (Google ships QAT int4 Gemma builds, including Gemma 4 12B) over quantizing yourself.
+That last rule holds for naive post-training quantization of a model trained at 16-bit. Models built for low bits behave differently. PrismML's **Ternary Bonsai 2 27B** (September 2026, Apache 2.0, derived from Qwen3.8-27B) averages 1.72 bits per weight in a 5.95 GB file and reports 98.2% of FP16 quality across 14 thinking-mode benchmarks, with about 130 tok/s decode on an RTX 5090 and about 28 tok/s on an M5 Pro (all vendor-reported). The catch: it runs only on PrismML's forks of llama.cpp and MLX. At the other extreme, Cactus Compute's **Needle 3** is a 121M-parameter tool-calling and extraction model compressed to about 2 bits per weight in an 8-29 MB file. Mixed-precision packing now reaches 70B-class MoE models: NVIDIA's **Nemotron 3.5 Bolt 74B-A9B 24GB** (October 15, 2026, OpenMDW-1.1) is a 74B-total, 9B-active MoE compressed from Nemotron 3.5 Super VL and shipped as a 24 GB checkpoint, with routed and shared experts in IQ2-XXS (about 2.06 bits per element), Mamba layers in NVFP4, and embedding and output layers in Q8_0, recovering accuracy through quantization-aware distillation. It supports up to 256K context, runs on llama.cpp, Ollama, LM Studio, and vLLM, and targets RTX PCs, RTX Spark laptops, and DGX Spark; a 4 GB Bolt E4B followed on October 23. Prefer vendor QAT builds like these (Google ships QAT int4 Gemma builds, including Gemma 4 12B) over quantizing yourself.
 
 The **VRAM rule of thumb**:
 
@@ -111,6 +113,7 @@ A model-size-to-hardware guide (Q4 quant assumed; planning guidance, not guarant
 | 32-35B | 24 GB | A 24 GB consumer GPU; 36-48 GB Mac |
 | 27B ternary (~1.7 bits) | ~6-8 GB | 8 GB+ GPU or 16 GB Mac, with the vendor's runtime fork |
 | 70B | ~40 GB+ | High-end or dual GPU; 64 GB+ Mac; or a datacenter card |
+| 74B MoE, vendor-packed ~2-bit experts (Nemotron 3.5 Bolt) | ~24 GB | A 24 GB consumer GPU, RTX Spark laptop, or DGX Spark |
 | 200B+ | 48 GB+, often multi-GPU / 128 GB+ unified | Multi-GPU rigs; large-unified-memory workstations |
 
 Notes:
@@ -129,8 +132,11 @@ The useful on-device answer is often several small specialists rather than one g
 | General assistant on phone or watch | K2 Horizon 0.9B / 3.7B / 7B (Apache 2.0, open training data) | 0.9B at 128K context; 3.7B and 7B at 512K |
 | Enterprise-friendly small model, no Chinese-origin weights | IBM Granite 4.2 3B / 8B (Apache 2.0) | Official FP8, MXFP4, NVFP4, GGUF, and MLX builds |
 | Laptop-class multimodal (text, image, audio, video) | Gemma 4 12B (Apache 2.0) | Encoder-free design; official QAT int4 builds |
+| Single-GPU reasoning, Apache 2.0 | Nanbeige4.3-33B (October 24, 2026; 33B dense, up to 524K context) | FP8, INT8, and INT4 builds since October 31; Artificial Analysis Intelligence Index v5.0.1 scores it 20, tying Qwen3.8-27B at xhigh, but it used 160M output tokens on the index against a 77.7M median, so cost per task is higher; no public API |
 | Local coding agent | MiMo-V2.6-Distill-Qwen-9B (MIT) | Vendor-reported 61.1% SWE-bench Verified |
 | Reasoning on a laptop | Ternary Bonsai 2 27B (Apache 2.0) | Needs PrismML runtime forks |
+
+Check a model card's engine pins before you ship it. IBM's **Granite Switch 4.1** (8B and 30B, Apache 2.0, model cards dated October 14, 2026) packs a Granite 4.1 base, two aLoRA adapters (guardian-core for safety detection, decision for scoring labeled options), and a 470M Granite Speech 5.0 encoder behind one endpoint, which is a neat way to ship several specialists as one model. But its optional vLLM backend is pinned to `>= 0.26.0, < 0.31.0`, below this guide's vLLM security floor (see [Serving Infrastructure](06-serving-infrastructure.md#operational-posture)), so serving it on vLLM means running an engine with known advisories. Fail CI when a model's pinned engine range excludes your floor.
 
 ---
 

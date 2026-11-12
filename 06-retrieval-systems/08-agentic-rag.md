@@ -74,7 +74,7 @@ Modern agents use **Sub-Step Plans**.
 
 The cost problem with agentic RAG is that every query pays for the loop, including the simple ones a single retrieval would have answered. **Adaptive RAG** fixes this with a router; in 2026 the router became a managed setting.
 
-Azure AI Search is the clearest example. Its knowledge bases went GA in REST API 2026-04-01 for extractive retrieval (LLM query planning and answer synthesis remain preview). The 2026-08-01-preview API adds `retrievalReasoningEffort: "auto"`: run a lightweight retrieval pass first, and escalate to LLM query planning (up to medium effort) only when grounding is insufficient. The same preview lets the planner turn query hints into filters and boosts. Separately, knowledge sources added in June 2026 (MCP servers, Fabric, Azure SQL) let one retrieve call fan out beyond search indexes; check each source's preview or GA status before you depend on it.
+Azure AI Search is the clearest example. Its knowledge bases went GA in REST API 2026-04-01 for extractive retrieval (LLM query planning and answer synthesis remain preview). The 2026-08-01-preview API adds an `auto` effort (`"retrievalReasoningEffort": {"kind": "auto"}`, which needs a model on the knowledge base and returns 400 on earlier API versions): run a lightweight retrieval pass first, and escalate to LLM query planning (up to medium effort) only when grounding is insufficient. The same preview lets the planner turn query hints into filters and boosts. Separately, knowledge sources added in June 2026 (MCP servers, Fabric, Azure SQL) let one retrieve call fan out beyond search indexes; check each source's preview or GA status before you depend on it.
 
 ```mermaid
 flowchart TD
@@ -127,7 +127,7 @@ The general lesson for any synthetic-data loop: never let the component that gen
 ### Q: What is the "Reasoning-Retrieval Balance" in Agentic RAG?
 
 **Strong answer:**
-Every "Reasoning turn" in an agentic loop adds token cost and user latency. The goal of a production engineer is to find the "Retrieval Threshold." We use **Token-Budgeting** where we allow the agent only 3-5 "turns" before forcing a final answer. We also use **Speculative Retrieval**, where the agent predicts the next 2 steps it will take and retrieves for both simultaneously to reduce round-trip latency. The cheapest turn is the one you never take, so I put an adaptive gate in front: a single hybrid-plus-rerank pass with a sufficiency check, escalating to planning only on failure (Azure AI Search ships this as `retrievalReasoningEffort: "auto"`).
+Every "Reasoning turn" in an agentic loop adds token cost and user latency. The goal of a production engineer is to find the "Retrieval Threshold." We use **Token-Budgeting** where we allow the agent only 3-5 "turns" before forcing a final answer. We also use **Speculative Retrieval**, where the agent predicts the next 2 steps it will take and retrieves for both simultaneously to reduce round-trip latency. The cheapest turn is the one you never take, so I put an adaptive gate in front: a single hybrid-plus-rerank pass with a sufficiency check, escalating to planning only on failure (Azure AI Search ships this as `retrievalReasoningEffort` with `kind: "auto"` in the 2026-08-01-preview API).
 
 ### Q: Why does Agentic RAG often lead to higher quality but lower "Reliability" (Determinism)?
 

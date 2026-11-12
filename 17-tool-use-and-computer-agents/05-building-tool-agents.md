@@ -90,7 +90,7 @@ Good Tool Design:                    Bad Tool Design:
 
 An MCP server is a standalone process that exposes tools, resources, and prompts to any MCP-compatible client (Claude, GPT, Llama-based agents). You write the server once and any LLM can use it.
 
-The current spec revision is **2026-07-28**, which made the core protocol stateless: no initialize handshake and no protocol-level session IDs, so a remote server can sit behind an ordinary load balancer. Clients on the earlier 2025-11-25 stateful revision are still common, so plan for a long dual-version period (see [Tool Use and MCP](../07-agentic-systems/03-tool-use-and-mcp.md) for the migration details).
+The current spec revision is **2026-07-28**, which made the core protocol stateless: no initialize handshake and no protocol-level session IDs, so a remote server can sit behind an ordinary load balancer. The next revision is targeted for March 30, 2027 (SEP-3398, subject to confirmation), after which releases follow a March and September cadence. Clients on the earlier 2025-11-25 stateful revision are still common, so plan for a long dual-version period (see [Tool Use and MCP](../07-agentic-systems/03-tool-use-and-mcp.md) for the migration details).
 
 ### MCP Architecture
 
@@ -134,7 +134,7 @@ server.registerTool(
 await server.connect(new StdioServerTransport());
 ```
 
-The v2 TypeScript SDK splits into `@modelcontextprotocol/server`, `@modelcontextprotocol/client`, and `@modelcontextprotocol/core`. The v1 package (`@modelcontextprotocol/sdk`) is in maintenance (security and critical fixes only) but still dominates installs (about 232M npm downloads in September 2026 against about 31M for v2 `core`), so expect to read both styles.
+The v2 TypeScript SDK splits into `@modelcontextprotocol/server`, `@modelcontextprotocol/client`, and `@modelcontextprotocol/core`. The v1 package (`@modelcontextprotocol/sdk`) is in maintenance (security and critical fixes only) but still dominates installs (about 246M npm downloads in October 2026 against about 62M for v2 `core`, 49M for `server`, and 33M for `client`), so expect to read both styles.
 
 ### Python MCP Server (SDK v2, MCPServer)
 
@@ -169,7 +169,9 @@ Since MCP Python SDK 2.0.0 (July 28, 2026), `pip install mcp` installs the 2.x l
 
 A remote server is a network service and gets attacked like one. Between August 15 and October 1, 2026, the GitHub Advisory Database published 73 advisories with MCP in the title (9 critical), led by 25 for the popular `mcp-atlassian` server, whose HTTP token verifier accepted any non-empty string (CVE-2026-77244, fixed in 0.22.0). Verify tokens against the issuer, not for presence; bind local HTTP servers to loopback with DNS-rebinding protection on; and treat upload or attachment tools as exfiltration channels.
 
-The official SDKs are part of that attack surface. In late September 2026 both published advisories for an OAuth mix-up (CVE-2026-104850 in TypeScript, GHSA-qx49-fqc8-xw99 in Python, CVSS 7.5) in which a malicious MCP server could name its own authorization server and receive the client's stored refresh tokens and client secrets. The floors are TypeScript 1.31.0 or 2.2.0 and Python 1.30.0 or 2.2.0, and upgrading is not the whole fix: machine-to-machine credential providers also need an expected issuer configured, and credentials saved before the upgrade stay exposed until they are tagged or cleared. The design rule for any multi-server client: bind every credential to its issuer, and never let a server decide where secrets go.
+The official SDKs are part of that attack surface. In late September 2026 both published advisories for an OAuth mix-up (CVE-2026-104850 in TypeScript, GHSA-qx49-fqc8-xw99 in Python, CVSS 7.5) in which a malicious MCP server could name its own authorization server and receive the client's stored refresh tokens and client secrets. The floors for that fix are TypeScript 1.31.0 or 2.2.0 and Python 1.30.0 or 2.2.0, and upgrading is not the whole fix: machine-to-machine credential providers also need an expected issuer configured, and credentials saved before the upgrade stay exposed until they are tagged or cleared. The design rule for any multi-server client: bind every credential to its issuer, and never let a server decide where secrets go.
+
+October added two TypeScript advisories where upgrading is again not enough. In CVE-2026-111770 (CVSS 7.7), a server or transport shared across clients leaked one client's responses to another. It affects `@modelcontextprotocol/server` 2.0.0 through 2.2.x and is fixed in 2.3.0, but the fix requires code changes: create one server and transport per request or session. A module-level singleton is the convenient pattern and the vulnerable one (a stdio server like the example above serves a single client, so it is not exposed). CVE-2026-111771, accepting tokens issued for other services, is fixed in `sdk` 1.32.0 and `server` 2.3.0, but the audience check is opt-in (`expectedResource`), so set it. The lesson for any SDK: read the advisory, not just the version bump, because secure behavior is often a configuration you have to turn on.
 
 Recent releases also tightened server defaults that a production deployment should keep rather than override: TypeScript 2.1.0 and later and current Python releases cap request bodies at 4 MiB, and Python 1.30.0 and 2.2.0 close legacy stateful sessions after 30 idle minutes, with at most 10,000 per server.
 
@@ -193,7 +195,7 @@ Editing the top-level `tools` array changes the front of the prompt and invalida
 
 ### MCP Discovery Protocol
 
-MCP clients discover capabilities via standard JSON-RPC methods: `tools/list` returns available tools, `resources/list` returns data resources, `prompts/list` returns prompt templates, and the 2026-07-28 revision added `server/discover`, which every server must implement to advertise its supported protocol versions, capabilities, and identity (clients may call it first to pick a version). Before connecting at all, clients can find servers through Server Cards (an experimental extension, SEP-2127), which are listed in AI Catalog entries at `/.well-known/ai-catalog.json`, or through the MCP Registry (still a preview). Server-side progressive discovery for very large catalogs is on the August 2026 MCP roadmap but not yet in the spec.
+MCP clients discover capabilities via standard JSON-RPC methods: `tools/list` returns available tools, `resources/list` returns data resources, `prompts/list` returns prompt templates, and the 2026-07-28 revision added `server/discover`, which every server must implement to advertise its supported protocol versions, capabilities, and identity (clients may call it first to pick a version). Before connecting at all, clients can find servers through Server Cards (SEP-2127, Final since October 6, 2026; the extension is at the Beta maturity stage), which are listed in AI Catalog entries at `/.well-known/ai-catalog.json`, or through the MCP Registry (still a preview). Server-side progressive discovery for very large catalogs is on the August 2026 MCP roadmap but not yet in the spec.
 
 ---
 
@@ -339,7 +341,7 @@ my-skill/
 Loading is progressive: only each skill's name and description sit in context at the start, the body of `SKILL.md` loads when the model decides the skill is relevant, and supporting files are read as needed. This keeps the base agent lightweight and the prompt prefix stable, which matters for caching; injecting every skill into the system prompt defeats both.
 
 **Skills are now a supply chain.** Two developments in September 2026 changed how to ship them:
-- **Skills over MCP:** the official MCP extension `io.modelcontextprotocol/skills` (SEP-2640, Final on September 13) lets a server publish skills next to the tools they describe. Each skill carries a file manifest with a SHA-256 digest per file; hosts must verify digests before use, bind any approval to the whole manifest (a changed, added, or removed file revokes it), treat skill content as untrusted, and get explicit approval before a skill grants tools or runs host-side code. Official SDK support was still in open pull requests at the end of September.
+- **Skills over MCP:** the official MCP extension `io.modelcontextprotocol/skills` (SEP-2640, Final on September 13) lets a server publish skills next to the tools they describe. Each skill carries a file manifest with a SHA-256 digest per file; hosts must verify digests before use, bind any approval to the whole manifest (a changed, added, or removed file revokes it), treat skill content as untrusted, and get explicit approval before a skill grants tools or runs host-side code. TypeScript SDK 2.4.0 (October 23) ships Skills over MCP. A Final SEP is not a frozen interface, though: under the extension lifecycle adopted in October (SEP-3392), Skills, Tasks, and Server Cards are Beta and can still break, while MCP Apps and enterprise auth are Stable, so pin the SDK version you build on.
 - **Scanners are not enough:** Pretext (arXiv 2609.39607) crafted malicious skills that got past NVIDIA's SkillSpector, a static-plus-LLM skill scanner, and still delivered their payload in up to 97% of attempts (77% against a version of the scanner that learns from its misses). The trick was moving payloads from code into natural language and splitting instructions across files. Pin skill versions, review updates like dependency upgrades, and contain what a skill can do at runtime instead of trusting a pre-install scan.
 
 ---
@@ -466,7 +468,7 @@ As tools evolve, you must maintain compatibility with agents that depend on them
 2. **Breaking changes** (rename, remove param, change semantics): Create a new tool name with the new schema. Keep the old tool running and add "DEPRECATED: Use new_tool instead" to its description. Log every deprecated call for monitoring.
 3. **Never remove a tool** until you verify no active agents depend on it.
 
-**The same discipline applies to tools you consume.** Vendors change built-in tool schemas on short notice. Google's `antigravity-preview-09-2026` agent (September 17, 2026) renamed its built-in tool parameters from snake_case to PascalCase, replaced full-file rewrites with line-range edits, and added `find_by_name` and `grep_search`; the 05-2026 version it replaced shuts down on October 5, 2026, 18 days later. Code that executes those tools locally or parses `function_call` steps had to change. Pin dated agent and tool versions, run contract tests against the tool definitions you receive, and alert when a fetched MCP tool list differs from the pinned one (a changed definition after approval is the "rug pull" attack).
+**The same discipline applies to tools you consume.** Vendors change built-in tool schemas on short notice. Google's `antigravity-preview-09-2026` agent (September 17, 2026) renamed its built-in tool parameters from snake_case to PascalCase, replaced full-file rewrites with line-range edits, and added `find_by_name` and `grep_search`; the 05-2026 version it replaced was scheduled to shut down on October 5, 2026, 18 days later. Code that executes those tools locally or parses `function_call` steps had to change. Pin dated agent and tool versions, run contract tests against the tool definitions you receive, and alert when a fetched MCP tool list differs from the pinned one (a changed definition after approval is the "rug pull" attack). SDK majors belong in the same contract tests: Anthropic's eight new SDK and CLI majors (Python 2.0.0, TypeScript 1.0.0, C# 13.0.0, Go 2.0.0, Java 3.0.0, PHP 1.0.0, Ruby 2.0.0, and the `ant` CLI 2.0.0) send API version `2026-10-21` by default, under which `temperature`, `top_p`, and `top_k` return HTTP 400 on every model, even at default values, and the new majors are licensed Apache 2.0 rather than MIT.
 
 ---
 
@@ -497,7 +499,7 @@ I would run evals on every model version change and every tool schema change. A 
 ### Q: Your extraction service forces a tool call to get JSON back. After moving to the newest Claude model, every request returns HTTP 400. What happened, and how do you fix it without losing the schema guarantee?
 
 **Strong answer:**
-Claude Fable 5.1, Mythos 5.1, Opus 5.5, and Sonnet 5.5 reject `tool_choice` of type `any` or `tool`; only `auto` and `none` remain. Forcing a tool call was always a workaround for getting structured output, and the provider has now removed it on its newest models.
+Claude Fable 5.1, Mythos 5.1, Opus 5.5, and Sonnet 5.5 reject `tool_choice` of type `any` or `tool`; only `auto` and `none` remain. Forcing a tool call was always a workaround for getting structured output, and the provider has now removed it on its largest models. Haiku 5.5 still accepts a forced `tool_choice`, but the response then starts with the tool call and has no thinking block.
 
 The fix depends on why the call was forced. If the tool only existed to shape the output, I would delete it and use native structured outputs (`output_config.format` with a JSON schema), which constrains the response itself. If the tool does real work, I would switch to `auto`, name the tool in the prompt, set `strict: true` so any call that happens has schema-valid arguments, and add a check in the loop for the case where the model answered without calling it, with one retry and then an error.
 
@@ -519,6 +521,8 @@ Two follow-ups matter more than the fix. First, this broke at a model upgrade, s
 - Kaisar and Dhar. "Pretext" (arXiv 2609.39607, September 2026)
 - GitHub Advisory Database: reviewed MCP advisories (github.com/advisories?query=type%3Areviewed+mcp)
 - MCP SDK security advisories GHSA-6qxp-vccf-f47h / CVE-2026-104850 (TypeScript) and GHSA-qx49-fqc8-xw99 (Python), OAuth authorization-server mix-up (September 2026)
+- MCP TypeScript SDK advisories CVE-2026-111770 (shared server or transport) and CVE-2026-111771 (token audience) (October 2026)
+- Model Context Protocol. SEP-3392 "Extension Lifecycle" and SEP-3398 "Release Cycle Updates" (October 2026)
 
 ---
 

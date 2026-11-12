@@ -491,9 +491,9 @@ class GracefulDegrader:
 
 **Failover is not drop-in.** The fallback leg has to accept the request, carry the conversation, meet the same data terms, and do the job:
 
-| What breaks | Example (October 2026) | Fix |
+| What breaks | Example (November 2026) | Fix |
 |-------------|------------------------|-----|
-| Request shape | Claude Fable 5.1, Opus 5.5, and Sonnet 5.5 return 400 on forced `tool_choice`; GPT-6 Astra rejects custom `temperature`, `top_p`, and `logprobs` | Translate per target from a capability profile; never pass parameters through blindly |
+| Request shape | Claude Fable 5.1, Opus 5.5, and Sonnet 5.5 return 400 on forced `tool_choice`; Claude API version `2026-10-21` rejects `temperature`, `top_p`, and `top_k` at any value on every model; GPT-6 Astra rejects custom `temperature`, `top_p`, and `logprobs` | Translate per target from a capability profile; never pass parameters through blindly |
 | Conversation state | The newest Claude models bind thinking blocks to the model and conversation | Fail over at turn boundaries; send the visible transcript and tool results |
 | Data terms | Fable 5.1 requires 30-day retention unless authorized for ZDR; OpenAI's Agents API beta has no ZDR | Store retention and residency per model in the registry and enforce them at routing time |
 | Output quality | The fallback model was never evaluated on your task | Run the eval suite on every fallback leg, on a schedule |

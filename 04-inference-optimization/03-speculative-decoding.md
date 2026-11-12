@@ -37,18 +37,20 @@ Illustrative numbers for the classic separate-draft setup:
 
 **Net Result**: 2x to 3x speedup in wall-clock time with **zero loss in quality** at low concurrency. The guarantee is exact: with standard speculative sampling the output distribution is provably the target's, and with greedy decoding the output is identical token for token. What varies is speed, which depends on the **acceptance length** (accepted tokens per verification step).
 
+The guarantee holds only for standard verification. Engines now ship opt-in lossy policies (vLLM v0.33.0 added FLy in November 2026, reporting 1.04x to 1.31x more decode throughput on MI355X and B300) that trade exact output for speed, so treat any non-default verification policy as a model change and rerun evals.
+
 ---
 
 ## Drafters in 2026: Heads, MTP, Diffusion, DSpark
 
-The industry has moved away from separately trained draft models, which add VRAM, a second KV cache, and tokenizer-matching pain, toward drafters tied to the target. Medusa heads started that move; they are no longer documented in vLLM (the `medusa` method is still accepted), and the methods below replaced them.
+The industry has moved away from separately trained draft models, which add VRAM, a second KV cache, and tokenizer-matching pain, toward drafters tied to the target. Medusa heads started that move. vLLM stopped documenting them first, then removed Medusa and the MLP speculator outright in v0.33.0 (November 2, 2026), and the methods below replaced them. A config that still sets `"method":"medusa"` fails on upgrade, so move it to EAGLE-3 or the model's own MTP module.
 
 | Method | What drafts | Notes |
 |--------|-------------|-------|
 | **EAGLE-3** | A light head fed by the target's hidden features from several layers | Paper reports up to 6.5x speedup and 1.38x throughput at batch 64 in SGLang; the common default for open models without native MTP |
 | **Native MTP** | Multi-token-prediction heads trained with the model (DeepSeek-V3 onward) | Shipped built in by MiMo-V2.6 and Qwen3.8-Flash-Next (a 4B MTP module) |
 | **DFlash / DFlash 2** | A small block-diffusion model that proposes a whole block in parallel | DFlash 2 (Inco AI, August 18, 2026) reports 2.7x to 3.4x throughput on Qwen3.8-27B (vendor-reported); merged into SGLang, vLLM, and llama.cpp between August 19 and 27 |
-| **DSpark** | DeepSeek's speculative module, shipped inside the checkpoint | DeepSeek-V4-Flash-DSpark (June 27, MIT) is the same checkpoint plus the module; other DSpark drafts exist for Kimi K3 (RadixArk) and MiniMax-M3 (NVIDIA), and publishers ship their own for Nemotron 3.5 (NVIDIA) and LFM2.5 (Liquid) |
+| **DSpark** | DeepSeek's speculative module, shipped inside the checkpoint | DeepSeek ships the module inside its checkpoints: V4-Flash-DSpark and V4-Pro-DSpark (June 27, MIT) first, then V4-Flash-0731, V4-Pro-0813, and V4.1-Flash (September 10, including the October 17 build), all MIT; other DSpark drafts exist for Kimi K3 (RadixArk) and MiniMax-M3 (NVIDIA), and publishers ship their own for Nemotron 3.5 (NVIDIA) and LFM2.5 (Liquid) |
 | **Separate draft model** | A smaller model from the same family | Still useful when nothing above exists; PARD (parallel draft) variants cut drafting latency |
 
 Two consequences for system design:
