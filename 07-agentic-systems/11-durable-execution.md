@@ -36,7 +36,7 @@ Where the determinism constraints come from is the load-bearing concept: recover
 
 The building blocks:
 - **Activities** are the only place side effects and nondeterminism live; each is independently retried.
-- **Exactly-once activities** use idempotency keys, often derived from the workflow and step IDs, so a retried tool call does not double-execute.
+- **Idempotent side effects** use stable keys, often derived from the workflow and step IDs, that the destination service enforces. An activity may execute more than once; a recorded completion is replayed without re-executing it. A key alone does not prevent duplicate effects if the destination does not honor it.
 - **Durable timers** are persisted and survive worker restarts and deploys, so a workflow can wait days without holding a process open.
 - **Signals** push external events (an approval, a cancellation) into a running workflow; paired **queries** read its current state without mutating it (status, monitoring). While a workflow awaits a signal or timer, the worker idles and consumes no compute until the event arrives, when it replays the history and resumes.
 
@@ -68,7 +68,7 @@ The integration landscape in 2026:
 - **DBOS and Restate** integrate at the library level with agent frameworks, wrapping agent runs and sub-agent calls as durable workflows and child workflows.
 - **Temporal + Amazon Bedrock AgentCore Runtime** entered prerelease on September 21, 2026: a Temporal workflow runs the durable agent loop, model and tool calls are activities with retry policies, Strands Agents supplies the programming model, and AgentCore Runtime is the compute behind Temporal Serverless Workers.
 
-The honest tension to teach: **framework-native checkpointing recovers *state*; a full durable-execution engine additionally gives exactly-once side effects, durable timers, signals, and replay semantics across deploys.** The gap matters most when tool calls have irreversible external effects. For agents that are mostly LLM reasoning with recoverable, idempotent tools, framework checkpointing plus idempotency keys on the few non-idempotent tools is often enough.
+The honest tension to teach: **framework-native checkpointing recovers *state*; a full durable-execution engine additionally gives durable timers, signals, and replay semantics across deploys. Exactly-once external effects still depend on the destination contract, such as a service-enforced idempotency key or a transaction that includes the effect.** The gap matters most when tool calls have irreversible external effects. For agents that are mostly LLM reasoning with recoverable, idempotent tools, framework checkpointing plus idempotency keys on the few non-idempotent tools is often enough.
 
 The canonical pattern that ties it together: when a proposed action is risky, the workflow pauses and waits for human approval via a signal, consuming no compute while it waits, then resumes durably, exactly the [human-in-the-loop](08-human-in-the-loop-patterns.md) approval gate, made crash-proof.
 
@@ -104,7 +104,7 @@ Walk these in order:
 
 1. **Does any tool call have an irreversible external side effect** (payment, email, deploy, ticket, cross-system write)? No: framework checkpointing or a retry/queue likely suffices. Yes: continue.
 2. **Can a single run outlast your process or deploy cycle, or must it pause for human approval across restarts?** No: in-memory plus a checkpoint on completion is probably fine. Yes: you need durable timers and durable pauses.
-3. **Would re-running the whole agent on a crash be unacceptable** in cost, duplicate effects, or lost multi-hour progress? Yes: you need replay and exactly-once, so durable execution is justified.
+3. **Would re-running the whole agent on a crash be unacceptable** in cost, duplicate effects, or lost multi-hour progress? Yes: durable replay is justified, and each external side effect still needs a verified idempotency or reconciliation contract.
 4. **Pick the weight class:** DBOS if side effects are mostly writes to your own Postgres and you want one deploy; Restate for low-ops, HTTP-native, stateful sessions; Inngest for event-driven, TS-first, AI-native rate-limit control; Step Functions if you are all-in on AWS and fine with a declarative state machine; Temporal for large scale, complex long-running processes, and the deepest agent-framework integrations; a managed agent runtime (Claude Managed Agents, OpenAI Agents API, Bedrock Managed Agents) when its residency, retention, and pricing fit and you would rather rent the loop than run it; or stay with framework-native durability (LangGraph checkpointers) plus idempotency keys when the agent is mostly reasoning with recoverable tools.
 
 It is overkill for simple CRUD, sub-millisecond hot paths, pure high-throughput streaming, or a tiny team whose needs a queue with a dead-letter handler already covers.
@@ -116,7 +116,7 @@ It is overkill for simple CRUD, sub-millisecond hot paths, pure high-throughput 
 ### Q: Why are naive retries and checkpoints insufficient for a production agent with side effects?
 
 **Strong answer:**
-Because an agent crash creates an ambiguity a retry cannot resolve safely. If the agent calls a tool that charges a card and then crashes, you cannot tell from a state snapshot whether the charge committed before the crash or whether only the acknowledgment was lost, so a naive retry risks charging twice. A plain checkpoint that saves state between steps still leaves an unsafe window between executing the side effect and recording that it happened. Durable execution closes this by capturing the journal of steps, not just the latest state: each side-effecting step is a recorded activity with an idempotency key, so on replay a completed activity returns its recorded result instead of re-running. That gives exactly-once semantics for the side effect and lets the workflow resume from the exact point it failed rather than from the beginning.
+Because an agent crash creates an ambiguity a retry cannot resolve safely. If the agent calls a tool that charges a card and then crashes, you cannot tell from a state snapshot whether the charge committed before the crash or whether only the acknowledgment was lost, so a naive retry risks charging twice. A plain checkpoint that saves state between steps still leaves an unsafe window between executing the side effect and recording that it happened. Durable execution records the journal of steps, not just the latest state: on replay, an activity whose completion was recorded returns its recorded result instead of re-running. If the external effect committed but the activity completion was not recorded, the activity may execute again. Avoiding a duplicate then depends on a stable idempotency key enforced by the destination, or an equivalent transactional contract. Durable replay alone cannot settle that lost-acknowledgment window.
 
 ### Q: When is durable execution overkill, and what would you use instead?
 
@@ -132,6 +132,7 @@ I separate the agent loop from the side effects. Renting the loop is attractive:
 
 ## References
 
+- Temporal, [Activity Definition: idempotency and retry behavior](https://docs.temporal.io/activity-definition)
 - Resonate, ["From where do deterministic constraints come?"](https://journal.resonatehq.io/p/from-where-do-deterministic-constraints)
 - Restate, ["What is durable execution?"](https://www.restate.dev/what-is-durable-execution)
 - Temporal, [OpenAI Agents SDK integration](https://temporal.io/blog/announcing-openai-agents-sdk-integration), [Series D announcement](https://temporal.io/news/temporal-raises-300M-to-make-agentic-ai-real-for-companies), and [Series E announcement](https://temporal.io/news/temporal-raises-550m-at-a-12-55b-valuation)
